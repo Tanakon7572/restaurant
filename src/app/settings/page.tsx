@@ -1,0 +1,269 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import BottomNav from '@/components/BottomNav'
+
+export default function SettingsPage() {
+  const [shopName, setShopName] = useState('')
+  const [shopNameSaving, setShopNameSaving] = useState(false)
+  const [shopNameMsg, setShopNameMsg] = useState('')
+
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMsg, setPasswordMsg] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  const [hasDbPassword, setHasDbPassword] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => {
+        if (res.status === 401) { router.push('/'); return null }
+        return res.json()
+      })
+      .then(data => {
+        if (data?.shopName) setShopName(data.shopName)
+        setHasDbPassword(!!data?.hasDbPassword)
+      })
+      .finally(() => setLoading(false))
+  }, [router])
+
+  async function saveShopName() {
+    if (!shopName.trim()) return
+    setShopNameSaving(true)
+    setShopNameMsg('')
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopName }),
+      })
+      if (res.ok) {
+        setShopNameMsg('บันทึกสำเร็จ')
+        setTimeout(() => setShopNameMsg(''), 3000)
+      } else {
+        const d = await res.json()
+        setShopNameMsg(d.error || 'เกิดข้อผิดพลาด')
+      }
+    } finally {
+      setShopNameSaving(false)
+    }
+  }
+
+  async function changePassword() {
+    setPasswordError('')
+    setPasswordMsg('')
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('กรุณากรอกข้อมูลให้ครบ')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('รหัสผ่านใหม่ไม่ตรงกัน')
+      return
+    }
+    setPasswordSaving(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      if (res.ok) {
+        setPasswordMsg('เปลี่ยนรหัสผ่านสำเร็จ')
+        setHasDbPassword(true)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setTimeout(() => setPasswordMsg(''), 3000)
+      } else {
+        const d = await res.json()
+        setPasswordError(d.error || 'เกิดข้อผิดพลาด')
+      }
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+        </div>
+        <BottomNav />
+      </div>
+    )
+  }
+
+  return (
+    <div className="page-container fade-in">
+      <div className="page-header">
+        <h1 className="page-title">ตั้งค่า</h1>
+      </div>
+
+      {/* Shop name */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>ข้อมูลร้าน</h2>
+        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+          ชื่อร้าน
+        </label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            className="input"
+            value={shopName}
+            onChange={e => setShopName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveShopName()}
+            placeholder="ชื่อร้านอาหาร"
+          />
+          <button
+            className="btn btn-primary"
+            onClick={saveShopName}
+            disabled={shopNameSaving || !shopName.trim()}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {shopNameSaving ? 'กำลังบันทึก…' : 'บันทึก'}
+          </button>
+        </div>
+        {shopNameMsg && (
+          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-success)' }}>{shopNameMsg}</p>
+        )}
+      </div>
+
+      {/* Change password */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>เปลี่ยนรหัสผ่าน</h2>
+          {hasDbPassword ? (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              fontSize: 'var(--text-xs)', fontWeight: 600,
+              color: 'var(--c-success)', background: 'var(--c-success-bg)',
+              border: '1px solid oklch(0.42 0.135 148 / 0.20)',
+              padding: '2px 8px', borderRadius: 'var(--radius-full)',
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              บันทึกใน Database
+            </span>
+          ) : (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              fontSize: 'var(--text-xs)', fontWeight: 600,
+              color: 'var(--c-warning)', background: 'var(--c-warning-bg)',
+              border: '1px solid oklch(0.55 0.150 72 / 0.20)',
+              padding: '2px 8px', borderRadius: 'var(--radius-full)',
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+              </svg>
+              ใช้จาก .env
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+              รหัสผ่านปัจจุบัน
+            </label>
+            <input
+              className="input"
+              type="password"
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="รหัสผ่านปัจจุบัน"
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+              รหัสผ่านใหม่
+            </label>
+            <input
+              className="input"
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="รหัสผ่านใหม่"
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+              ยืนยันรหัสผ่านใหม่
+            </label>
+            <input
+              className="input"
+              type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="ยืนยันรหัสผ่านใหม่"
+              onKeyDown={e => e.key === 'Enter' && changePassword()}
+            />
+          </div>
+
+          {passwordError && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--c-danger)' }}>{passwordError}</p>
+          )}
+          {passwordMsg && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--c-success)' }}>{passwordMsg}</p>
+          )}
+
+          <button
+            className="btn btn-primary"
+            onClick={changePassword}
+            disabled={passwordSaving}
+          >
+            {passwordSaving ? 'กำลังเปลี่ยน…' : 'เปลี่ยนรหัสผ่าน'}
+          </button>
+        </div>
+      </div>
+
+      {/* QR Ordering */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>QR สั่งอาหาร</h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
+          สร้าง QR code สำหรับแต่ละโต๊ะ ให้ลูกค้าสแกนสั่งอาหารเอง
+        </p>
+        <a
+          href="/qr"
+          className="btn btn-ghost btn-full"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', textDecoration: 'none' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M14 14h2v2h-2zM18 14h3M14 18v3M18 18h3v3h-3z"/>
+          </svg>
+          จัดการ QR Code
+        </a>
+      </div>
+
+      {/* Kitchen Display */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>Kitchen Display</h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
+          หน้าจอสำหรับครัว แสดงออเดอร์ที่กำลังรอและกำลังทำ
+        </p>
+        <a
+          href="/kitchen"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-ghost btn-full"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', textDecoration: 'none' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+          เปิด Kitchen Display
+        </a>
+      </div>
+
+      <BottomNav />
+    </div>
+  )
+}

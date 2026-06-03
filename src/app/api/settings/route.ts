@@ -1,82 +1,55 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getSession } from '@/lib/session'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { getSession, checkPassword } from '@/lib/session'
 
 export async function GET() {
-    try {
-        const settings = await prisma.siteSettings.findFirst()
-        const data = settings || { backgroundImageUrl: null, backgroundType: 'gradient', siteTitle: 'AR Photo Book', backgroundColor: '#2d0035' }
-        return NextResponse.json(data, {
-            headers: {
-                // cache 30 วิ ที่ browser, 60 วิ ที่ CDN - ลด DB round-trip
-                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',
-            },
-        })
-    } catch {
-        return NextResponse.json(
-            { backgroundImageUrl: null, backgroundType: 'gradient', siteTitle: 'AR Photo Book', backgroundColor: '#2d0035' },
-            { status: 200 }
-        )
-    }
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const settings = await prisma.appSettings.findFirst()
+    return NextResponse.json({
+      shopName: settings?.shopName ?? 'ร้านอาหาร',
+      hasDbPassword: !!settings?.adminPassword,
+    })
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to fetch settings', detail: String(err) }, { status: 500 })
+  }
 }
 
-export async function PATCH(req: Request) {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function PATCH(request: Request) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const contentType = req.headers.get('content-type') || ''
+  try {
+    const { shopName, currentPassword, newPassword } = await request.json()
 
-    if (contentType.includes('multipart/form-data')) {
-        const formData = await req.formData()
-        const file = formData.get('background') as File | null
-        const backgroundType = formData.get('backgroundType') as string | null
-        const siteTitle = formData.get('siteTitle') as string | null
-        const backgroundColor = formData.get('backgroundColor') as string | null
-
-        let backgroundImageUrl: string | undefined = undefined
-        if (file && file.size > 0) {
-            const bytes = await file.arrayBuffer()
-            const buffer = Buffer.from(bytes)
-            const rawExt = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : 'jpg'
-            const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(rawExt) ? rawExt : 'jpg'
-            const filename = `bg-custom.${safeExt}`
-            
-            try {
-                const { uploadFileToSupabase } = await import('@/lib/supabase')
-                backgroundImageUrl = await uploadFileToSupabase(buffer, filename, file.type)
-            } catch (error) {
-                console.error('Supabase upload error:', error)
-                return NextResponse.json({ error: 'Failed to upload to cloud storage' }, { status: 500 })
-            }
-        }
-
-        let settings = await prisma.siteSettings.findFirst()
-        if (!settings) settings = await prisma.siteSettings.create({ data: {} })
-        const updated = await prisma.siteSettings.update({
-            where: { id: settings.id },
-            data: {
-                ...(backgroundImageUrl ? { backgroundImageUrl } : {}),
-                ...(backgroundType ? { backgroundType } : {}),
-                ...(siteTitle ? { siteTitle } : {}),
-                ...(backgroundColor ? { backgroundColor } : {}),
-            },
-        })
-        return NextResponse.json(updated)
+    if (newPassword !== undefined) {
+      if (!currentPassword) {
+        return NextResponse.json({ error: 'กรุณากรอกรหัสผ่านปัจจุบัน' }, { status: 400 })
+      }
+      const valid = await checkPassword(currentPassword)
+      if (!valid) {
+        return NextResponse.json({ error: 'รหัสผ่านปัจจุบันไม่ถูกต้อง' }, { status: 400 })
+      }
+      if (!newPassword?.trim()) {
+        return NextResponse.json({ error: 'รหัสผ่านใหม่ห้ามว่าง' }, { status: 400 })
+      }
     }
 
-    const body = await req.json()
-    let settings = await prisma.siteSettings.findFirst()
-    if (!settings) settings = await prisma.siteSettings.create({ data: {} })
-    const updated = await prisma.siteSettings.update({
-        where: { id: settings.id },
-        data: {
-            backgroundType: body.backgroundType ?? undefined,
-            siteTitle: body.siteTitle ?? undefined,
-            backgroundColor: body.backgroundColor ?? undefined,
-            backgroundImageUrl: 'backgroundImageUrl' in body ? body.backgroundImageUrl : undefined,
-        },
-    })
-    return NextResponse.json(updated)
+    const existing = await prisma.appSettings.findFirst()
+    const data: Record<string, string> = {}
+    if (shopName !== undefined) data.shopName = shopName.trim()
+    if (newPassword !== undefined) data.adminPassword = newPassword.trim()
+
+    if (existing) {
+      await prisma.appSettings.update({ where: { id: existing.id }, data })
+    } else {
+      await prisma.appSettings.create({ data: { shopName: shopName ?? 'ร้านอาหาร', ...data } })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to update settings', detail: String(err) }, { status: 500 })
+  }
 }

@@ -1,53 +1,56 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
-model Shelf {
-  id        Int      @id @default(autoincrement())
+model MenuCategory {
+  id        Int        @id @default(autoincrement())
   name      String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  books     Book[]
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  items     MenuItem[]
 }
 
-model Book {
-  id             Int      @id @default(autoincrement())
-  title          String
-  subtitle       String?
-  coverColor     String   @default("#8B2252")
-  spineColor     String   @default("#5C1A38")
-  coverImageUrl  String?
-  shelfId        Int
-  shelf          Shelf    @relation(fields: [shelfId], references: [id], onDelete: Cascade)
-  order          Int      @default(0)
-  qrToken        String   @unique @default(cuid())
-  createdAt      DateTime @default(now())
-  pages          Page[]
+model MenuItem {
+  id         Int           @id @default(autoincrement())
+  name       String
+  price      Float
+  categoryId Int
+  category   MenuCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  available  Boolean       @default(true)
+  order      Int           @default(0)
+  imageUrl   String?
+  createdAt  DateTime      @default(now())
+  orderItems OrderItem[]
 }
 
-model Page {
-  id        Int      @id @default(autoincrement())
-  bookId    Int
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  order     Int      @default(0)
-  imageUrl  String?
-  text      String?
-  caption   String?
-  createdAt DateTime @default(now())
+model Order {
+  id          Int         @id @default(autoincrement())
+  tableNumber String?
+  status      String      @default("pending")
+  totalPrice  Float       @default(0)
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       OrderItem[]
 }
 
-model SiteSettings {
-  id                 Int     @id @default(autoincrement())
-  backgroundImageUrl String?
-  backgroundType     String  @default("gradient") // "gradient" | "image"
-  backgroundColor    String  @default("#2d0035")
-  siteTitle          String  @default("AR Photo Book")
-  adminPassword      String?
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int      @default(1)
+  price      Float
+  note       String?
+}
+
+model AppSettings {
+  id            Int     @id @default(autoincrement())
+  shopName      String  @default("ร้านอาหาร")
+  adminPassword String?
 }
