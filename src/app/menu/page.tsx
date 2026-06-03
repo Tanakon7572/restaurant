@@ -438,7 +438,7 @@ export default function MenuPage() {
 
           {/* Menu items grid */}
           {cat.items.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
               {cat.items.map((item) => (
                 editingItem === item.id ? (
                   <div key={item.id} style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>

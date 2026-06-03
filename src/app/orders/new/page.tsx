@@ -250,7 +250,7 @@ export default function NewOrderPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: '10px', marginBottom: '16px' }}>
           {availableItems.map((item) => {
             const qty = getCartQty(item.id)
             return (
