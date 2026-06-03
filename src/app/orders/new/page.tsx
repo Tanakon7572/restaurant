@@ -268,7 +268,7 @@ export default function NewOrderPage() {
                 }}
                 onClick={() => addToCart(item)}
               >
-                <div style={{ aspectRatio: '1 / 1', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
                   <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
                 </div>
                 <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>

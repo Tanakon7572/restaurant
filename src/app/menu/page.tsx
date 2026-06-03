@@ -1,10 +1,23 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Cropper from 'react-easy-crop'
 import BottomNav from '@/components/BottomNav'
 import ConfirmModal from '@/components/ConfirmModal'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
+
+async function getCroppedImg(imageSrc: string, pixelCrop: { x: number; y: number; width: number; height: number }): Promise<Blob> {
+  const image = new Image()
+  image.src = imageSrc
+  await new Promise<void>(resolve => { image.onload = () => resolve() })
+  const canvas = document.createElement('canvas')
+  canvas.width = pixelCrop.width
+  canvas.height = pixelCrop.height
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height)
+  return new Promise(resolve => canvas.toBlob(blob => resolve(blob!), 'image/jpeg', 0.92))
+}
 
 interface MenuItem {
   id: number
@@ -69,6 +82,11 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(value)
   const [previewError, setPreviewError] = useState(false)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [pendingFileName, setPendingFileName] = useState('image.jpg')
 
   function handleUrlChange(url: string) {
     onChange(url)
@@ -76,13 +94,32 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
     setPreviewError(false)
   }
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setPendingFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSrc(reader.result as string)
+      setCrop({ x: 0, y: 0 })
+      setZoom(1)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const onCropComplete = useCallback((_: unknown, pixels: { x: number; y: number; width: number; height: number }) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  async function handleCropConfirm() {
+    if (!cropSrc || !croppedAreaPixels) return
     setUploading(true)
+    setCropSrc(null)
     try {
+      const blob = await getCroppedImg(cropSrc, croppedAreaPixels)
       const form = new FormData()
-      form.append('file', file)
+      form.append('file', blob, pendingFileName)
       const res = await fetch('/api/upload-image', { method: 'POST', body: form })
       const data = await res.json()
       if (res.ok && data.url) {
@@ -94,56 +131,92 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
       }
     } finally {
       setUploading(false)
-      e.target.value = ''
     }
   }
 
   return (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-      {/* Preview */}
-      <div
-        style={{
-          width: 130, borderRadius: '8px', flexShrink: 0,
-          background: 'var(--c-primary-light)', border: '1px solid var(--c-border)',
-          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          minHeight: 130,
-        }}
-      >
-        {preview && !previewError ? (
-          <img src={preview} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} onError={() => setPreviewError(true)} />
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        )}
-      </div>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <input
-          className="input"
-          value={value}
-          onChange={e => handleUrlChange(e.target.value)}
-          style={{ padding: '7px 10px', fontSize: 'var(--text-sm)' }}
-          placeholder="URL รูปภาพ (ไม่บังคับ)"
-        />
-        <label
+    <>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+        {/* Preview */}
+        <div
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: uploading ? 'wait' : 'pointer',
-            fontSize: 'var(--text-xs)', color: 'var(--c-text-3)',
-            padding: '5px 10px', border: '1px dashed var(--c-border)', borderRadius: 'var(--radius-xs)',
-            background: 'var(--c-surface-2)', userSelect: 'none', width: 'fit-content',
+            width: 130, borderRadius: '8px', flexShrink: 0,
+            background: 'var(--c-primary-light)', border: '1px solid var(--c-border)',
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            minHeight: 130,
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          {uploading ? 'กำลังอัปโหลด…' : 'อัปโหลดรูป'}
-          <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} disabled={uploading} />
-        </label>
+          {preview && !previewError ? (
+            <img src={preview} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} onError={() => setPreviewError(true)} />
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          )}
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <input
+            className="input"
+            value={value}
+            onChange={e => handleUrlChange(e.target.value)}
+            style={{ padding: '7px 10px', fontSize: 'var(--text-sm)' }}
+            placeholder="URL รูปภาพ (ไม่บังคับ)"
+          />
+          <label
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: uploading ? 'wait' : 'pointer',
+              fontSize: 'var(--text-xs)', color: 'var(--c-text-3)',
+              padding: '5px 10px', border: '1px dashed var(--c-border)', borderRadius: 'var(--radius-xs)',
+              background: 'var(--c-surface-2)', userSelect: 'none', width: 'fit-content',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            {uploading ? 'กำลังอัปโหลด…' : 'อัปโหลดรูป'}
+            <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} disabled={uploading} />
+          </label>
+        </div>
       </div>
-    </div>
+
+      {/* Crop Modal */}
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper
+              image={cropSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={4 / 3}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div style={{ padding: '16px 20px', background: 'var(--c-surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: 'var(--c-primary)' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCropConfirm}>
+                ยืนยัน &amp; อัปโหลด
+              </button>
+              <button className="btn btn-ghost" onClick={() => setCropSrc(null)}>
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -383,7 +456,7 @@ export default function MenuPage() {
                       flexDirection: 'column',
                     }}
                   >
-                    <div style={{ aspectRatio: '1 / 1', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+                    <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
                       <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
                     </div>
                     <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
