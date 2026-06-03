@@ -258,7 +258,7 @@ export default function NewOrderPage() {
             >
               {/* Thumbnail + Name + price */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer', minWidth: 0 }} onClick={() => addToCart(item)}>
-                <ItemThumb imageUrl={item.imageUrl} name={item.name} size={40} />
+                <ItemThumb imageUrl={item.imageUrl} name={item.name} size={120} />
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontWeight: 500, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.name}

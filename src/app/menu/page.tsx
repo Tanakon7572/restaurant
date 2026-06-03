@@ -87,7 +87,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
       {/* Preview */}
       <div
         style={{
-          width: 80, height: 80, borderRadius: '8px', flexShrink: 0,
+          width: 120, height: 120, borderRadius: '8px', flexShrink: 0,
           background: 'var(--c-primary-light)', border: '1px solid var(--c-border)',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
@@ -362,7 +362,7 @@ export default function MenuPage() {
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <ItemImage imageUrl={item.imageUrl} name={item.name} size={72} />
+                    <ItemImage imageUrl={item.imageUrl} name={item.name} size={120} />
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontWeight: 500, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {item.name}
