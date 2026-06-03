@@ -196,7 +196,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
               onCropComplete={onCropComplete}
             />
           </div>
-          <div style={{ padding: '16px 20px', background: 'var(--c-surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ padding: '16px 20px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 16px))', background: 'var(--c-surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
