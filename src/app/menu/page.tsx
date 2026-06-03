@@ -202,7 +202,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
 
       {/* Crop Modal */}
       {cropSrc && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', zIndex: 2000, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', zIndex: 1100, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
             <Cropper
               image={cropSrc}
