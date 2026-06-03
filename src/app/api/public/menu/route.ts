@@ -14,7 +14,7 @@ export async function GET() {
       },
     })
     return NextResponse.json(categories.filter(c => c.items.length > 0))
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch menu' }, { status: 500 })
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to fetch menu', detail: String(err) }, { status: 500 })
   }
 }
