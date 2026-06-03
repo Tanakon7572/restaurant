@@ -16,7 +16,6 @@ export default function SettingsPage() {
   const [passwordMsg, setPasswordMsg] = useState('')
   const [passwordError, setPasswordError] = useState('')
 
-  const [hasDbPassword, setHasDbPassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -28,7 +27,6 @@ export default function SettingsPage() {
       })
       .then(data => {
         if (data?.shopName) setShopName(data.shopName)
-        setHasDbPassword(!!data?.hasDbPassword)
       })
       .finally(() => setLoading(false))
   }, [router])
@@ -75,7 +73,6 @@ export default function SettingsPage() {
       })
       if (res.ok) {
         setPasswordMsg('เปลี่ยนรหัสผ่านสำเร็จ')
-        setHasDbPassword(true)
         setCurrentPassword('')
         setNewPassword('')
         setConfirmPassword('')
@@ -136,36 +133,7 @@ export default function SettingsPage() {
 
       {/* Change password */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600 }}>เปลี่ยนรหัสผ่าน</h2>
-          {hasDbPassword ? (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px',
-              fontSize: 'var(--text-xs)', fontWeight: 600,
-              color: 'var(--c-success)', background: 'var(--c-success-bg)',
-              border: '1px solid oklch(0.42 0.135 148 / 0.20)',
-              padding: '2px 8px', borderRadius: 'var(--radius-full)',
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              บันทึกใน Database
-            </span>
-          ) : (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px',
-              fontSize: 'var(--text-xs)', fontWeight: 600,
-              color: 'var(--c-warning)', background: 'var(--c-warning-bg)',
-              border: '1px solid oklch(0.55 0.150 72 / 0.20)',
-              padding: '2px 8px', borderRadius: 'var(--radius-full)',
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2L1 21h22L12 2zm0 3.5L20.5 19h-17L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
-              </svg>
-              ใช้จาก .env
-            </span>
-          )}
-        </div>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>เปลี่ยนรหัสผ่าน</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div>
