@@ -200,44 +200,57 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
         </div>
       </div>
 
-      {/* Crop Modal */}
+      {/* Crop Modal — centered bounded card (robust on iOS) */}
       {cropSrc && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
-            <Cropper
-              image={cropSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={4 / 3}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
-          </div>
-          <div style={{
-            padding: '16px 20px',
-            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
-            background: 'var(--c-surface)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            flexShrink: 0,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                type="range" min={1} max={3} step={0.01} value={zoom}
-                onChange={e => setZoom(Number(e.target.value))}
-                style={{ flex: 1, accentColor: 'var(--c-primary)' }}
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1100,
+            background: 'oklch(0 0 0 / 0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '16px',
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+          }}
+          onClick={() => setCropSrc(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: '420px', maxHeight: '90svh',
+              background: 'var(--c-surface)', borderRadius: 'var(--radius-lg)',
+              overflow: 'hidden', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 12px 40px oklch(0 0 0 / 0.4)',
+            }}
+          >
+            {/* Crop area — fixed reasonable height */}
+            <div style={{ position: 'relative', width: '100%', height: 'min(48vh, 320px)', background: 'oklch(0.15 0.01 165)', flexShrink: 0 }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={4 / 3}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
               />
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCropConfirm}>
-                ยืนยัน &amp; อัปโหลด
-              </button>
-              <button className="btn btn-ghost" onClick={() => setCropSrc(null)}>
-                ยกเลิก
-              </button>
+            {/* Controls */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input
+                  type="range" min={1} max={3} step={0.01} value={zoom}
+                  onChange={e => setZoom(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--c-primary)' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCropConfirm}>
+                  ยืนยัน &amp; อัปโหลด
+                </button>
+                <button className="btn btn-ghost" onClick={() => setCropSrc(null)}>
+                  ยกเลิก
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -438,7 +451,7 @@ export default function MenuPage() {
 
           {/* Menu items grid */}
           {cat.items.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
               {cat.items.map((item) => (
                 editingItem === item.id ? (
                   <div key={item.id} style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>
