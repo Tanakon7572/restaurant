@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap');
-
 :root {
   /* Backgrounds — warm-tinted neutrals */
   --c-bg:        oklch(0.965 0.007 55);
@@ -58,7 +56,7 @@
   --text-3xl:  2.25rem;
 
   /* Font */
-  --font: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font: var(--font-ibm), -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Transitions */
   --t-fast:   0.12s ease;

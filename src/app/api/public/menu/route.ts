@@ -13,7 +13,9 @@ export async function GET() {
         },
       },
     })
-    return NextResponse.json(categories.filter(c => c.items.length > 0))
+    return NextResponse.json(categories.filter(c => c.items.length > 0), {
+      headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=60' },
+    })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch menu', detail: String(err) }, { status: 500 })
   }
