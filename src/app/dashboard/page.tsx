@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
+import { fetchWithCache } from '@/lib/cache'
 
 interface OrderItem {
   menuItemId: number | null
@@ -86,8 +87,11 @@ export default function DashboardPage() {
     const mainQ    = period === 'today' ? todayQ : `/api/orders?days=${period === '7d' ? 7 : 30}`
 
     Promise.all([
-      fetch(mainQ).then(r => { if (r.status === 401) { router.push('/'); return null } return r.json() }),
-      period !== 'today' ? fetch(chartQ).then(r => r.ok ? r.json() : []) : Promise.resolve(null),
+      fetchWithCache<Order[]>(`dashboard:${period}:main`, mainQ, 30_000).then(d => {
+        if (d === null) fetch(mainQ).then(r => { if (r.status === 401) router.push('/') })
+        return d
+      }),
+      period !== 'today' ? fetchWithCache<Order[]>(`dashboard:${period}:chart`, chartQ, 30_000) : Promise.resolve(null),
     ]).then(([mainData, chartData]) => {
       if (Array.isArray(mainData)) setOrders(mainData)
       if (Array.isArray(chartData)) setChartOrders(chartData)

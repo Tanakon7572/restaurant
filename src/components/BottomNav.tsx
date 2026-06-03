@@ -62,6 +62,11 @@ export default function BottomNav() {
   const router = useRouter()
   const [pendingCount, setPendingCount] = useState(0)
 
+  // Prefetch all nav pages upfront so navigation feels instant
+  useEffect(() => {
+    NAV_ITEMS.forEach(({ href }) => router.prefetch(href))
+  }, [router])
+
   useEffect(() => {
     function fetchPending() {
       fetch('/api/orders?status=pending')

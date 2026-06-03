@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
 import ConfirmModal from '@/components/ConfirmModal'
+import { fetchWithCache, invalidateCache } from '@/lib/cache'
 
 interface MenuItem {
   id: number
@@ -146,13 +147,16 @@ export default function MenuPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'item'; id: number; name: string } | null>(null)
   const router = useRouter()
 
-  function fetchCategories() {
-    fetch('/api/menu-categories')
-      .then(res => {
-        if (res.status === 401) { router.push('/'); return null }
-        return res.json()
+  function fetchCategories(bust = false) {
+    if (bust) invalidateCache('menu:categories')
+    fetchWithCache<Category[]>('menu:categories', '/api/menu-categories', 60_000)
+      .then(data => {
+        if (data === null) {
+          fetch('/api/menu-categories').then(r => { if (r.status === 401) router.push('/') })
+          return
+        }
+        setCategories(data)
       })
-      .then(data => { if (Array.isArray(data)) setCategories(data) })
       .finally(() => setLoading(false))
   }
 
@@ -177,7 +181,7 @@ export default function MenuPage() {
       body: JSON.stringify({ name: editCatName.trim() }),
     })
     setEditingCat(null)
-    fetchCategories()
+    fetchCategories(true)
   }
 
   async function addItem(categoryId: number) {
