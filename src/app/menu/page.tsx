@@ -7,6 +7,23 @@ import BottomNav from '@/components/BottomNav'
 import ConfirmModal from '@/components/ConfirmModal'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
 
+async function resizeToDataUrl(dataUrl: string, maxPx = 1400): Promise<string> {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', 0.92))
+    }
+    img.src = dataUrl
+  })
+}
+
 async function getCroppedImg(imageSrc: string, pixelCrop: { x: number; y: number; width: number; height: number }): Promise<Blob> {
   const image = new Image()
   image.src = imageSrc
@@ -99,8 +116,9 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
     if (!file) return
     setPendingFileName(file.name)
     const reader = new FileReader()
-    reader.onload = () => {
-      setCropSrc(reader.result as string)
+    reader.onload = async () => {
+      const resized = await resizeToDataUrl(reader.result as string)
+      setCropSrc(resized)
       setCrop({ x: 0, y: 0 })
       setZoom(1)
     }
@@ -184,8 +202,8 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
 
       {/* Crop Modal */}
       {cropSrc && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '100dvh', zIndex: 1000, background: 'oklch(0 0 0 / 0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
             <Cropper
               image={cropSrc}
               crop={crop}
@@ -196,7 +214,16 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
               onCropComplete={onCropComplete}
             />
           </div>
-          <div style={{ padding: '16px 20px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 16px))', background: 'var(--c-surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{
+            padding: '16px 20px',
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
+            marginBottom: '12px',
+            background: 'var(--c-surface)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            flexShrink: 0,
+          }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
