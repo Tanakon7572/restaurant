@@ -21,8 +21,25 @@ interface Category {
   items: MenuItem[]
 }
 
-function ItemImage({ imageUrl, name, size = 48 }: { imageUrl?: string | null; name: string; size?: number }) {
+function ItemImage({ imageUrl, name, size = 48, cover = false }: { imageUrl?: string | null; name: string; size?: number; cover?: boolean }) {
   const [imgError, setImgError] = useState(false)
+  if (cover) {
+    if (imageUrl && !imgError) {
+      return (
+        <img
+          src={imageUrl}
+          alt={name}
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      )
+    }
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: '1.8rem' }}>
+        {name.charAt(0)}
+      </div>
+    )
+  }
   if (imageUrl && !imgError) {
     return (
       <img
@@ -320,89 +337,93 @@ export default function MenuPage() {
             )}
           </div>
 
-          {/* Menu items */}
-          {cat.items.map((item, idx) => (
-            <div
-              key={item.id}
-              style={{
-                padding: '12px 16px',
-                borderBottom: idx < cat.items.length - 1 ? '1px solid var(--c-border)' : 'none',
-                opacity: item.available ? 1 : 0.5,
-                transition: 'opacity 0.15s',
-              }}
-            >
-              {editingItem === item.id ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <input
-                      className="input"
-                      value={editItemName}
-                      onChange={e => setEditItemName(e.target.value)}
-                      style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
-                      placeholder="ชื่อเมนู"
-                    />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-                      <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+          {/* Menu items grid */}
+          {cat.items.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
+              {cat.items.map((item) => (
+                editingItem === item.id ? (
+                  <div key={item.id} style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <input
                         className="input"
-                        type="number"
-                        value={editItemPrice}
-                        onChange={e => setEditItemPrice(e.target.value)}
-                        style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
-                        placeholder="ราคา"
+                        value={editItemName}
+                        onChange={e => setEditItemName(e.target.value)}
+                        style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
+                        placeholder="ชื่อเมนู"
                       />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
+                        <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+                        <input
+                          className="input"
+                          type="number"
+                          value={editItemPrice}
+                          onChange={e => setEditItemPrice(e.target.value)}
+                          style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
+                          placeholder="ราคา"
+                        />
+                      </div>
+                    </div>
+                    <ImageInput value={editItemImageUrl} onChange={setEditItemImageUrl} />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="btn btn-primary btn-sm" onClick={() => updateItem(item.id)}>บันทึก</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(null)}>ยกเลิก</button>
                     </div>
                   </div>
-                  <ImageInput value={editItemImageUrl} onChange={setEditItemImageUrl} />
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-primary btn-sm" onClick={() => updateItem(item.id)}>บันทึก</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(null)}>ยกเลิก</button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <ItemImage imageUrl={item.imageUrl} name={item.name} size={130} />
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontWeight: 500, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {item.name}
-                      </p>
-                      <p className="price-tag" style={{ fontSize: '1.05rem', marginTop: '1px' }}>
-                        ฿{item.price.toLocaleString('th-TH')}
-                      </p>
+                ) : (
+                  <div
+                    key={item.id}
+                    style={{
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--c-border)',
+                      overflow: 'hidden',
+                      opacity: item.available ? 1 : 0.5,
+                      transition: 'opacity 0.15s',
+                      background: 'var(--c-surface)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ aspectRatio: '1 / 1', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+                      <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
+                    </div>
+                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                      <div>
+                        <p style={{ fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.name}
+                        </p>
+                        <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px' }}>
+                          ฿{item.price.toLocaleString('th-TH')}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '4px' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => toggleAvailable(item)}
+                          style={{ fontSize: '0.7rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
+                        >
+                          {item.available ? 'เปิด' : 'ปิด'}
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || '') }}
+                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                        >
+                          แก้ไข
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
+                          onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
+                        >
+                          ลบ
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: '12px' }}>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => toggleAvailable(item)}
-                      style={{ fontSize: '0.72rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', minWidth: '42px' }}
-                    >
-                      {item.available ? 'เปิด' : 'ปิด'}
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => {
-                        setEditingItem(item.id)
-                        setEditItemName(item.name)
-                        setEditItemPrice(String(item.price))
-                        setEditItemImageUrl(item.imageUrl || '')
-                      }}
-                    >
-                      แก้ไข
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      style={{ color: 'var(--c-danger)' }}
-                      onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
-                    >
-                      ลบ
-                    </button>
-                  </div>
-                </div>
-              )}
+                )
+              ))}
             </div>
-          ))}
+          )}
 
           {/* Add item row */}
           {addingItemCat === cat.id ? (

@@ -27,8 +27,25 @@ interface CartItem {
   note: string
 }
 
-function ItemThumb({ imageUrl, name, size = 40 }: { imageUrl?: string | null; name: string; size?: number }) {
+function ItemThumb({ imageUrl, name, size = 40, cover = false }: { imageUrl?: string | null; name: string; size?: number; cover?: boolean }) {
   const [imgError, setImgError] = useState(false)
+  if (cover) {
+    if (imageUrl && !imgError) {
+      return (
+        <img
+          src={imageUrl}
+          alt={name}
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      )
+    }
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: '1.8rem' }}>
+        {name.charAt(0)}
+      </div>
+    )
+  }
   if (imageUrl && !imgError) {
     return (
       <img
@@ -43,17 +60,10 @@ function ItemThumb({ imageUrl, name, size = 40 }: { imageUrl?: string | null; na
   return (
     <div
       style={{
-        width: size,
-        height: size,
-        borderRadius: '8px',
+        width: size, height: size, borderRadius: '8px',
         background: 'var(--c-primary-light)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--c-primary)',
-        fontWeight: 700,
-        fontSize: size * 0.38,
-        flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--c-primary)', fontWeight: 700, fontSize: size * 0.38, flexShrink: 0,
       }}
     >
       {name.charAt(0)}
@@ -232,78 +242,75 @@ export default function NewOrderPage() {
         </p>
       )}
 
-      {/* Menu items */}
-      <div className="glass-panel" style={{ overflow: 'hidden', marginBottom: '16px' }}>
-        {availableItems.length === 0 && (
+      {/* Menu items grid */}
+      {availableItems.length === 0 ? (
+        <div className="glass-panel" style={{ marginBottom: '16px' }}>
           <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
             {isSearching ? 'ไม่พบเมนูที่ค้นหา' : 'ไม่มีเมนูในหมวดนี้'}
           </p>
-        )}
-        {availableItems.map((item, idx) => {
-          const qty = getCartQty(item.id)
-          const isLast = idx === availableItems.length - 1
-          return (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px 16px',
-                borderBottom: isLast ? 'none' : '1px solid var(--c-border)',
-                background: qty > 0 ? 'var(--c-primary-glow)' : 'transparent',
-                transition: 'background 0.15s',
-              }}
-            >
-              {/* Thumbnail + Name + price */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer', minWidth: 0 }} onClick={() => addToCart(item)}>
-                <ItemThumb imageUrl={item.imageUrl} name={item.name} size={120} />
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+          {availableItems.map((item) => {
+            const qty = getCartQty(item.id)
+            return (
+              <div
+                key={item.id}
+                style={{
+                  borderRadius: 'var(--radius-sm)',
+                  border: qty > 0 ? '2px solid var(--c-primary)' : '1px solid var(--c-border)',
+                  overflow: 'hidden',
+                  background: qty > 0 ? 'var(--c-primary-glow)' : 'var(--c-surface)',
+                  transition: 'border-color 0.15s, background 0.15s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                }}
+                onClick={() => addToCart(item)}
+              >
+                <div style={{ aspectRatio: '1 / 1', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+                  <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
+                </div>
+                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <p style={{ fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.name}
                   </p>
-                  <p className="price-tag" style={{ marginTop: '2px' }}>
-                    ฿{item.price.toLocaleString('th-TH')}
-                  </p>
+                  <p className="price-tag" style={{ fontSize: '0.9rem' }}>฿{item.price.toLocaleString('th-TH')}</p>
+                  {qty > 0 ? (
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => updateQuantity(item.id, -1)}
+                        style={{ width: '28px', height: '28px', padding: 0, borderRadius: '50%', fontSize: '1rem' }}
+                        aria-label="ลดจำนวน"
+                      >−</button>
+                      <span style={{ fontWeight: 700, minWidth: '18px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--c-primary)' }}>
+                        {qty}
+                      </span>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => updateQuantity(item.id, 1)}
+                        style={{ width: '28px', height: '28px', padding: 0, borderRadius: '50%', fontSize: '1rem' }}
+                        aria-label="เพิ่มจำนวน"
+                      >+</button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginTop: '6px', fontSize: '0.78rem' }}
+                    >
+                      + เพิ่ม
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Quantity controls */}
-              {qty > 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, marginLeft: '12px' }}>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => updateQuantity(item.id, -1)}
-                    style={{ width: '32px', height: '32px', padding: 0, borderRadius: '50%', fontSize: '1.1rem' }}
-                    aria-label="ลดจำนวน"
-                  >
-                    −
-                  </button>
-                  <span style={{ fontWeight: 700, minWidth: '20px', textAlign: 'center', fontSize: '1rem', color: 'var(--c-primary)' }}>
-                    {qty}
-                  </span>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => updateQuantity(item.id, 1)}
-                    style={{ width: '32px', height: '32px', padding: 0, borderRadius: '50%', fontSize: '1.1rem' }}
-                    aria-label="เพิ่มจำนวน"
-                  >
-                    +
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => addToCart(item)}
-                  style={{ flexShrink: 0, marginLeft: '12px' }}
-                >
-                  เพิ่ม
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
       {categories.length === 0 && (
         <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center' }}>
