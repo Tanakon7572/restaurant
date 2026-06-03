@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
   // ใช้ DIRECT_URL สำหรับ Prisma เพื่อหลีกเลี่ยง double pooling กับ pgbouncer
-  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL
   const pool = new Pool({
     connectionString,
     // pgbouncer จัดการ pool อยู่แล้ว จึงเปิด connection น้อยๆ ก็พอ
