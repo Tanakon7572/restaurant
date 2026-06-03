@@ -7,8 +7,9 @@ import ConfirmModal from '@/components/ConfirmModal'
 
 interface OrderItemData {
   id: number
-  menuItemId: number
-  menuItem: { id: number; name: string; price: number }
+  menuItemId: number | null
+  itemName: string
+  menuItem?: { id: number; name: string; price: number } | null
   quantity: number
   price: number
   note: string | null
@@ -73,10 +74,10 @@ export default function OrderDetailPage() {
 
   function startEditing() {
     if (!order) return
-    setEditItems(order.items.map(i => ({
-      menuItemId: i.menuItemId,
-      name: i.menuItem.name,
-      price: i.menuItem.price,
+    setEditItems(order.items.filter(i => i.menuItemId != null).map(i => ({
+      menuItemId: i.menuItemId as number,
+      name: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
+      price: i.menuItem?.price ?? i.price,
       quantity: i.quantity,
     })))
     setEditTable(order.tableNumber || '')
@@ -301,7 +302,7 @@ export default function OrderDetailPage() {
       day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
     const lines = order.items.map(i =>
-      `<tr><td>${i.menuItem.name} ×${i.quantity}</td><td style="text-align:right">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
+      `<tr><td>${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}</td><td style="text-align:right">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
     ).join('')
     const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
 <title>ใบเสร็จ #${order.id}</title>
@@ -400,9 +401,9 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
             }}
           >
             <div>
-              <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.menuItem.name}</p>
+              <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</p>
               <p style={{ color: 'var(--c-text-3)', fontSize: '0.78rem', marginTop: '1px' }}>
-                ฿{item.menuItem.price.toLocaleString('th-TH')} × {item.quantity}
+                ฿{(item.menuItem?.price ?? item.price).toLocaleString('th-TH')} × {item.quantity}
               </p>
             </div>
             <span className="price-tag">

@@ -14,13 +14,14 @@ export async function POST(request: Request) {
       where: { id: { in: menuItemIds }, available: true },
     })
 
-    const priceMap = new Map(menuItems.map(m => [m.id, m.price]))
+    const menuItemMap = new Map(menuItems.map(m => [m.id, m]))
 
     let totalPrice = 0
     const orderItems = items.map((item: { menuItemId: number; quantity: number }) => {
-      const price = priceMap.get(item.menuItemId) ?? 0
+      const mi = menuItemMap.get(item.menuItemId)
+      const price = mi?.price ?? 0
       totalPrice += price * item.quantity
-      return { menuItemId: item.menuItemId, quantity: item.quantity, price, note: null }
+      return { menuItemId: item.menuItemId, itemName: mi?.name ?? '', quantity: item.quantity, price, note: null }
     })
 
     const order = await prisma.order.create({
@@ -41,7 +42,8 @@ export async function POST(request: Request) {
       totalPrice: order.totalPrice,
       tableNumber: order.tableNumber,
       items: order.items.map(i => ({
-        menuItem: { name: i.menuItem.name },
+        itemName: i.itemName || i.menuItem?.name || '',
+        menuItem: { name: i.itemName || i.menuItem?.name || '' },
         quantity: i.quantity,
         price: i.price,
       })),

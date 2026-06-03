@@ -6,7 +6,8 @@ import BottomNav from '@/components/BottomNav'
 
 interface OrderItem {
   id: number
-  menuItem: { name: string }
+  itemName: string
+  menuItem?: { name: string } | null
   quantity: number
   price: number
 }
@@ -63,7 +64,7 @@ function buildQuery(period: Period, from: string, to: string, status: string) {
 function exportCSV(orders: Order[]) {
   const header = 'เลขออเดอร์,โต๊ะ,สถานะ,รายการ,ยอดรวม,วันเวลา'
   const rows = orders.map(o => {
-    const items = o.items.map(i => `${i.menuItem.name}x${i.quantity}`).join('; ')
+    const items = o.items.map(i => `${i.itemName || i.menuItem?.name || '(ลบแล้ว)'}x${i.quantity}`).join('; ')
     const dt = new Date(o.createdAt).toLocaleString('th-TH', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
@@ -243,7 +244,7 @@ export default function OrdersPage() {
             </div>
 
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {order.items.map(i => `${i.menuItem.name} ×${i.quantity}`).join('  ·  ')}
+              {order.items.map(i => `${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}`).join('  ·  ')}
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

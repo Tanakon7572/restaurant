@@ -68,14 +68,16 @@ export async function POST(request: Request) {
       where: { id: { in: menuItemIds } },
     })
 
-    const priceMap = new Map(menuItems.map(m => [m.id, m.price]))
+    const menuItemMap = new Map(menuItems.map(m => [m.id, m]))
 
     let totalPrice = 0
     const orderItems = items.map((item: { menuItemId: number; quantity: number; note?: string }) => {
-      const price = priceMap.get(item.menuItemId) ?? 0
+      const mi = menuItemMap.get(item.menuItemId)
+      const price = mi?.price ?? 0
       totalPrice += price * item.quantity
       return {
         menuItemId: item.menuItemId,
+        itemName: mi?.name ?? '',
         quantity: item.quantity,
         price,
         note: item.note || null,

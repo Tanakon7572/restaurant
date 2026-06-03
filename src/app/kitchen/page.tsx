@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from 'react'
 
 interface KitchenOrderItem {
   id: number
+  itemName: string
   quantity: number
   note: string | null
-  menuItem: { name: string }
+  menuItem?: { name: string } | null
 }
 
 interface KitchenOrder {
@@ -141,7 +142,7 @@ function OrderCard({
             }}
           >
             <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1f2937', lineHeight: 1.3 }}>
-              {item.menuItem.name}
+              {item.itemName || item.menuItem?.name || '(ลบแล้ว)'}
             </span>
             <span style={{
               fontSize: '1.25rem', fontWeight: 800,

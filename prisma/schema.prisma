@@ -39,12 +39,13 @@ model Order {
 }
 
 model OrderItem {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   orderId    Int
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItemId Int
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity   Int      @default(1)
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId Int?
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  itemName   String    @default("")
+  quantity   Int       @default(1)
   price      Float
   note       String?
 }

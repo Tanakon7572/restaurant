@@ -29,7 +29,7 @@ interface OrderStatus {
   totalPrice: number
   tableNumber: string | null
   updatedAt: string
-  items: { menuItem: { name: string }; quantity: number; price: number }[]
+  items: { itemName?: string; menuItem?: { name: string } | null; quantity: number; price: number }[]
 }
 
 const STATUS_INFO: Record<string, { label: string; sub: string; color: string; done?: boolean }> = {
@@ -340,7 +340,7 @@ function QROrderPage() {
               }}
             >
               <div>
-                <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.menuItem.name}</span>
+                <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</span>
                 <span style={{ color: 'var(--c-text-3)', marginLeft: '8px', fontSize: '0.82rem' }}>×{item.quantity}</span>
               </div>
               <span className="price-tag">฿{(item.price * item.quantity).toLocaleString('th-TH')}</span>

@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
 
 interface OrderItem {
-  menuItemId: number
+  menuItemId: number | null
+  itemName: string
   quantity: number
   price: number
-  menuItem: { name: string }
+  menuItem?: { name: string } | null
 }
 
 interface Order {
@@ -130,13 +131,15 @@ export default function DashboardPage() {
 
   // Top items
   const topItems = (() => {
-    const map = new Map<number, { name: string; qty: number; revenue: number }>()
+    const map = new Map<string, { name: string; qty: number; revenue: number }>()
     for (const order of orders) {
       if (order.status === 'cancelled') continue
       for (const item of order.items) {
-        const e = map.get(item.menuItemId)
+        const name = item.itemName || item.menuItem?.name || '(ลบแล้ว)'
+        const key  = String(item.menuItemId ?? name)
+        const e = map.get(key)
         if (e) { e.qty += item.quantity; e.revenue += item.price * item.quantity }
-        else     map.set(item.menuItemId, { name: item.menuItem.name, qty: item.quantity, revenue: item.price * item.quantity })
+        else     map.set(key, { name, qty: item.quantity, revenue: item.price * item.quantity })
       }
     }
     return Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 5)
