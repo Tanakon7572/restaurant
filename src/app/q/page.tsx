@@ -78,9 +78,8 @@ function ItemThumb({ imageUrl, name, size = 40 }: { imageUrl?: string | null; na
         src={imageUrl}
         alt={name}
         width={size}
-        height={size}
         onError={() => setImgError(true)}
-        style={{ width: size, height: size, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+        style={{ width: size, height: 'auto', borderRadius: '8px', flexShrink: 0, display: 'block' }}
       />
     )
   }

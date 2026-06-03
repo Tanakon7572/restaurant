@@ -29,9 +29,8 @@ function ItemImage({ imageUrl, name, size = 48 }: { imageUrl?: string | null; na
         src={imageUrl}
         alt={name}
         width={size}
-        height={size}
         onError={() => setImgError(true)}
-        style={{ width: size, height: size, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }}
+        style={{ width: size, height: 'auto', borderRadius: '8px', flexShrink: 0, display: 'block' }}
       />
     )
   }
@@ -87,13 +86,14 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
       {/* Preview */}
       <div
         style={{
-          width: 120, height: 120, borderRadius: '8px', flexShrink: 0,
+          width: 130, borderRadius: '8px', flexShrink: 0,
           background: 'var(--c-primary-light)', border: '1px solid var(--c-border)',
           overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: 130,
         }}
       >
         {preview && !previewError ? (
-          <img src={preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={() => setPreviewError(true)} />
+          <img src={preview} alt="" style={{ width: '100%', height: 'auto', display: 'block' }} onError={() => setPreviewError(true)} />
         ) : (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
@@ -362,7 +362,7 @@ export default function MenuPage() {
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <ItemImage imageUrl={item.imageUrl} name={item.name} size={120} />
+                    <ItemImage imageUrl={item.imageUrl} name={item.name} size={130} />
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontWeight: 500, fontSize: '0.92rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {item.name}
