@@ -265,14 +265,15 @@ export default function NewOrderPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   cursor: 'pointer',
+                  minWidth: 0,
                 }}
                 onClick={() => addToCart(item)}
               >
                 <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
                   <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
                 </div>
-                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>
                     {item.name}
                   </p>
                   <p className="price-tag" style={{ fontSize: '0.9rem' }}>฿{item.price.toLocaleString('th-TH')}</p>

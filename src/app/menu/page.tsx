@@ -493,14 +493,15 @@ export default function MenuPage() {
                       background: 'var(--c-surface)',
                       display: 'flex',
                       flexDirection: 'column',
+                      minWidth: 0,
                     }}
                   >
                     <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
                       <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
                     </div>
-                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                      <div>
-                        <p style={{ fontWeight: 500, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>
                           {item.name}
                         </p>
                         <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px' }}>
