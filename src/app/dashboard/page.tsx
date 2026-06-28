@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
   if (loading) return <DashboardSkeleton />
 
-  const active = orders.filter(o => o.status !== 'cancelled')
+  const active = orders.filter(o => o.status !== 'cancelled' && o.status !== 'awaiting')
   const stats = {
     total:     orders.length,
     pending:   orders.filter(o => o.status === 'pending').length,
@@ -123,7 +123,7 @@ export default function DashboardPage() {
       const dateStr = d.toISOString().slice(0, 10)
       const label   = period === '30d' ? getShortDate(d) : getDayLabel(d)
       const revenue = chartOrders
-        .filter(o => o.status !== 'cancelled' && o.createdAt.slice(0, 10) === dateStr)
+        .filter(o => o.status !== 'cancelled' && o.status !== 'awaiting' && o.createdAt.slice(0, 10) === dateStr)
         .reduce((s, o) => s + o.totalPrice, 0)
       days.push({ label, revenue, date: dateStr })
     }
@@ -137,7 +137,7 @@ export default function DashboardPage() {
   const topItems = (() => {
     const map = new Map<string, { name: string; qty: number; revenue: number }>()
     for (const order of orders) {
-      if (order.status === 'cancelled') continue
+      if (order.status === 'cancelled' || order.status === 'awaiting') continue
       for (const item of order.items) {
         const name = item.itemName || item.menuItem?.name || '(ลบแล้ว)'
         const key  = String(item.menuItemId ?? name)

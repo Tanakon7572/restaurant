@@ -13,6 +13,7 @@ interface OrderItemData {
   quantity: number
   price: number
   note: string | null
+  options?: { groupName: string; choiceName: string; priceDelta: number }[]
 }
 
 interface Order {
@@ -20,6 +21,7 @@ interface Order {
   status: string
   totalPrice: number
   tableNumber: string | null
+  customerName: string | null
   note: string | null
   createdAt: string
   updatedAt: string
@@ -33,6 +35,7 @@ interface Category {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  awaiting:  'รอยืนยัน',
   pending:   'รอรับ',
   preparing: 'กำลังทำ',
   completed: 'เสร็จแล้ว',
@@ -40,6 +43,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_FLOW: Record<string, string[]> = {
+  awaiting:  [],
   pending:   ['preparing', 'cancelled'],
   preparing: ['completed', 'cancelled'],
   completed: [],
@@ -133,6 +137,21 @@ export default function OrderDetailPage() {
       body: JSON.stringify({ status }),
     })
     fetchOrder()
+  }
+
+  const [closing, setClosing] = useState(false)
+  const [closed, setClosed] = useState(false)
+  async function closeTable() {
+    if (!order?.tableNumber) return
+    if (!confirm(`เคลียร์โต๊ะ ${order.tableNumber}? เครื่องที่ลูกค้าสแกน QR โต๊ะนี้จะเริ่มสั่งใหม่`)) return
+    setClosing(true)
+    try {
+      const res = await fetch('/api/orders/close-table', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableNumber: order.tableNumber }),
+      })
+      if (res.ok) setClosed(true)
+    } finally { setClosing(false) }
   }
 
   if (loading || !order) {
@@ -301,9 +320,13 @@ export default function OrderDetailPage() {
     const dt = new Date(order.createdAt).toLocaleString('th-TH', {
       day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
-    const lines = order.items.map(i =>
-      `<tr><td>${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}</td><td style="text-align:right">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
-    ).join('')
+    const lines = order.items.map(i => {
+      const opts = (i.options && i.options.length > 0)
+        ? `<div style="font-size:11px;color:#666;padding-left:6px">${i.options.map(o => `• ${o.choiceName}${o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}`).join('<br>')}</div>`
+        : ''
+      const note = i.note ? `<div style="font-size:11px;color:#666;padding-left:6px">📝 ${i.note}</div>` : ''
+      return `<tr><td>${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}${opts}${note}</td><td style="text-align:right;vertical-align:top">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
+    }).join('')
     const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
 <title>ใบเสร็จ #${order.id}</title>
 <style>
@@ -318,7 +341,7 @@ export default function OrderDetailPage() {
 </style></head><body>
 <h2>ใบเสร็จรับเงิน</h2>
 <div class="meta">
-  ออเดอร์ #${order.id}${order.tableNumber ? ` · โต๊ะ ${order.tableNumber}` : ''}<br>
+  ออเดอร์ #${order.id}${order.tableNumber ? ` · โต๊ะ ${order.tableNumber}` : ''}${order.customerName ? ` · ${order.customerName}` : ''}<br>
   ${dt}
 </div>
 <table>
@@ -368,6 +391,10 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
             <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{order.tableNumber || '—'}</p>
           </div>
           <div>
+            <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>ชื่อลูกค้า</p>
+            <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{order.customerName || '—'}</p>
+          </div>
+          <div>
             <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>เวลา</p>
             <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>
               {new Date(order.createdAt).toLocaleString('th-TH', {
@@ -385,6 +412,12 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
             </div>
           )}
         </div>
+        {order.tableNumber && (
+          <button className="btn btn-ghost btn-sm btn-full" onClick={closeTable} disabled={closing || closed}
+            style={{ marginTop: 12, color: closed ? 'var(--c-success)' : 'var(--c-text-2)' }}>
+            {closed ? `✓ เคลียร์โต๊ะ ${order.tableNumber} แล้ว` : closing ? 'กำลังเคลียร์…' : `เคลียร์โต๊ะ ${order.tableNumber} (เริ่มลูกค้าใหม่)`}
+          </button>
+        )}
       </div>
 
       {/* Order items */}
@@ -395,18 +428,27 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: 'flex-start',
+              gap: 8,
               padding: '12px 16px',
               borderBottom: idx < order.items.length - 1 ? '1px solid var(--c-border)' : 'none',
             }}
           >
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</p>
               <p style={{ color: 'var(--c-text-3)', fontSize: '0.78rem', marginTop: '1px' }}>
-                ฿{(item.menuItem?.price ?? item.price).toLocaleString('th-TH')} × {item.quantity}
+                ฿{item.price.toLocaleString('th-TH')} × {item.quantity}
               </p>
+              {item.options && item.options.length > 0 && (
+                <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: '0.78rem', color: 'var(--c-text-3)' }}>
+                  {item.options.map((o, i) => (
+                    <li key={i}>• {o.choiceName}{o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}</li>
+                  ))}
+                </ul>
+              )}
+              {item.note && <p style={{ fontSize: '0.78rem', color: 'var(--c-text-3)', marginTop: 2 }}>📝 {item.note}</p>}
             </div>
-            <span className="price-tag">
+            <span className="price-tag" style={{ flexShrink: 0 }}>
               ฿{(item.price * item.quantity).toLocaleString('th-TH')}
             </span>
           </div>
@@ -425,6 +467,18 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
           <span className="price-tag-lg">฿{order.totalPrice.toLocaleString('th-TH')}</span>
         </div>
       </div>
+
+      {/* Awaiting confirmation — customer request needs approval */}
+      {order.status === 'awaiting' && (
+        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '10px', borderColor: 'var(--c-warning)', background: 'var(--c-warning-bg)' }}>
+          <p style={{ fontWeight: 700, color: 'oklch(0.44 0.145 68)', marginBottom: '2px' }}>คำขอจากลูกค้า · รอยืนยัน</p>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', marginBottom: '12px' }}>กดยืนยันเพื่อส่งเข้าครัว หรือปฏิเสธเพื่อยกเลิกคำขอ</p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-success" style={{ flex: 1 }} onClick={() => updateStatus('pending')}>ยืนยันออเดอร์</button>
+            <button className="btn btn-danger" style={{ flex: 1 }} onClick={() => setCancelConfirm(true)}>ปฏิเสธ</button>
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>

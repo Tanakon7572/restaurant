@@ -11,12 +11,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         status: true,
         totalPrice: true,
         tableNumber: true,
+        customerName: true,
         updatedAt: true,
         items: {
           select: {
+            itemName: true,
             menuItem: { select: { name: true } },
             quantity: true,
             price: true,
+            note: true,
+            options: { select: { groupName: true, choiceName: true, priceDelta: true } },
           },
         },
       },

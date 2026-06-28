@@ -8,12 +8,14 @@ interface KitchenOrderItem {
   quantity: number
   note: string | null
   menuItem?: { name: string } | null
+  options?: { groupName: string; choiceName: string; priceDelta: number }[]
 }
 
 interface KitchenOrder {
   id: number
   status: 'pending' | 'preparing'
   tableNumber: string | null
+  customerName: string | null
   note: string | null
   createdAt: string
   items: KitchenOrderItem[]
@@ -114,6 +116,16 @@ function OrderCard({
                 โต๊ะ {order.tableNumber}
               </span>
             )}
+            {order.customerName && (
+              <span style={{
+                background: '#f9fafb', color: '#374151',
+                border: '1px solid #e5e7eb',
+                padding: '2px 10px', borderRadius: '99px',
+                fontSize: '0.82rem', fontWeight: 600,
+              }}>
+                {order.customerName}
+              </span>
+            )}
           </div>
           <ElapsedTimer createdAt={order.createdAt} warn={15} />
         </div>
@@ -136,14 +148,22 @@ function OrderCard({
           <div
             key={item.id}
             style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
               padding: '8px 0',
               borderBottom: idx < order.items.length - 1 ? '1px solid #f3f4f6' : 'none',
             }}
           >
-            <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1f2937', lineHeight: 1.3 }}>
-              {item.itemName || item.menuItem?.name || '(ลบแล้ว)'}
-            </span>
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1f2937', lineHeight: 1.3 }}>
+                {item.itemName || item.menuItem?.name || '(ลบแล้ว)'}
+              </span>
+              {item.options && item.options.length > 0 && (
+                <ul style={{ listStyle: 'none', margin: '2px 0 0', paddingLeft: 2, fontSize: '0.92rem', color: '#4b5563', lineHeight: 1.4 }}>
+                  {item.options.map((o, i) => <li key={i}>• {o.choiceName}</li>)}
+                </ul>
+              )}
+              {item.note && <p style={{ fontSize: '0.92rem', color: '#b45309', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
+            </div>
             <span style={{
               fontSize: '1.25rem', fontWeight: 800,
               color: isPending ? '#d97706' : '#2563eb',

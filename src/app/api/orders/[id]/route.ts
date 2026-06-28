@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const { id } = await params
     const order = await prisma.order.findUnique({
       where: { id: parseInt(id) },
-      include: { items: { include: { menuItem: true } } },
+      include: { items: { include: { menuItem: true, options: true } } },
     })
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     return NextResponse.json(order)
@@ -60,7 +60,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           note: body.note ?? undefined,
           status: body.status ?? undefined,
         },
-        include: { items: { include: { menuItem: true } } },
+        include: { items: { include: { menuItem: true, options: true } } },
       })
       return NextResponse.json(order)
     }
@@ -73,7 +73,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const order = await prisma.order.update({
       where: { id: orderId },
       data: updateData,
-      include: { items: { include: { menuItem: true } } },
+      include: { items: { include: { menuItem: true, options: true } } },
     })
     return NextResponse.json(order)
   } catch (err) {

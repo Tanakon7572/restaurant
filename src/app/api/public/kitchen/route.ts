@@ -8,7 +8,10 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
       include: {
         items: {
-          include: { menuItem: { select: { name: true } } },
+          include: {
+            menuItem: { select: { name: true } },
+            options: { select: { groupName: true, choiceName: true, priceDelta: true } },
+          },
         },
       },
     })

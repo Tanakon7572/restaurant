@@ -7,11 +7,15 @@ datasource db {
 }
 
 model MenuCategory {
-  id        Int        @id @default(autoincrement())
-  name      String
-  order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  items     MenuItem[]
+  id         Int        @id @default(autoincrement())
+  name       String
+  order      Int        @default(0)
+  createdAt  DateTime   @default(now())
+  hidden     Boolean    @default(false)
+  required   Boolean    @default(true)
+  selectMode String     @default("single")
+  ingredientCategoryId Int?
+  items      MenuItem[]
 }
 
 model MenuItem {
@@ -24,12 +28,16 @@ model MenuItem {
   order      Int           @default(0)
   imageUrl   String?
   createdAt  DateTime      @default(now())
+  isSet          Boolean   @default(false)
+  setCategoryIds Int[]     @default([])
   orderItems OrderItem[]
+  optionGroups OptionGroup[]
 }
 
 model Order {
   id          Int         @id @default(autoincrement())
   tableNumber String?
+  customerName String?
   status      String      @default("pending")
   totalPrice  Float       @default(0)
   note        String?
@@ -48,10 +56,47 @@ model OrderItem {
   quantity   Int       @default(1)
   price      Float
   note       String?
+  options    OrderItemOption[]
 }
 
 model AppSettings {
   id            Int     @id @default(autoincrement())
   shopName      String  @default("ร้านอาหาร")
   adminPassword String?
+}
+
+model OptionGroup {
+  id         Int            @id @default(autoincrement())
+  menuItemId Int
+  menuItem   MenuItem       @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  name       String
+  required   Boolean        @default(false)
+  minSelect  Int            @default(0)
+  maxSelect  Int            @default(1)
+  order      Int            @default(0)
+  choices    OptionChoice[]
+}
+
+model OptionChoice {
+  id         Int          @id @default(autoincrement())
+  groupId    Int
+  group      OptionGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name       String
+  priceDelta Float        @default(0)
+  available  Boolean      @default(true)
+  order      Int          @default(0)
+}
+
+model TableReset {
+  tableNumber String   @id
+  resetAt     DateTime @default(now())
+}
+
+model OrderItemOption {
+  id          Int       @id @default(autoincrement())
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  groupName   String
+  choiceName  String
+  priceDelta  Float     @default(0)
 }

@@ -17,19 +17,21 @@ interface Order {
   status: string
   totalPrice: number
   tableNumber: string | null
+  customerName: string | null
   note: string | null
   createdAt: string
   items: OrderItem[]
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  awaiting:  'รอยืนยัน',
   pending:   'รอรับ',
   preparing: 'กำลังทำ',
   completed: 'เสร็จแล้ว',
   cancelled: 'ยกเลิก',
 }
 
-const STATUSES = ['all', 'pending', 'preparing', 'completed', 'cancelled'] as const
+const STATUSES = ['all', 'awaiting', 'pending', 'preparing', 'completed', 'cancelled'] as const
 
 type Period = 'today' | '7d' | '30d' | 'custom'
 
@@ -128,7 +130,7 @@ export default function OrdersPage() {
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
   const revenue = orders
-    .filter(o => o.status !== 'cancelled')
+    .filter(o => o.status !== 'cancelled' && o.status !== 'awaiting')
     .reduce((s, o) => s + o.totalPrice, 0)
 
   const today = toDateStr(new Date())
@@ -180,6 +182,18 @@ export default function OrdersPage() {
             ค้นหา
           </button>
         </div>
+      )}
+
+      {/* Awaiting-confirmation alert */}
+      {orders.filter(o => o.status === 'awaiting').length > 0 && status !== 'awaiting' && (
+        <button
+          className="btn btn-full"
+          onClick={() => setStatus('awaiting')}
+          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'oklch(0.44 0.145 68)', border: '1px solid oklch(0.55 0.150 72 / 0.30)' }}
+        >
+          <span>🔔 มีคำขอจากลูกค้ารอยืนยัน {orders.filter(o => o.status === 'awaiting').length} รายการ</span>
+          <span style={{ fontWeight: 700 }}>ดู →</span>
+        </button>
       )}
 
       {/* Status filter */}
@@ -238,6 +252,9 @@ export default function OrdersPage() {
                   <span style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)', background: 'var(--c-surface-2)', padding: '2px 8px', borderRadius: 'var(--radius-full)', border: '1px solid var(--c-border)' }}>
                     โต๊ะ {order.tableNumber}
                   </span>
+                )}
+                {order.customerName && (
+                  <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>{order.customerName}</span>
                 )}
               </div>
               <span className={`badge badge-${order.status}`}>{STATUS_LABELS[order.status]}</span>
