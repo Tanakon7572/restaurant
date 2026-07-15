@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import BottomNav from '@/components/BottomNav'
 import ConfirmModal from '@/components/ConfirmModal'
-import OptionGroupsEditor from '@/components/OptionGroupsEditor'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
 
 async function resizeToDataUrl(dataUrl: string, maxPx = 1400): Promise<string> {
@@ -285,7 +284,6 @@ export default function MenuPage() {
   const [editItemImageUrl, setEditItemImageUrl] = useState('')
   const [editItemCategoryId, setEditItemCategoryId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'item'; id: number; name: string } | null>(null)
-  const [optionsItem, setOptionsItem] = useState<{ id: number; name: string } | null>(null)
   const router = useRouter()
 
   function fetchCategories(bust = false) {
@@ -587,13 +585,6 @@ export default function MenuPage() {
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => setOptionsItem({ id: item.id, name: item.name })}
-                          style={{ fontSize: '0.7rem', padding: '3px 8px', color: 'var(--c-primary)' }}
-                        >
-                          ตัวเลือก
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
                           style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
                           onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
                         >
@@ -654,23 +645,6 @@ export default function MenuPage() {
           <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
             ยังไม่มีหมวดหมู่ เพิ่มหมวดหมู่แรกด้านบน
           </p>
-        </div>
-      )}
-
-      {optionsItem && (
-        <div className="sheet-overlay" onClick={() => setOptionsItem(null)}>
-          <div className="sheet scale-in" onClick={e => e.stopPropagation()}>
-            <div className="sheet-head">
-              <button className="btn-icon btn-ghost" onClick={() => setOptionsItem(null)} aria-label="ปิด">✕</button>
-              <span className="page-title" style={{ fontSize: 'var(--text-lg)' }}>ตัวเลือก · {optionsItem.name}</span>
-            </div>
-            <div className="sheet-body">
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: 8 }}>
-                เพิ่มกลุ่มตัวเลือก เช่น “ระดับความสุก” (เลือก 1 ข้อ, ต้องระบุ) หรือ “ท็อปปิ้ง” (เลือกหลายข้อ พร้อมราคา)
-              </p>
-              <OptionGroupsEditor menuItemId={optionsItem.id} />
-            </div>
-          </div>
         </div>
       )}
 
