@@ -63,6 +63,23 @@ export function isCrustCategory(name: string): boolean {
   return name.trim().startsWith('แป้ง')
 }
 
+/**
+ * Expand linked pool category ids into the actual pools: a category with
+ * sub-categories contributes itself plus its children (empty pools are
+ * dropped later during group derivation, so a parent whose items were all
+ * moved into sub-categories simply disappears from the steps).
+ */
+export function expandPoolIds(catIds: number[], childrenOf: Map<number, number[]>): number[] {
+  const seen = new Set<number>()
+  const out: number[] = []
+  for (const id of catIds) {
+    for (const x of [id, ...(childrenOf.get(id) ?? [])]) {
+      if (!seen.has(x)) { seen.add(x); out.push(x) }
+    }
+  }
+  return out
+}
+
 export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature' | 'diy'): OptionGroupDTO[] {
   // Single mixed pool (legacy layout): split by item-name prefix as before.
   if (pools.length === 1 && !isCrustCategory(pools[0].name)) {

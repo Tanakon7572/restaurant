@@ -14,6 +14,9 @@ model MenuCategory {
   hidden     Boolean    @default(false)
   required   Boolean    @default(true)
   selectMode String     @default("single")
+  // Sub-category: set to the parent category's id. Children never appear as
+  // customer tabs; a pool category's children become the option steps.
+  parentId   Int?
   ingredientCategoryId Int?
   // Multi-pool links: each linked (usually hidden) category becomes one
   // option group in the DIY/Signature sheet (แป้ง / แยม / ไส้หวาน / ไส้เค็ม).

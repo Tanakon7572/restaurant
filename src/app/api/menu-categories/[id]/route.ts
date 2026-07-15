@@ -25,6 +25,9 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params
+    // Deleting a parent promotes its sub-categories to top level so their
+    // items are not cascaded away silently.
+    await prisma.menuCategory.updateMany({ where: { parentId: parseInt(id) }, data: { parentId: null } })
     await prisma.menuCategory.delete({ where: { id: parseInt(id) } })
     return NextResponse.json({ success: true })
   } catch (err) {

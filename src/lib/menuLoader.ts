@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 import type { MenuItemForPricing } from './order'
 import {
-  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools,
+  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, expandPoolIds,
   DIY_NAME_PREFIX, type Ingredient, type IngredientPool,
 } from './options'
 
@@ -36,17 +36,21 @@ export async function loadMenuForPricing(
 
   // All category link structures (cheap: categories are few).
   const cats = await prisma.menuCategory.findMany({
-    select: { id: true, name: true, ingredientCategoryId: true, ingredientCategoryIds: true },
+    select: { id: true, name: true, parentId: true, ingredientCategoryId: true, ingredientCategoryIds: true },
   })
   const nameByCat = new Map(cats.map(c => [c.id, c.name]))
+  const childrenOf = new Map<number, number[]>()
+  for (const c of cats) {
+    if (c.parentId) childrenOf.set(c.parentId, [...(childrenOf.get(c.parentId) ?? []), c.id])
+  }
   const linksOf = (c: { ingredientCategoryId: number | null; ingredientCategoryIds: number[] }): number[] =>
     c.ingredientCategoryIds.length > 0
       ? c.ingredientCategoryIds
       : (c.ingredientCategoryId ? [c.ingredientCategoryId] : [])
-  const linksByCat = new Map(cats.map(c => [c.id, linksOf(c)]))
+  const linksByCat = new Map(cats.map(c => [c.id, expandPoolIds(linksOf(c), childrenOf)]))
 
-  // For a DIY base item, its category is a pool; the relevant pool set is the
-  // one of the (first) category that links it.
+  // For a DIY base item, its category (or a sub-category of a pool) belongs
+  // to some category's expanded pool set; those pools are its siblings.
   const poolSetContaining = (poolCatId: number): number[] | null => {
     for (const c of cats) {
       const links = linksByCat.get(c.id) ?? []

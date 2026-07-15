@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import BottomNav from '@/components/BottomNav'
@@ -49,6 +49,7 @@ interface Category {
   id: number
   name: string
   hidden?: boolean
+  parentId?: number | null
   ingredientCategoryId?: number | null
   ingredientCategoryIds?: number[]
   items: MenuItem[]
@@ -284,7 +285,19 @@ export default function MenuPage() {
   const [editItemImageUrl, setEditItemImageUrl] = useState('')
   const [editItemCategoryId, setEditItemCategoryId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'item'; id: number; name: string } | null>(null)
+  // Sub-category creation
+  const [addingSubCat, setAddingSubCat] = useState<number | null>(null)
+  const [newSubCatName, setNewSubCatName] = useState('')
+  // Multi-select mode (long-press a card or the เลือกหลายรายการ button)
+  const [selecting, setSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [moveTarget, setMoveTarget] = useState<number | ''>('')
+  const [moving, setMoving] = useState(false)
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+
+  const topLevelCats = categories.filter(c => !c.parentId)
+  const childCats = (parentId: number) => categories.filter(c => c.parentId === parentId)
 
   function fetchCategories(bust = false) {
     if (bust) invalidateCache('menu:categories')
@@ -309,7 +322,19 @@ export default function MenuPage() {
       body: JSON.stringify({ name: newCatName.trim() }),
     })
     setNewCatName('')
-    fetchCategories()
+    fetchCategories(true)
+  }
+
+  async function addSubCategory(parentId: number) {
+    if (!newSubCatName.trim()) return
+    await fetch('/api/menu-categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newSubCatName.trim(), parentId }),
+    })
+    setAddingSubCat(null)
+    setNewSubCatName('')
+    fetchCategories(true)
   }
 
   async function updateCategory(id: number) {
@@ -348,7 +373,7 @@ export default function MenuPage() {
     setNewItemName('')
     setNewItemPrice('')
     setNewItemImageUrl('')
-    fetchCategories()
+    fetchCategories(true)
   }
 
   async function updateItem(id: number) {
@@ -373,7 +398,7 @@ export default function MenuPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ available: !item.available }),
     })
-    fetchCategories()
+    fetchCategories(true)
   }
 
   async function handleDelete() {
@@ -383,7 +408,235 @@ export default function MenuPage() {
       : `/api/menu-items/${deleteTarget.id}`
     await fetch(url, { method: 'DELETE' })
     setDeleteTarget(null)
-    fetchCategories()
+    fetchCategories(true)
+  }
+
+  // ── Multi-select helpers ─────────────────────────────────────────
+  function startPress(itemId: number) {
+    cancelPress()
+    pressTimer.current = setTimeout(() => {
+      setSelecting(true)
+      setSelectedIds(prev => (prev.includes(itemId) ? prev : [...prev, itemId]))
+    }, 450)
+  }
+
+  function cancelPress() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+
+  function toggleSelect(itemId: number) {
+    setSelectedIds(prev => (prev.includes(itemId) ? prev.filter(x => x !== itemId) : [...prev, itemId]))
+  }
+
+  function exitSelecting() {
+    setSelecting(false)
+    setSelectedIds([])
+    setMoveTarget('')
+  }
+
+  async function moveSelected() {
+    if (moveTarget === '' || selectedIds.length === 0) return
+    setMoving(true)
+    try {
+      await Promise.all(selectedIds.map(id =>
+        fetch(`/api/menu-items/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ categoryId: moveTarget }),
+        }),
+      ))
+      exitSelecting()
+      fetchCategories(true)
+    } finally {
+      setMoving(false)
+    }
+  }
+
+  // Options for category selects: top-level first, children indented.
+  function categoryOptions(excludeId?: number) {
+    return topLevelCats.flatMap(o => [
+      ...(o.id !== excludeId
+        ? [<option key={o.id} value={o.id}>{o.name}{o.hidden ? ' (ซ่อน)' : ''}</option>]
+        : []),
+      ...childCats(o.id)
+        .filter(ch => ch.id !== excludeId)
+        .map(ch => <option key={ch.id} value={ch.id}>{'  — '}{ch.name}</option>),
+    ])
+  }
+
+  function renderItemGrid(items: MenuItem[]) {
+    if (items.length === 0) return null
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', padding: '12px' }}>
+        {items.map(item => (
+          editingItem === item.id ? (
+            <div key={item.id} style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  className="input"
+                  value={editItemName}
+                  onChange={e => setEditItemName(e.target.value)}
+                  style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
+                  placeholder="ชื่อเมนู"
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
+                  <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+                  <input
+                    className="input"
+                    type="number"
+                    value={editItemPrice}
+                    onChange={e => setEditItemPrice(e.target.value)}
+                    style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
+                    placeholder="ราคา"
+                  />
+                </div>
+              </div>
+              <ImageInput value={editItemImageUrl} onChange={setEditItemImageUrl} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                หมวดหมู่
+                <select
+                  className="input"
+                  value={editItemCategoryId ?? item.categoryId}
+                  onChange={e => setEditItemCategoryId(Number(e.target.value))}
+                  style={{ width: 'auto', padding: '6px 10px' }}
+                >
+                  {categoryOptions()}
+                </select>
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-primary btn-sm" onClick={() => updateItem(item.id)}>บันทึก</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(null)}>ยกเลิก</button>
+              </div>
+            </div>
+          ) : (
+            <div
+              key={item.id}
+              onPointerDown={() => !selecting && startPress(item.id)}
+              onPointerUp={cancelPress}
+              onPointerLeave={cancelPress}
+              onPointerMove={cancelPress}
+              onContextMenu={e => e.preventDefault()}
+              onClick={() => selecting && toggleSelect(item.id)}
+              style={{
+                borderRadius: 'var(--radius-sm)',
+                border: selectedIds.includes(item.id) ? '2px solid var(--c-primary)' : '1px solid var(--c-border)',
+                overflow: 'hidden',
+                opacity: item.available ? 1 : 0.5,
+                transition: 'opacity 0.15s, border-color 0.15s',
+                background: selectedIds.includes(item.id) ? 'var(--c-primary-glow)' : 'var(--c-surface)',
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
+                position: 'relative',
+                cursor: selecting ? 'pointer' : 'default',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+              } as React.CSSProperties}
+            >
+              {selecting && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute', top: 6, right: 6, zIndex: 2,
+                    width: 22, height: 22, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.8rem', fontWeight: 700,
+                    background: selectedIds.includes(item.id) ? 'var(--c-primary)' : 'var(--c-surface)',
+                    color: selectedIds.includes(item.id) ? '#fff' : 'var(--c-text-3)',
+                    border: '1px solid var(--c-border)',
+                  }}
+                >
+                  ✓
+                </span>
+              )}
+              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+                <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
+              </div>
+              <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>
+                    {item.name}
+                  </p>
+                  <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px' }}>
+                    ฿{item.price.toLocaleString('th-TH')}
+                  </p>
+                </div>
+                {!selecting && (
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '4px' }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => toggleAvailable(item)}
+                      style={{ fontSize: '0.7rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
+                    >
+                      {item.available ? 'เปิด' : 'ปิด'}
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) }}
+                      style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                    >
+                      แก้ไข
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
+                      onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
+                    >
+                      ลบ
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        ))}
+      </div>
+    )
+  }
+
+  function renderAddItemRow(catId: number) {
+    return addingItemCat === catId ? (
+      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            className="input"
+            placeholder="ชื่อเมนู"
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
+            autoFocus
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
+            <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+            <input
+              className="input"
+              type="number"
+              placeholder="ราคา"
+              value={newItemPrice}
+              onChange={e => setNewItemPrice(e.target.value)}
+              style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
+            />
+          </div>
+        </div>
+        <ImageInput value={newItemImageUrl} onChange={setNewItemImageUrl} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn btn-primary btn-sm" onClick={() => addItem(catId)}>เพิ่ม</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setAddingItemCat(null); setNewItemName(''); setNewItemPrice(''); setNewItemImageUrl('') }}>ยกเลิก</button>
+        </div>
+      </div>
+    ) : (
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={() => { setAddingItemCat(catId); setNewItemName(''); setNewItemPrice(''); setNewItemImageUrl('') }}
+        style={{ width: 'calc(100% - 32px)', margin: '10px 16px', border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
+      >
+        + เพิ่มเมนู
+      </button>
+    )
   }
 
   if (loading) {
@@ -401,7 +654,19 @@ export default function MenuPage() {
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">จัดการเมนู</h1>
+        <button
+          className={`btn btn-sm ${selecting ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => (selecting ? exitSelecting() : setSelecting(true))}
+        >
+          {selecting ? 'เสร็จสิ้น' : 'เลือกหลายรายการ'}
+        </button>
       </div>
+
+      {selecting && (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', margin: '-8px 0 12px' }}>
+          แตะการ์ดเมนูเพื่อเลือก แล้วเลือกหมวดปลายทางที่แถบด้านล่าง (กดค้างที่การ์ดก็เข้าโหมดนี้ได้)
+        </p>
+      )}
 
       {/* Add category */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
@@ -417,228 +682,166 @@ export default function MenuPage() {
         </button>
       </div>
 
-      {categories.map(cat => (
-        <div key={cat.id} className="glass-panel" style={{ marginBottom: '12px', overflow: 'hidden' }}>
-          {/* Category header */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '14px 16px',
-              borderBottom: cat.items.length > 0 || addingItemCat === cat.id ? '1px solid var(--c-border)' : 'none',
-            }}
-          >
-            {editingCat === cat.id ? (
-              <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
-                <input
-                  className="input"
-                  value={editCatName}
-                  onChange={e => setEditCatName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && updateCategory(cat.id)}
-                  autoFocus
-                  style={{ padding: '8px 12px' }}
-                />
-                <button className="btn btn-primary btn-sm" onClick={() => updateCategory(cat.id)}>บันทึก</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setEditingCat(null)}>ยกเลิก</button>
-              </div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{cat.name}</h3>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', fontWeight: 500 }}>
-                    {cat.items.length} รายการ
-                  </span>
+      {topLevelCats.map(cat => {
+        const subs = childCats(cat.id)
+        const totalItems = cat.items.length + subs.reduce((s, x) => s + x.items.length, 0)
+        return (
+          <div key={cat.id} className="glass-panel" style={{ marginBottom: '12px', overflow: 'hidden' }}>
+            {/* Category header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 16px',
+                borderBottom: totalItems > 0 || addingItemCat === cat.id ? '1px solid var(--c-border)' : 'none',
+              }}
+            >
+              {editingCat === cat.id ? (
+                <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                  <input
+                    className="input"
+                    value={editCatName}
+                    onChange={e => setEditCatName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && updateCategory(cat.id)}
+                    autoFocus
+                    style={{ padding: '8px 12px' }}
+                  />
+                  <button className="btn btn-primary btn-sm" onClick={() => updateCategory(cat.id)}>บันทึก</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditingCat(null)}>ยกเลิก</button>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => { setEditingCat(cat.id); setEditCatName(cat.name) }}
-                  >
-                    แก้ไข
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ color: 'var(--c-danger)' }}
-                    onClick={() => setDeleteTarget({ type: 'category', id: cat.id, name: cat.name })}
-                  >
-                    ลบ
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Category options config */}
-          {editingCat !== cat.id && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)', background: 'var(--c-surface-2)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-                ดึงตัวเลือกอัตโนมัติจาก
-                <select
-                  className="input"
-                  value={linksOf(cat)[0] ?? ''}
-                  onChange={e => updateCategoryField(cat.id, {
-                    ingredientCategoryId: e.target.value ? Number(e.target.value) : null,
-                    ingredientCategoryIds: [],
-                  })}
-                  style={{ width: 'auto', padding: '6px 10px' }}
-                >
-                  <option value="">— ไม่ใช้ —</option>
-                  {categories.filter(o => o.id !== cat.id).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-                <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
-                ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)
-              </label>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{cat.name}</h3>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', fontWeight: 500 }}>
+                      {totalItems} รายการ{subs.length > 0 ? ` · ${subs.length} หมวดย่อย` : ''}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => { setEditingCat(cat.id); setEditCatName(cat.name) }}
+                    >
+                      แก้ไข
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--c-danger)' }}
+                      onClick={() => setDeleteTarget({ type: 'category', id: cat.id, name: cat.name })}
+                    >
+                      ลบ
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          )}
 
-          {/* Menu items grid */}
-          {cat.items.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', padding: '12px', borderTop: '1px solid var(--c-border)' }}>
-              {cat.items.map((item) => (
-                editingItem === item.id ? (
-                  <div key={item.id} style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' }}>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Category options config */}
+            {editingCat !== cat.id && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)', background: 'var(--c-surface-2)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                  ดึงตัวเลือกอัตโนมัติจาก
+                  <select
+                    className="input"
+                    value={linksOf(cat)[0] ?? ''}
+                    onChange={e => updateCategoryField(cat.id, {
+                      ingredientCategoryId: e.target.value ? Number(e.target.value) : null,
+                      ingredientCategoryIds: [],
+                    })}
+                    style={{ width: 'auto', padding: '6px 10px' }}
+                  >
+                    <option value="">— ไม่ใช้ —</option>
+                    {categoryOptions(cat.id)}
+                  </select>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                  <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
+                  ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)
+                </label>
+              </div>
+            )}
+
+            {/* Own items */}
+            {renderItemGrid(cat.items)}
+
+            {/* Sub-categories */}
+            {subs.map(sub => (
+              <div key={sub.id} style={{ borderTop: '1px solid var(--c-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'var(--c-surface-2)' }}>
+                  {editingCat === sub.id ? (
+                    <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
                       <input
                         className="input"
-                        value={editItemName}
-                        onChange={e => setEditItemName(e.target.value)}
-                        style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
-                        placeholder="ชื่อเมนู"
+                        value={editCatName}
+                        onChange={e => setEditCatName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && updateCategory(sub.id)}
+                        autoFocus
+                        style={{ padding: '6px 10px' }}
                       />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-                        <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
-                        <input
-                          className="input"
-                          type="number"
-                          value={editItemPrice}
-                          onChange={e => setEditItemPrice(e.target.value)}
-                          style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
-                          placeholder="ราคา"
-                        />
+                      <button className="btn btn-primary btn-sm" onClick={() => updateCategory(sub.id)}>บันทึก</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingCat(null)}>ยกเลิก</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--c-text-2)' }}>▸ {sub.name}</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)' }}>{sub.items.length} รายการ</span>
                       </div>
-                    </div>
-                    <ImageInput value={editItemImageUrl} onChange={setEditItemImageUrl} />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-                      หมวดหมู่
-                      <select
-                        className="input"
-                        value={editItemCategoryId ?? item.categoryId}
-                        onChange={e => setEditItemCategoryId(Number(e.target.value))}
-                        style={{ width: 'auto', padding: '6px 10px' }}
-                      >
-                        {categories.map(o => (
-                          <option key={o.id} value={o.id}>{o.name}{o.hidden ? ' (ซ่อน)' : ''}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-primary btn-sm" onClick={() => updateItem(item.id)}>บันทึก</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(null)}>ยกเลิก</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    key={item.id}
-                    style={{
-                      borderRadius: 'var(--radius-sm)',
-                      border: '1px solid var(--c-border)',
-                      overflow: 'hidden',
-                      opacity: item.available ? 1 : 0.5,
-                      transition: 'opacity 0.15s',
-                      background: 'var(--c-surface)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      minWidth: 0,
-                    }}
-                  >
-                    <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
-                      <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
-                    </div>
-                    <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>
-                          {item.name}
-                        </p>
-                        <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px' }}>
-                          ฿{item.price.toLocaleString('th-TH')}
-                        </p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '4px' }}>
+                      <div style={{ display: 'flex', gap: '4px' }}>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => toggleAvailable(item)}
-                          style={{ fontSize: '0.7rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
-                        >
-                          {item.available ? 'เปิด' : 'ปิด'}
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) }}
                           style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          onClick={() => { setEditingCat(sub.id); setEditCatName(sub.name) }}
                         >
                           แก้ไข
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
                           style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
-                          onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
+                          onClick={() => setDeleteTarget({ type: 'category', id: sub.id, name: sub.name })}
                         >
                           ลบ
                         </button>
                       </div>
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          )}
+                    </>
+                  )}
+                </div>
+                {renderItemGrid(sub.items)}
+                {renderAddItemRow(sub.id)}
+              </div>
+            ))}
 
-          {/* Add item row */}
-          {addingItemCat === cat.id ? (
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Add item to the category itself */}
+            {renderAddItemRow(cat.id)}
+
+            {/* Add sub-category */}
+            {addingSubCat === cat.id ? (
+              <div style={{ display: 'flex', gap: '8px', padding: '0 16px 12px' }}>
                 <input
                   className="input"
-                  placeholder="ชื่อเมนู"
-                  value={newItemName}
-                  onChange={e => setNewItemName(e.target.value)}
-                  style={{ flex: 1, minWidth: '120px', padding: '8px 12px' }}
+                  placeholder="ชื่อหมวดย่อย เช่น แยม"
+                  value={newSubCatName}
+                  onChange={e => setNewSubCatName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addSubCategory(cat.id)}
                   autoFocus
+                  style={{ padding: '8px 12px' }}
                 />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-                  <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="ราคา"
-                    value={newItemPrice}
-                    onChange={e => setNewItemPrice(e.target.value)}
-                    style={{ width: '80px', padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}
-                  />
-                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => addSubCategory(cat.id)}>เพิ่ม</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setAddingSubCat(null); setNewSubCatName('') }}>ยกเลิก</button>
               </div>
-              <ImageInput value={newItemImageUrl} onChange={setNewItemImageUrl} />
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-primary btn-sm" onClick={() => addItem(cat.id)}>เพิ่ม</button>
-                <button className="btn btn-ghost btn-sm" onClick={() => { setAddingItemCat(null); setNewItemName(''); setNewItemPrice(''); setNewItemImageUrl('') }}>ยกเลิก</button>
-              </div>
-            </div>
-          ) : (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => { setAddingItemCat(cat.id); setNewItemName(''); setNewItemPrice(''); setNewItemImageUrl('') }}
-              style={{ width: 'calc(100% - 32px)', margin: '10px 16px', border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
-            >
-              + เพิ่มเมนู
-            </button>
-          )}
-        </div>
-      ))}
+            ) : (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setAddingSubCat(cat.id); setNewSubCatName('') }}
+                style={{ width: 'calc(100% - 32px)', margin: '0 16px 12px', border: '1px dashed var(--c-primary-light)', color: 'var(--c-primary)' }}
+              >
+                + เพิ่มหมวดย่อย
+              </button>
+            )}
+          </div>
+        )
+      })}
 
       {categories.length === 0 && (
         <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center' }}>
@@ -648,10 +851,44 @@ export default function MenuPage() {
         </div>
       )}
 
+      {/* Multi-select action bar */}
+      {selecting && (
+        <div
+          style={{
+            position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)',
+            width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 200,
+            background: 'var(--c-surface)', border: '1px solid var(--c-border)',
+            borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)',
+            padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, flexShrink: 0 }}>
+            เลือกแล้ว {selectedIds.length}
+          </span>
+          <select
+            className="input"
+            value={moveTarget}
+            onChange={e => setMoveTarget(e.target.value ? Number(e.target.value) : '')}
+            style={{ flex: 1, minWidth: '120px', padding: '7px 10px' }}
+          >
+            <option value="">ย้ายไปหมวด…</option>
+            {categoryOptions()}
+          </select>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={moveSelected}
+            disabled={moving || moveTarget === '' || selectedIds.length === 0}
+          >
+            {moving ? 'กำลังย้าย…' : 'ย้าย'}
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={exitSelecting}>✕</button>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={!!deleteTarget}
         title="ยืนยันการลบ"
-        message={`ต้องการลบ "${deleteTarget?.name}" ใช่หรือไม่?${deleteTarget?.type === 'category' ? ' เมนูทั้งหมดในหมวดหมู่นี้จะถูกลบด้วย' : ''}`}
+        message={`ต้องการลบ "${deleteTarget?.name}" ใช่หรือไม่?${deleteTarget?.type === 'category' ? ' เมนูทั้งหมดในหมวดหมู่นี้จะถูกลบด้วย (หมวดย่อยจะถูกย้ายขึ้นเป็นหมวดหลักแทน)' : ''}`}
         confirmText="ลบ"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

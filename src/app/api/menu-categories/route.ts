@@ -19,13 +19,17 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { name } = await request.json()
+    const { name, parentId } = await request.json()
     if (!name?.trim()) {
       return NextResponse.json({ error: 'ชื่อหมวดหมู่ห้ามว่าง' }, { status: 400 })
     }
     const maxOrder = await prisma.menuCategory.aggregate({ _max: { order: true } })
     const category = await prisma.menuCategory.create({
-      data: { name: name.trim(), order: (maxOrder._max.order ?? -1) + 1 },
+      data: {
+        name: name.trim(),
+        order: (maxOrder._max.order ?? -1) + 1,
+        parentId: parentId ? parseInt(parentId) : null,
+      },
     })
     return NextResponse.json(category, { status: 201 })
   } catch (err) {

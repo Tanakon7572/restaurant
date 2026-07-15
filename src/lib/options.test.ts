@@ -2,7 +2,7 @@ import { it, expect } from 'vitest'
 import {
   deriveOptionGroups, isCrust, deriveGroupsForPricing,
   deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
-  deriveGroupsFromPools, deriveDiyExtrasFromPools, isCrustCategory,
+  deriveGroupsFromPools, deriveDiyExtrasFromPools, isCrustCategory, expandPoolIds,
   CRUST_GROUP_ID, DIY_NAME_PREFIX, type IngredientPool,
 } from './options'
 import { priceOrderItems, type MenuItemForPricing } from './order'
@@ -150,6 +150,13 @@ const pools: IngredientPool[] = [
     { id: 80, name: 'แฮมชีส', price: 20, available: false },
   ]},
 ]
+
+it('expands pool ids into parent + sub-categories, deduped', () => {
+  const childrenOf = new Map<number, number[]>([[4, [10, 11, 12]]])
+  expect(expandPoolIds([4], childrenOf)).toEqual([4, 10, 11, 12])
+  expect(expandPoolIds([4, 10], childrenOf)).toEqual([4, 10, 11, 12])
+  expect(expandPoolIds([7], childrenOf)).toEqual([7])
+})
 
 it('detects crust category by แป้ง prefix', () => {
   expect(isCrustCategory('แป้ง')).toBe(true)

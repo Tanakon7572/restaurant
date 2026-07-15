@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { deriveGroupsFromPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { deriveGroupsFromPools, expandPoolIds, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 
 export async function GET() {
   try {
     const categories = await prisma.menuCategory.findMany({
       orderBy: { order: 'asc' },
       select: {
-        id: true, name: true, order: true, hidden: true,
+        id: true, name: true, order: true, hidden: true, parentId: true,
         ingredientCategoryId: true, ingredientCategoryIds: true,
         items: {
           where: { available: true },
@@ -32,9 +32,11 @@ export async function GET() {
     // Ingredient pools (include items from hidden categories) for derivation.
     const allItemsByCat = new Map<number, Ingredient[]>()
     const nameByCat = new Map<number, string>()
+    const childrenOf = new Map<number, number[]>()
     for (const c of categories) {
       allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: true })))
       nameByCat.set(c.id, c.name)
+      if (c.parentId) childrenOf.set(c.parentId, [...(childrenOf.get(c.parentId) ?? []), c.id])
     }
 
     // Linked pool ids for a category: multi-link list, falling back to the
@@ -45,7 +47,7 @@ export async function GET() {
         : (c.ingredientCategoryId ? [c.ingredientCategoryId] : [])
 
     const poolsOf = (ids: number[]): IngredientPool[] =>
-      ids
+      expandPoolIds(ids, childrenOf)
         .filter(id => allItemsByCat.has(id))
         .map(id => ({ id, name: nameByCat.get(id) ?? '', items: allItemsByCat.get(id) ?? [] }))
 
@@ -54,24 +56,34 @@ export async function GET() {
     // category with links but no items of its own is also a DIY builder.
     const referencedPoolIds = new Set(categories.flatMap(c => linksOf(c)))
 
+    const descendantItems = (id: number) =>
+      (childrenOf.get(id) ?? []).flatMap(childId => allItemsByCat.get(childId) ?? [])
+
+    // Only top-level categories become customer tabs; sub-categories exist
+    // as option steps / organization only.
     const browsable = categories
-      .filter(c => !c.hidden && (c.items.length > 0 || linksOf(c).length > 0))
+      .filter(c => !c.parentId)
+      .filter(c => !c.hidden && (c.items.length > 0 || linksOf(c).length > 0 || descendantItems(c.id).length > 0))
       .map(c => {
         const links = linksOf(c)
-        const maybeDiy = referencedPoolIds.has(c.id) || (links.length > 0 && c.items.length === 0)
-        // For a legacy visible pool category, the builder derives from its
-        // own items; otherwise from its linked pools.
+        const ownContent = c.items.length + descendantItems(c.id).length
+        const maybeDiy = referencedPoolIds.has(c.id) || (links.length > 0 && ownContent === 0)
+        // For a visible pool category, the builder derives from itself (its
+        // sub-categories expand into the steps); otherwise from its links.
         const diyPools: IngredientPool[] = maybeDiy
-          ? (links.length > 0 ? poolsOf(links) : [{ id: c.id, name: c.name, items: allItemsByCat.get(c.id) ?? [] }])
+          ? poolsOf(links.length > 0 ? links : [c.id])
           : []
         const diyGroups = maybeDiy ? deriveGroupsFromPools(diyPools, 'diy') : []
         // The builder needs a base (แป้ง) group to order against.
         const isDiy = maybeDiy && diyGroups.some(g => g.id === CRUST_GROUP_ID)
+        // Normal categories flatten their sub-categories' items into the tab.
+        const tabItems = isDiy ? c.items : [...c.items, ...(childrenOf.get(c.id) ?? []).flatMap(childId =>
+          categories.find(x => x.id === childId)?.items ?? [])]
         return {
           id: c.id, name: c.name, order: c.order,
           diy: isDiy,
           diyGroups: isDiy ? diyGroups : [],
-          items: c.items.map(it => {
+          items: tabItems.map(it => {
             const groups = it.optionGroups.length > 0
               ? it.optionGroups
               : (links.length > 0 && !isDiy ? deriveGroupsFromPools(poolsOf(links), 'signature') : [])
