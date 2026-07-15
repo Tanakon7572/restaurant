@@ -48,6 +48,55 @@ export function deriveGroupsForPricing(ingredients: Ingredient[]): GroupForPrici
   }))
 }
 
+// ── Multi-pool groups (แป้ง / แยม / ไส้หวาน / ไส้เค็ม / …) ───────────
+// A category may link several ingredient categories; each linked category
+// becomes one option group named after it. A pool category whose name
+// starts with "แป้ง" is the base group: required, single-select, free swap
+// for Signature / real price for DIY.
+export type IngredientPool = { id: number; name: string; items: Ingredient[] }
+
+// Synthetic ids for per-pool groups; CRUST_GROUP_ID stays reserved for the
+// base (แป้ง) group so DIY translation can find it.
+const POOL_GROUP_BASE_ID = -100
+
+export function isCrustCategory(name: string): boolean {
+  return name.trim().startsWith('แป้ง')
+}
+
+export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature' | 'diy'): OptionGroupDTO[] {
+  // Single mixed pool (legacy layout): split by item-name prefix as before.
+  if (pools.length === 1 && !isCrustCategory(pools[0].name)) {
+    return mode === 'signature' ? deriveOptionGroups(pools[0].items) : deriveDiyGroups(pools[0].items)
+  }
+  return pools
+    .filter(p => p.items.length > 0)
+    .map((p, idx) => {
+      const crust = isCrustCategory(p.name)
+      return {
+        id: crust ? CRUST_GROUP_ID : POOL_GROUP_BASE_ID - idx,
+        name: crust ? 'เลือกแป้ง' : p.name,
+        required: crust,
+        minSelect: crust ? 1 : 0,
+        maxSelect: crust ? 1 : p.items.length,
+        order: idx,
+        choices: p.items.map((i, j) => ({
+          id: i.id,
+          name: i.name,
+          priceDelta: crust && mode === 'signature' ? 0 : i.price,
+          available: i.available,
+          order: j,
+        })),
+      }
+    })
+}
+
+export function deriveGroupsFromPoolsForPricing(pools: IngredientPool[], mode: 'signature' | 'diy'): GroupForPricing[] {
+  return deriveGroupsFromPools(pools, mode).map(g => ({
+    id: g.id, name: g.name, required: g.required, minSelect: g.minSelect, maxSelect: g.maxSelect,
+    choices: g.choices.map(c => ({ id: c.id, name: c.name, priceDelta: c.priceDelta, available: c.available })),
+  }))
+}
+
 // ── DIY (จัดเอง) ──────────────────────────────────────────────────
 // A DIY category is an ingredient pool the customer orders from directly.
 // The UI shows one entry card that opens the same step sheet as Signature,
@@ -69,16 +118,18 @@ export function deriveDiyGroups(ingredients: Ingredient[]): OptionGroupDTO[] {
 }
 
 // Synthetic browsable item representing "build your own" for a DIY category.
+// Prefers server-derived diyGroups (multi-pool aware); falls back to deriving
+// from the category's own items (legacy single-pool layout).
 export function buildDiyItem(cat: MenuCategoryDTO): MenuItemDTO {
-  const ingredients: Ingredient[] = cat.items.map(i => ({
-    id: i.id, name: i.name, price: i.price, available: true,
-  }))
+  const groups = cat.diyGroups && cat.diyGroups.length > 0
+    ? cat.diyGroups
+    : deriveDiyGroups(cat.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: true })))
   return {
     id: -cat.id, // negative = synthetic; translated to the chosen crust id on add
     name: cat.name,
     price: 0,
     imageUrl: cat.items.find(i => isCrust(i.name) && i.imageUrl)?.imageUrl ?? null,
-    optionGroups: deriveDiyGroups(ingredients),
+    optionGroups: groups,
   }
 }
 
@@ -108,7 +159,11 @@ export function translateDiyLine(line: CartLine, diyItem: MenuItemDTO): CartLine
 }
 
 // Server-side pricing groups for a DIY base (crust) item ordered directly:
-// only the extras group applies — the crust itself is the base item.
+// only the extras groups apply — the crust itself is the base item.
 export function deriveDiyExtrasForPricing(ingredients: Ingredient[]): GroupForPricing[] {
   return deriveGroupsForPricing(ingredients).filter(g => g.id !== CRUST_GROUP_ID)
+}
+
+export function deriveDiyExtrasFromPools(pools: IngredientPool[]): GroupForPricing[] {
+  return deriveGroupsFromPoolsForPricing(pools, 'diy').filter(g => g.id !== CRUST_GROUP_ID)
 }

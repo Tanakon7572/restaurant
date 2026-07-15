@@ -2,7 +2,8 @@ import { it, expect } from 'vitest'
 import {
   deriveOptionGroups, isCrust, deriveGroupsForPricing,
   deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
-  CRUST_GROUP_ID, DIY_NAME_PREFIX,
+  deriveGroupsFromPools, deriveDiyExtrasFromPools, isCrustCategory,
+  CRUST_GROUP_ID, DIY_NAME_PREFIX, type IngredientPool,
 } from './options'
 import { priceOrderItems, type MenuItemForPricing } from './order'
 import type { MenuCategoryDTO } from './types'
@@ -129,4 +130,92 @@ it('rejects unavailable extras on a DIY base crust', () => {
   const menu = new Map([[32, crustItem]])
   const r = priceOrderItems([{ menuItemId: 32, quantity: 1, optionChoiceIds: [51] }], menu)
   expect(r.ok).toBe(false)
+})
+
+// ── Multi-pool groups (แป้ง / แยม / ไส้หวาน / ไส้เค็ม) ───────────────
+
+const pools: IngredientPool[] = [
+  { id: 10, name: 'แป้ง', items: [
+    { id: 31, name: 'วานิลลา', price: 20, available: true },
+    { id: 32, name: 'ชาร์โคล', price: 25, available: true },
+  ]},
+  { id: 11, name: 'แยม', items: [
+    { id: 60, name: 'แยมส้ม', price: 10, available: true },
+    { id: 61, name: 'แยมบลูเบอร์รี่', price: 10, available: true },
+  ]},
+  { id: 12, name: 'ไส้หวาน', items: [
+    { id: 70, name: 'ฝอยทอง', price: 15, available: true },
+  ]},
+  { id: 13, name: 'ไส้เค็ม', items: [
+    { id: 80, name: 'แฮมชีส', price: 20, available: false },
+  ]},
+]
+
+it('detects crust category by แป้ง prefix', () => {
+  expect(isCrustCategory('แป้ง')).toBe(true)
+  expect(isCrustCategory('แป้งเครป')).toBe(true)
+  expect(isCrustCategory('แยม')).toBe(false)
+})
+
+it('derives one group per pool, named after the category', () => {
+  const groups = deriveGroupsFromPools(pools, 'diy')
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง', 'แยม', 'ไส้หวาน', 'ไส้เค็ม'])
+  const crust = groups[0]
+  expect(crust.id).toBe(CRUST_GROUP_ID)
+  expect(crust.required).toBe(true)
+  expect(crust.maxSelect).toBe(1)
+  expect(crust.choices.find(c => c.id === 32)!.priceDelta).toBe(25) // diy = real price
+  const jam = groups[1]
+  expect(jam.required).toBe(false)
+  expect(jam.maxSelect).toBe(2)
+  expect(jam.choices[0].priceDelta).toBe(10)
+  expect(groups[3].choices[0].available).toBe(false)
+})
+
+it('signature mode keeps the crust swap free across pools', () => {
+  const groups = deriveGroupsFromPools(pools, 'signature')
+  expect(groups[0].choices.every(c => c.priceDelta === 0)).toBe(true)
+  expect(groups[1].choices[0].priceDelta).toBe(10)
+})
+
+it('falls back to legacy split for a single mixed pool', () => {
+  const single: IngredientPool[] = [{ id: 4, name: 'DIY', items: ingredients }]
+  const groups = deriveGroupsFromPools(single, 'signature')
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง', 'เพิ่มไส้ / ท็อปปิ้ง'])
+})
+
+it('prices a multi-pool DIY order: crust base + extras from sibling pools', () => {
+  const crustItem: MenuItemForPricing = {
+    id: 32, name: 'DIY · ชาร์โคล', price: 25,
+    optionGroups: deriveDiyExtrasFromPools(pools),
+  }
+  const menu = new Map([[32, crustItem]])
+  const r = priceOrderItems([{ menuItemId: 32, quantity: 1, optionChoiceIds: [60, 70] }], menu)
+  expect(r.ok).toBe(true)
+  if (!r.ok) return
+  expect(r.items[0].price).toBe(50) // 25 + 10 + 15
+  expect(r.items[0].options.map(o => o.groupName)).toEqual(['แยม', 'ไส้หวาน'])
+})
+
+it('multi-pool DIY builder translates the crust into the base item', () => {
+  const cat = {
+    id: 5, name: 'DIY', order: 0, items: [], diy: true,
+    diyGroups: deriveGroupsFromPools(pools, 'diy'),
+  }
+  const item = buildDiyItem(cat)
+  expect(item.optionGroups).toHaveLength(4)
+  const line = translateDiyLine({
+    key: '', menuItemId: item.id, name: item.name, basePrice: 0,
+    quantity: 1, note: null,
+    optionChoiceIds: [31, 60],
+    choices: [
+      { groupName: 'เลือกแป้ง', choiceName: 'วานิลลา', priceDelta: 20 },
+      { groupName: 'แยม', choiceName: 'แยมส้ม', priceDelta: 10 },
+    ],
+    unitPrice: 30,
+  }, item)
+  expect(line!.menuItemId).toBe(31)
+  expect(line!.basePrice).toBe(20)
+  expect(line!.optionChoiceIds).toEqual([60])
+  expect(line!.choices.map(c => c.groupName)).toEqual(['แยม'])
 })

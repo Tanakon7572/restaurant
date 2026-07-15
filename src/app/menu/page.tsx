@@ -51,7 +51,14 @@ interface Category {
   name: string
   hidden?: boolean
   ingredientCategoryId?: number | null
+  ingredientCategoryIds?: number[]
   items: MenuItem[]
+}
+
+// Effective pool links: multi-link list wins over the legacy single link.
+function linksOf(cat: Category): number[] {
+  if (cat.ingredientCategoryIds && cat.ingredientCategoryIds.length > 0) return cat.ingredientCategoryIds
+  return cat.ingredientCategoryId ? [cat.ingredientCategoryId] : []
 }
 
 function ItemImage({ imageUrl, name, size = 48, cover = false }: { imageUrl?: string | null; name: string; size?: number; cover?: boolean }) {
@@ -465,20 +472,27 @@ export default function MenuPage() {
           {/* Category options config */}
           {editingCat !== cat.id && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)', background: 'var(--c-surface-2)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-                ดึงตัวเลือกอัตโนมัติจาก
-                <select
-                  className="input"
-                  value={cat.ingredientCategoryId ?? ''}
-                  onChange={e => updateCategoryField(cat.id, { ingredientCategoryId: e.target.value ? Number(e.target.value) : null })}
-                  style={{ width: 'auto', padding: '6px 10px' }}
-                >
-                  <option value="">— ไม่ใช้ —</option>
-                  {categories.filter(o => o.id !== cat.id).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}</option>
-                  ))}
-                </select>
-              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                <span>ดึงตัวเลือกจากหมวด (เลือกได้หลายหมวด — แต่ละหมวดเป็น 1 ขั้นตอน):</span>
+                {categories.filter(o => o.id !== cat.id).map(o => {
+                  const selected = linksOf(cat).includes(o.id)
+                  return (
+                    <button
+                      key={o.id}
+                      className={`chip${selected ? ' chip-active' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        const current = linksOf(cat)
+                        const next = selected ? current.filter(x => x !== o.id) : [...current, o.id]
+                        // Clear the legacy single link when adopting multi-links.
+                        updateCategoryField(cat.id, { ingredientCategoryIds: next, ingredientCategoryId: null })
+                      }}
+                    >
+                      {o.name}
+                    </button>
+                  )
+                })}
+              </div>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
                 <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
                 ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)

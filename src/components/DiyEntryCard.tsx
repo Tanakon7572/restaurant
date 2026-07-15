@@ -1,7 +1,7 @@
 'use client'
 
 import type { MenuCategoryDTO } from '@/lib/types'
-import { isCrust } from '@/lib/options'
+import { isCrust, CRUST_GROUP_ID } from '@/lib/options'
 
 type Props = { category: MenuCategoryDTO; onStart: () => void }
 
@@ -10,9 +10,22 @@ type Props = { category: MenuCategoryDTO; onStart: () => void }
  * category. Tapping it opens the same step sheet used by Signature items.
  */
 export default function DiyEntryCard({ category, onStart }: Props) {
-  const crusts = category.items.filter(i => isCrust(i.name))
-  const extras = category.items.filter(i => !isCrust(i.name))
-  const minCrust = crusts.length > 0 ? Math.min(...crusts.map(c => c.price)) : 0
+  // Multi-pool categories carry server-derived groups; legacy pools derive
+  // the summary from their own items.
+  const groups = category.diyGroups ?? []
+  const crustGroup = groups.find(g => g.id === CRUST_GROUP_ID)
+  const crustCount = crustGroup
+    ? crustGroup.choices.length
+    : category.items.filter(i => isCrust(i.name)).length
+  const extraGroups = groups.filter(g => g.id !== CRUST_GROUP_ID)
+  const extraCount = extraGroups.length > 0
+    ? extraGroups.reduce((s, g) => s + g.choices.length, 0)
+    : category.items.filter(i => !isCrust(i.name)).length
+  const crustPrices = crustGroup
+    ? crustGroup.choices.map(c => c.priceDelta)
+    : category.items.filter(i => isCrust(i.name)).map(i => i.price)
+  const minCrust = crustPrices.length > 0 ? Math.min(...crustPrices) : 0
+  const stepNames = extraGroups.length > 1 ? extraGroups.map(g => g.name).join(' · ') : ''
 
   return (
     <button
@@ -43,9 +56,14 @@ export default function DiyEntryCard({ category, onStart }: Props) {
           จัดเองตามใจ ({category.name})
         </p>
         <p style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', marginTop: 2 }}>
-          เลือกแป้ง {crusts.length} แบบ · ท็อปปิ้ง {extras.length} อย่าง
+          เลือกแป้ง {crustCount} แบบ · ท็อปปิ้ง {extraCount} อย่าง
           {minCrust > 0 && ` · เริ่ม ฿${minCrust.toLocaleString('th-TH')}`}
         </p>
+        {stepNames && (
+          <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {stepNames}
+          </p>
+        )}
       </div>
       <span
         className="btn btn-primary btn-sm"

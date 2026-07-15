@@ -31,6 +31,8 @@ export type MenuCategoryDTO = {
   items: MenuItemDTO[]
   // Ingredient-pool category shown as a single "build your own" entry
   diy?: boolean
+  // Server-derived option groups for the DIY builder (one per linked pool)
+  diyGroups?: OptionGroupDTO[]
 }
 
 // One configured line in the cart / order request

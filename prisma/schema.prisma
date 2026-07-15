@@ -15,6 +15,10 @@ model MenuCategory {
   required   Boolean    @default(true)
   selectMode String     @default("single")
   ingredientCategoryId Int?
+  // Multi-pool links: each linked (usually hidden) category becomes one
+  // option group in the DIY/Signature sheet (แป้ง / แยม / ไส้หวาน / ไส้เค็ม).
+  // Supersedes ingredientCategoryId when non-empty.
+  ingredientCategoryIds Int[] @default([])
   items      MenuItem[]
 }
 
