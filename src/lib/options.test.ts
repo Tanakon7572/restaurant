@@ -151,6 +151,32 @@ const pools: IngredientPool[] = [
   ]},
 ]
 
+it('keeps the crust step during reorganization (แป้ง items still in the mixed parent pool)', () => {
+  // Production-shaped state: parent DIY still holds crusts + leftover
+  // toppings, only แยม moved into a sub-category so far.
+  const transitional: IngredientPool[] = [
+    { id: 4, name: 'DIY', items: [
+      { id: 31, name: 'แป้งวานิลลา', price: 20, available: true },
+      { id: 32, name: 'แป้งชาร์โคล', price: 25, available: true },
+      { id: 59, name: 'ฝอยทอง', price: 10, available: true },
+    ]},
+    { id: 5, name: 'แยม', items: [
+      { id: 40, name: 'แยมส้ม', price: 5, available: true },
+    ]},
+  ]
+  const groups = deriveGroupsFromPools(transitional, 'diy')
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง', 'เพิ่มไส้ / ท็อปปิ้ง', 'แยม'])
+  const crust = groups[0]
+  expect(crust.id).toBe(CRUST_GROUP_ID)
+  expect(crust.required).toBe(true)
+  expect(crust.choices.map(c => c.id)).toEqual([31, 32])
+  expect(crust.choices[1].priceDelta).toBe(25)
+  expect(groups[1].choices.map(c => c.id)).toEqual([59])
+  // signature mode: same shape, free crust swap
+  const sig = deriveGroupsFromPools(transitional, 'signature')
+  expect(sig[0].choices.every(c => c.priceDelta === 0)).toBe(true)
+})
+
 it('expands pool ids into parent + sub-categories, deduped', () => {
   const childrenOf = new Map<number, number[]>([[4, [10, 11, 12]]])
   expect(expandPoolIds([4], childrenOf)).toEqual([4, 10, 11, 12])

@@ -85,26 +85,43 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
   if (pools.length === 1 && !isCrustCategory(pools[0].name)) {
     return mode === 'signature' ? deriveOptionGroups(pools[0].items) : deriveDiyGroups(pools[0].items)
   }
-  return pools
-    .filter(p => p.items.length > 0)
-    .map((p, idx) => {
-      const crust = isCrustCategory(p.name)
-      return {
-        id: crust ? CRUST_GROUP_ID : POOL_GROUP_BASE_ID - idx,
-        name: crust ? 'เลือกแป้ง' : p.name,
-        required: crust,
-        minSelect: crust ? 1 : 0,
-        maxSelect: crust ? 1 : p.items.length,
-        order: idx,
-        choices: p.items.map((i, j) => ({
-          id: i.id,
-          name: i.name,
-          priceDelta: crust && mode === 'signature' ? 0 : i.price,
-          available: i.available,
-          order: j,
-        })),
-      }
+
+  const groups: OptionGroupDTO[] = []
+  let order = 0
+
+  // Base group: every item of a แป้ง-named pool, plus แป้ง-named items still
+  // sitting in mixed pools (e.g. the parent category during reorganization).
+  const crustChoices = pools.flatMap(p =>
+    (isCrustCategory(p.name) ? p.items : p.items.filter(i => isCrust(i.name))))
+    .map((i, j) => ({
+      id: i.id, name: i.name,
+      priceDelta: mode === 'signature' ? 0 : i.price,
+      available: i.available, order: j,
+    }))
+  if (crustChoices.length > 0) {
+    groups.push({
+      id: CRUST_GROUP_ID, name: 'เลือกแป้ง',
+      required: true, minSelect: 1, maxSelect: 1, order: order++,
+      choices: crustChoices,
     })
+  }
+
+  // One optional group per remaining pool. A mixed pool's leftovers keep the
+  // generic topping label; pure sub-categories are named after themselves.
+  pools.forEach((p, idx) => {
+    if (isCrustCategory(p.name)) return
+    const rest = p.items.filter(i => !isCrust(i.name))
+    if (rest.length === 0) return
+    const mixed = rest.length !== p.items.length
+    groups.push({
+      id: POOL_GROUP_BASE_ID - idx,
+      name: mixed ? 'เพิ่มไส้ / ท็อปปิ้ง' : p.name,
+      required: false, minSelect: 0, maxSelect: rest.length, order: order++,
+      choices: rest.map((i, j) => ({ id: i.id, name: i.name, priceDelta: i.price, available: i.available, order: j })),
+    })
+  })
+
+  return groups
 }
 
 export function deriveGroupsFromPoolsForPricing(pools: IngredientPool[], mode: 'signature' | 'diy'): GroupForPricing[] {
