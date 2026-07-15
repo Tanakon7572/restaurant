@@ -571,13 +571,13 @@ function QROrderPage() {
               <div key={item.id}
                 style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)', overflow: 'hidden', background: 'var(--c-surface)', transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column', cursor: soldOut ? 'not-allowed' : 'pointer', minWidth: 0, position: 'relative', opacity: soldOut ? 0.6 : 1 }}
                 onClick={() => openItem(item)}>
-                <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, position: 'relative', filter: soldOut ? 'grayscale(1)' : 'none' }}>
+                {soldOut && (
+                  <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 2, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
+                    หมด
+                  </span>
+                )}
+                <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, filter: soldOut ? 'grayscale(1)' : 'none' }}>
                   <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
-                  {soldOut && (
-                    <span style={{ position: 'absolute', top: 6, left: 6, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
-                      หมด
-                    </span>
-                  )}
                 </div>
                 <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
                   <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: soldOut ? 'line-through' : 'none', color: soldOut ? 'var(--c-text-3)' : 'inherit' }}>{item.name}</p>

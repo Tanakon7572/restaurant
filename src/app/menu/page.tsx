@@ -553,13 +553,13 @@ export default function MenuPage() {
                   ✓
                 </span>
               )}
-              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, position: 'relative', filter: item.available ? 'none' : 'grayscale(1)' }}>
+              {!item.available && (
+                <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 2, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
+                  หมด
+                </span>
+              )}
+              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, filter: item.available ? 'none' : 'grayscale(1)' }}>
                 <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
-                {!item.available && (
-                  <span style={{ position: 'absolute', top: 6, left: 6, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
-                    หมด
-                  </span>
-                )}
               </div>
               <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
                 <div style={{ minWidth: 0 }}>
