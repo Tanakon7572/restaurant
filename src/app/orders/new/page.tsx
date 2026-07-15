@@ -63,6 +63,7 @@ export default function NewOrderPage() {
             name: c.name as string,
             order: (c.order as number) ?? 0,
             diy: !!c.diy,
+            diyGroups: Array.isArray(c.diyGroups) ? (c.diyGroups as MenuCategoryDTO['diyGroups']) : [],
             items: Array.isArray(c.items) ? (c.items as Record<string, unknown>[]).map(toMenuItem) : [],
           }))
           setCategories(cats)
