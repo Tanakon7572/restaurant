@@ -53,7 +53,9 @@ export function deriveGroupsForPricing(ingredients: Ingredient[]): GroupForPrici
 // becomes one option group named after it. A pool category whose name
 // starts with "แป้ง" is the base group: required, single-select, free swap
 // for Signature / real price for DIY.
-export type IngredientPool = { id: number; name: string; items: Ingredient[] }
+// `generic` marks a parent/self pool whose leftovers are "not yet sorted
+// into a sub-category" — its residual group keeps the generic topping label.
+export type IngredientPool = { id: number; name: string; items: Ingredient[]; generic?: boolean }
 
 // Synthetic ids for per-pool groups; CRUST_GROUP_ID stays reserved for the
 // base (แป้ง) group so DIY translation can find it.
@@ -106,8 +108,9 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
     })
   }
 
-  // One optional group per remaining pool. A mixed pool's leftovers keep the
-  // generic topping label; pure sub-categories are named after themselves.
+  // One optional group per remaining pool. Leftovers of a generic/mixed
+  // parent pool keep the topping label; pure sub-categories are named after
+  // themselves.
   pools.forEach((p, idx) => {
     if (isCrustCategory(p.name)) return
     const rest = p.items.filter(i => !isCrust(i.name))
@@ -115,7 +118,7 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
     const mixed = rest.length !== p.items.length
     groups.push({
       id: POOL_GROUP_BASE_ID - idx,
-      name: mixed ? 'เพิ่มไส้ / ท็อปปิ้ง' : p.name,
+      name: mixed || p.generic ? 'เพิ่มไส้ / ท็อปปิ้ง' : p.name,
       required: false, minSelect: 0, maxSelect: rest.length, order: order++,
       choices: rest.map((i, j) => ({ id: i.id, name: i.name, priceDelta: i.price, available: i.available, order: j })),
     })

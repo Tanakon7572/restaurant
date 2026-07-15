@@ -553,15 +553,20 @@ export default function MenuPage() {
                   ✓
                 </span>
               )}
-              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
+              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, position: 'relative', filter: item.available ? 'none' : 'grayscale(1)' }}>
                 <ItemImage imageUrl={item.imageUrl} name={item.name} cover />
+                {!item.available && (
+                  <span style={{ position: 'absolute', top: 6, left: 6, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
+                    หมด
+                  </span>
+                )}
               </div>
               <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>
+                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: item.available ? 'none' : 'line-through', color: item.available ? 'inherit' : 'var(--c-text-3)' }}>
                     {item.name}
                   </p>
-                  <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px' }}>
+                  <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px', textDecoration: item.available ? 'none' : 'line-through' }}>
                     ฿{item.price.toLocaleString('th-TH')}
                   </p>
                 </div>
@@ -572,7 +577,7 @@ export default function MenuPage() {
                       onClick={() => toggleAvailable(item)}
                       style={{ fontSize: '0.7rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
                     >
-                      {item.available ? 'เปิด' : 'ปิด'}
+                      {item.available ? 'มีของ' : 'หมด'}
                     </button>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -598,7 +603,7 @@ export default function MenuPage() {
     )
   }
 
-  function renderAddItemRow(catId: number) {
+  function renderAddItemRow(catId: number, label: string) {
     return addingItemCat === catId ? (
       <div style={{ padding: '12px 16px', borderTop: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -634,7 +639,7 @@ export default function MenuPage() {
         onClick={() => { setAddingItemCat(catId); setNewItemName(''); setNewItemPrice(''); setNewItemImageUrl('') }}
         style={{ width: 'calc(100% - 32px)', margin: '10px 16px', border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
       >
-        + เพิ่มเมนู
+        + เพิ่มเมนูใน “{label}”
       </button>
     )
   }
@@ -764,6 +769,7 @@ export default function MenuPage() {
 
             {/* Own items */}
             {renderItemGrid(cat.items)}
+            {renderAddItemRow(cat.id, cat.name)}
 
             {/* Sub-categories */}
             {subs.map(sub => (
@@ -808,12 +814,9 @@ export default function MenuPage() {
                   )}
                 </div>
                 {renderItemGrid(sub.items)}
-                {renderAddItemRow(sub.id)}
+                {renderAddItemRow(sub.id, sub.name)}
               </div>
             ))}
-
-            {/* Add item to the category itself */}
-            {renderAddItemRow(cat.id)}
 
             {/* Add sub-category */}
             {addingSubCat === cat.id ? (

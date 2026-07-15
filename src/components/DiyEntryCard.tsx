@@ -11,19 +11,17 @@ type Props = { category: MenuCategoryDTO; onStart: () => void }
  */
 export default function DiyEntryCard({ category, onStart }: Props) {
   // Multi-pool categories carry server-derived groups; legacy pools derive
-  // the summary from their own items.
+  // the summary from their own items. Sold-out choices don't count.
   const groups = category.diyGroups ?? []
   const crustGroup = groups.find(g => g.id === CRUST_GROUP_ID)
-  const crustCount = crustGroup
-    ? crustGroup.choices.length
-    : category.items.filter(i => isCrust(i.name)).length
+  const crustPrices = crustGroup
+    ? crustGroup.choices.filter(c => c.available).map(c => c.priceDelta)
+    : category.items.filter(i => isCrust(i.name) && i.available !== false).map(i => i.price)
+  const crustCount = crustPrices.length
   const extraGroups = groups.filter(g => g.id !== CRUST_GROUP_ID)
   const extraCount = extraGroups.length > 0
-    ? extraGroups.reduce((s, g) => s + g.choices.length, 0)
-    : category.items.filter(i => !isCrust(i.name)).length
-  const crustPrices = crustGroup
-    ? crustGroup.choices.map(c => c.priceDelta)
-    : category.items.filter(i => isCrust(i.name)).map(i => i.price)
+    ? extraGroups.reduce((s, g) => s + g.choices.filter(c => c.available).length, 0)
+    : category.items.filter(i => !isCrust(i.name) && i.available !== false).length
   const minCrust = crustPrices.length > 0 ? Math.min(...crustPrices) : 0
   const stepNames = extraGroups.length > 1 ? extraGroups.map(g => g.name).join(' · ') : ''
 

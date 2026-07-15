@@ -78,8 +78,14 @@ export default function ItemOptionSheet({ item, onClose, onAdd }: Props) {
                         name={`g${g.id}`} checked={checked}
                         disabled={!c.available || blocked}
                         onChange={() => toggle(g, c.id)} />
-                      <span className="opt-name">{c.name}</span>
-                      <span className="opt-price">{c.priceDelta > 0 ? `+฿${c.priceDelta}` : '฿0'}</span>
+                      <span className="opt-name" style={!c.available ? { textDecoration: 'line-through', color: 'var(--c-text-3)' } : undefined}>
+                        {c.name}
+                      </span>
+                      {!c.available ? (
+                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-danger)', flexShrink: 0 }}>หมด</span>
+                      ) : (
+                        <span className="opt-price">{c.priceDelta > 0 ? `+฿${c.priceDelta}` : '฿0'}</span>
+                      )}
                     </label>
                   )
                 })}

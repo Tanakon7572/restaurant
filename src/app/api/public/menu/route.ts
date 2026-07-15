@@ -10,10 +10,12 @@ export async function GET() {
         id: true, name: true, order: true, hidden: true, parentId: true,
         ingredientCategoryId: true, ingredientCategoryIds: true,
         items: {
-          where: { available: true },
+          // Unavailable items are included so the UI can show them struck
+          // through with a "หมด" badge; ordering them is blocked client- and
+          // server-side.
           orderBy: { order: 'asc' },
           select: {
-            id: true, name: true, price: true, imageUrl: true,
+            id: true, name: true, price: true, imageUrl: true, available: true,
             optionGroups: {
               orderBy: { order: 'asc' },
               select: {
@@ -34,7 +36,7 @@ export async function GET() {
     const nameByCat = new Map<number, string>()
     const childrenOf = new Map<number, number[]>()
     for (const c of categories) {
-      allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: true })))
+      allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: i.available })))
       nameByCat.set(c.id, c.name)
       if (c.parentId) childrenOf.set(c.parentId, [...(childrenOf.get(c.parentId) ?? []), c.id])
     }
@@ -49,7 +51,14 @@ export async function GET() {
     const poolsOf = (ids: number[]): IngredientPool[] =>
       expandPoolIds(ids, childrenOf)
         .filter(id => allItemsByCat.has(id))
-        .map(id => ({ id, name: nameByCat.get(id) ?? '', items: allItemsByCat.get(id) ?? [] }))
+        .map(id => ({
+          id,
+          name: nameByCat.get(id) ?? '',
+          items: allItemsByCat.get(id) ?? [],
+          // A linked parent that has sub-categories: its leftovers are the
+          // "not yet sorted" pool.
+          generic: ids.includes(id) && (childrenOf.get(id)?.length ?? 0) > 0,
+        }))
 
     // Categories referenced as an ingredient source = DIY pools; when visible,
     // the client renders them as a single "build your own" entry. A visible
@@ -87,13 +96,15 @@ export async function GET() {
             const groups = it.optionGroups.length > 0
               ? it.optionGroups
               : (links.length > 0 && !isDiy ? deriveGroupsFromPools(poolsOf(links), 'signature') : [])
-            return { id: it.id, name: it.name, price: it.price, imageUrl: it.imageUrl, optionGroups: groups }
+            return { id: it.id, name: it.name, price: it.price, imageUrl: it.imageUrl, available: it.available, optionGroups: groups }
           }),
         }
       })
 
     return NextResponse.json(browsable, {
-      headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=60' },
+      // Short CDN cache: staff toggle availability during service and expect
+      // the customer menu to follow within seconds.
+      headers: { 'Cache-Control': 's-maxage=5, stale-while-revalidate=20' },
     })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch menu', detail: String(err) }, { status: 500 })

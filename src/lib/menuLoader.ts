@@ -80,7 +80,12 @@ export async function loadMenuForPricing(
   }
 
   const poolsOf = (ids: number[]): IngredientPool[] =>
-    ids.map(id => ({ id, name: nameByCat.get(id) ?? '', items: ingredientsByCat.get(id) ?? [] }))
+    ids.map(id => ({
+      id,
+      name: nameByCat.get(id) ?? '',
+      items: ingredientsByCat.get(id) ?? [],
+      generic: (childrenOf.get(id)?.length ?? 0) > 0,
+    }))
 
   const map = new Map<number, MenuItemForPricing>()
   for (const it of items) {

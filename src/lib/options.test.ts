@@ -177,6 +177,25 @@ it('keeps the crust step during reorganization (แป้ง items still in the 
   expect(sig[0].choices.every(c => c.priceDelta === 0)).toBe(true)
 })
 
+it('labels a generic parent pool\'s leftovers as toppings, not by category name', () => {
+  // แป้ง moved into its own sub-category; parent DIY still holds unsorted
+  // toppings and is marked generic.
+  const reorganized: IngredientPool[] = [
+    { id: 4, name: 'DIY', generic: true, items: [
+      { id: 59, name: 'ฝอยทอง', price: 10, available: true },
+    ]},
+    { id: 6, name: 'แป้ง', items: [
+      { id: 31, name: 'วานิลลา', price: 20, available: true },
+    ]},
+    { id: 5, name: 'แยม', items: [
+      { id: 40, name: 'แยมส้ม', price: 5, available: true },
+    ]},
+  ]
+  const groups = deriveGroupsFromPools(reorganized, 'diy')
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง', 'เพิ่มไส้ / ท็อปปิ้ง', 'แยม'])
+  expect(groups[0].choices[0].id).toBe(31)
+})
+
 it('expands pool ids into parent + sub-categories, deduped', () => {
   const childrenOf = new Map<number, number[]>([[4, [10, 11, 12]]])
   expect(expandPoolIds([4], childrenOf)).toEqual([4, 10, 11, 12])

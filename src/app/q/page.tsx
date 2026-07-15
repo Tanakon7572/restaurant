@@ -91,6 +91,7 @@ function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
     name: raw.name as string,
     price: raw.price as number,
     imageUrl: (raw.imageUrl as string | null) ?? null,
+    available: raw.available !== false,
     optionGroups: Array.isArray(raw.optionGroups) ? (raw.optionGroups as MenuItemDTO['optionGroups']) : [],
   }
 }
@@ -261,6 +262,7 @@ function QROrderPage() {
 
   // ── Add an item: open sheet if it has options, else add directly ──
   function openItem(item: MenuItemDTO) {
+    if (item.available === false) { showToast('เมนูนี้หมดแล้ว'); return }
     if (item.optionGroups.length > 0) { setSheetItem(item); return }
     setCart(prev => addLine(prev, {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
@@ -562,22 +564,30 @@ function QROrderPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginBottom: '14px' }}>
-          {displayItems.map(item => (
-            <div key={item.id}
-              style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)', overflow: 'hidden', background: 'var(--c-surface)', transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0, position: 'relative' }}
-              onClick={() => openItem(item)}>
-              <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0 }}>
-                <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
-              </div>
-              <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3 }}>{item.name}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                  <p className="price-tag" style={{ fontSize: '0.9rem' }}>฿{item.price.toLocaleString('th-TH')}</p>
-                  <span className="btn btn-primary" style={{ width: 28, height: 28, padding: 0, borderRadius: '50%', fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>+</span>
+          {displayItems.map(item => {
+            const soldOut = item.available === false
+            return (
+              <div key={item.id}
+                style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)', overflow: 'hidden', background: 'var(--c-surface)', transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column', cursor: soldOut ? 'not-allowed' : 'pointer', minWidth: 0, position: 'relative', opacity: soldOut ? 0.6 : 1 }}
+                onClick={() => openItem(item)}>
+                <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, position: 'relative', filter: soldOut ? 'grayscale(1)' : 'none' }}>
+                  <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
+                  {soldOut && (
+                    <span style={{ position: 'absolute', top: 6, left: 6, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
+                      หมด
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: soldOut ? 'line-through' : 'none', color: soldOut ? 'var(--c-text-3)' : 'inherit' }}>{item.name}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                    <p className="price-tag" style={{ fontSize: '0.9rem', textDecoration: soldOut ? 'line-through' : 'none' }}>฿{item.price.toLocaleString('th-TH')}</p>
+                    {!soldOut && <span className="btn btn-primary" style={{ width: 28, height: 28, padding: 0, borderRadius: '50%', fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>+</span>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

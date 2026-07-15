@@ -21,6 +21,8 @@ export type MenuItemDTO = {
   name: string
   price: number
   imageUrl: string | null
+  // false = sold out: shown struck-through with a "หมด" badge, not orderable
+  available?: boolean
   optionGroups: OptionGroupDTO[]
 }
 
