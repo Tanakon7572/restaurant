@@ -29,6 +29,8 @@ export type MenuCategoryDTO = {
   name: string
   order: number
   items: MenuItemDTO[]
+  // Ingredient-pool category shown as a single "build your own" entry
+  diy?: boolean
 }
 
 // One configured line in the cart / order request

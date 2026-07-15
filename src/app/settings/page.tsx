@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
+import ConfirmModal from '@/components/ConfirmModal'
+
+function todayStr() {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
 
 export default function SettingsPage() {
   const [shopName, setShopName] = useState('')
@@ -15,6 +22,12 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMsg, setPasswordMsg] = useState('')
   const [passwordError, setPasswordError] = useState('')
+
+  const [clearDate, setClearDate] = useState(todayStr())
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [clearMsg, setClearMsg] = useState('')
+  const [clearError, setClearError] = useState('')
 
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -83,6 +96,34 @@ export default function SettingsPage() {
       }
     } finally {
       setPasswordSaving(false)
+    }
+  }
+
+  async function clearOrdersForDay() {
+    setClearing(true)
+    setClearMsg('')
+    setClearError('')
+    try {
+      // Local-day boundaries so "one day" means the staff's day, not UTC's.
+      const from = new Date(`${clearDate}T00:00:00`)
+      const to = new Date(`${clearDate}T23:59:59.999`)
+      const res = await fetch('/api/orders/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: from.toISOString(), to: to.toISOString() }),
+      })
+      if (res.status === 401) { router.push('/'); return }
+      const data = await res.json()
+      if (res.ok) {
+        setClearMsg(`ลบออเดอร์ของวันที่เลือกแล้ว ${data.deleted} รายการ`)
+        setTimeout(() => setClearMsg(''), 5000)
+      } else {
+        setClearError(data.error || 'เกิดข้อผิดพลาด')
+      }
+    } catch {
+      setClearError('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -211,6 +252,42 @@ export default function SettingsPage() {
         </a>
       </div>
 
+      {/* Order data management */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>จัดการข้อมูลออเดอร์</h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
+          ระบบเก็บข้อมูลออเดอร์ย้อนหลัง 7 วัน และลบข้อมูลที่เก่ากว่านั้นให้อัตโนมัติ
+          หากต้องการเก็บถาวร ให้ Export CSV จากหน้าออเดอร์ก่อน
+        </p>
+        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+          ล้างออเดอร์ของวันที่
+        </label>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <input
+            className="input"
+            type="date"
+            value={clearDate}
+            max={todayStr()}
+            onChange={e => setClearDate(e.target.value)}
+            style={{ flex: 1, minWidth: '150px' }}
+          />
+          <button
+            className="btn btn-danger"
+            onClick={() => setClearConfirmOpen(true)}
+            disabled={clearing || !clearDate}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {clearing ? 'กำลังลบ…' : 'ล้างข้อมูลวันที่เลือก'}
+          </button>
+        </div>
+        {clearMsg && (
+          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-success)' }}>{clearMsg}</p>
+        )}
+        {clearError && (
+          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-danger)' }}>{clearError}</p>
+        )}
+      </div>
+
       {/* Kitchen Display */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>Kitchen Display</h2>
@@ -230,6 +307,16 @@ export default function SettingsPage() {
           เปิด Kitchen Display
         </a>
       </div>
+
+      <ConfirmModal
+        isOpen={clearConfirmOpen}
+        title="ล้างข้อมูลออเดอร์"
+        message={`ต้องการลบออเดอร์ทั้งหมดของวันที่ ${new Date(`${clearDate}T00:00:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })} ใช่ไหม? ข้อมูลที่ลบแล้วไม่สามารถกู้คืนได้`}
+        confirmText="ลบข้อมูล"
+        isDanger
+        onConfirm={clearOrdersForDay}
+        onCancel={() => setClearConfirmOpen(false)}
+      />
 
       <BottomNav />
     </div>

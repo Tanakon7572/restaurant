@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
+import { buildDiyItem, translateDiyLine } from '@/lib/options'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
+import DiyEntryCard from '@/components/DiyEntryCard'
 
 function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
   return {
@@ -59,6 +61,7 @@ export default function NewOrderPage() {
             id: c.id as number,
             name: c.name as string,
             order: (c.order as number) ?? 0,
+            diy: !!c.diy,
             items: Array.isArray(c.items) ? (c.items as Record<string, unknown>[]).map(toMenuItem) : [],
           }))
           setCategories(cats)
@@ -74,6 +77,17 @@ export default function NewOrderPage() {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
       quantity: 1, note: null, optionChoiceIds: [], choices: [], unitPrice: item.price,
     }))
+  }
+
+  function handleAdd(line: CartLine) {
+    // Lines from the synthetic DIY item carry a negative id; remap the chosen
+    // crust to be the real base menu item before the line enters the cart.
+    if (line.menuItemId < 0 && sheetItem) {
+      const translated = translateDiyLine(line, sheetItem)
+      if (!translated) return
+      line = translated
+    }
+    setCart(prev => addLine(prev, line))
   }
 
   const totalPrice = cartTotal(cart)
@@ -162,10 +176,11 @@ export default function NewOrderPage() {
   const trimmedSearch = search.trim().toLowerCase()
   const isSearching = trimmedSearch.length > 0
   const searchResults = isSearching
-    ? categories.flatMap(cat => cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch)))
+    ? categories.flatMap(cat => (cat.diy ? [] : cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch))))
     : []
   const activeCat = categories.find(c => c.id === activeCategory)
-  const availableItems = isSearching ? searchResults : (activeCat?.items ?? [])
+  const isDiyView = !isSearching && !!activeCat?.diy
+  const availableItems = isSearching ? searchResults : isDiyView ? [] : (activeCat?.items ?? [])
 
   return (
     <div className="page-container fade-in">
@@ -201,7 +216,9 @@ export default function NewOrderPage() {
         </p>
       )}
 
-      {availableItems.length === 0 ? (
+      {isDiyView && activeCat ? (
+        <DiyEntryCard category={activeCat} onStart={() => setSheetItem(buildDiyItem(activeCat))} />
+      ) : availableItems.length === 0 ? (
         <div className="glass-panel" style={{ marginBottom: '16px' }}>
           <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
             {isSearching ? 'ไม่พบเมนูที่ค้นหา' : 'ไม่มีเมนูในหมวดนี้'}
@@ -234,7 +251,7 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      <ItemOptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={line => setCart(prev => addLine(prev, line))} />
+      <ItemOptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={handleAdd} />
 
       {cart.length > 0 && (
         <div style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>

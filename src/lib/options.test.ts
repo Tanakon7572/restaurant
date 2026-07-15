@@ -1,7 +1,11 @@
 import { it, expect } from 'vitest'
-import { deriveOptionGroups, isCrust } from './options'
+import {
+  deriveOptionGroups, isCrust, deriveGroupsForPricing,
+  deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
+  CRUST_GROUP_ID, DIY_NAME_PREFIX,
+} from './options'
 import { priceOrderItems, type MenuItemForPricing } from './order'
-import { deriveGroupsForPricing } from './options'
+import type { MenuCategoryDTO } from './types'
 
 const ingredients = [
   { id: 31, name: 'แป้งวานิลลา', price: 20, available: true },
@@ -49,5 +53,80 @@ it('rejects a Signature item with no crust selected (required)', () => {
   }
   const menu = new Map([[6, item]])
   const r = priceOrderItems([{ menuItemId: 6, quantity: 1, optionChoiceIds: [50] }], menu)
+  expect(r.ok).toBe(false)
+})
+
+// ── DIY (จัดเอง) ──────────────────────────────────────────────────
+
+it('DIY groups charge the crust at its real price', () => {
+  const groups = deriveDiyGroups(ingredients)
+  const crust = groups.find(g => g.id === CRUST_GROUP_ID)!
+  expect(crust.required).toBe(true)
+  expect(crust.choices.find(c => c.id === 31)!.priceDelta).toBe(20)
+  expect(crust.choices.find(c => c.id === 32)!.priceDelta).toBe(25)
+})
+
+const diyCategory: MenuCategoryDTO = {
+  id: 4, name: 'DIY', order: 0, diy: true,
+  items: ingredients.map(i => ({ id: i.id, name: i.name, price: i.price, imageUrl: null, optionGroups: [] })),
+}
+
+it('builds a synthetic DIY item with a negative id and ฿0 base', () => {
+  const item = buildDiyItem(diyCategory)
+  expect(item.id).toBe(-4)
+  expect(item.price).toBe(0)
+  expect(item.optionGroups).toHaveLength(2)
+})
+
+it('translates a DIY line: crust becomes the base item, extras stay options', () => {
+  const item = buildDiyItem(diyCategory)
+  const line = translateDiyLine({
+    key: '', menuItemId: item.id, name: item.name, basePrice: 0,
+    quantity: 2, note: 'หวานน้อย',
+    optionChoiceIds: [32, 50],
+    choices: [
+      { groupName: 'เลือกแป้ง', choiceName: 'แป้งชาร์โคล', priceDelta: 25 },
+      { groupName: 'เพิ่มไส้ / ท็อปปิ้ง', choiceName: 'ฝอยทอง', priceDelta: 10 },
+    ],
+    unitPrice: 35,
+  }, item)
+  expect(line).not.toBeNull()
+  expect(line!.menuItemId).toBe(32)
+  expect(line!.name).toBe(`${DIY_NAME_PREFIX}แป้งชาร์โคล`)
+  expect(line!.basePrice).toBe(25)
+  expect(line!.optionChoiceIds).toEqual([50])
+  expect(line!.choices).toEqual([{ groupName: 'เพิ่มไส้ / ท็อปปิ้ง', choiceName: 'ฝอยทอง', priceDelta: 10 }])
+  expect(line!.unitPrice).toBe(35)
+})
+
+it('returns null when translating a DIY line without a crust', () => {
+  const item = buildDiyItem(diyCategory)
+  const line = translateDiyLine({
+    key: '', menuItemId: item.id, name: item.name, basePrice: 0,
+    quantity: 1, note: null, optionChoiceIds: [50], choices: [], unitPrice: 10,
+  }, item)
+  expect(line).toBeNull()
+})
+
+it('prices a DIY base crust with extras-only derived groups', () => {
+  const crustItem: MenuItemForPricing = {
+    id: 32, name: `${DIY_NAME_PREFIX}แป้งชาร์โคล`, price: 25,
+    optionGroups: deriveDiyExtrasForPricing(ingredients),
+  }
+  const menu = new Map([[32, crustItem]])
+  const r = priceOrderItems([{ menuItemId: 32, quantity: 1, optionChoiceIds: [50] }], menu)
+  expect(r.ok).toBe(true)
+  if (!r.ok) return
+  expect(r.items[0].price).toBe(35) // 25 + 10
+  expect(r.items[0].itemName).toBe('DIY · แป้งชาร์โคล')
+})
+
+it('rejects unavailable extras on a DIY base crust', () => {
+  const crustItem: MenuItemForPricing = {
+    id: 32, name: 'แป้งชาร์โคล', price: 25,
+    optionGroups: deriveDiyExtrasForPricing(ingredients),
+  }
+  const menu = new Map([[32, crustItem]])
+  const r = priceOrderItems([{ menuItemId: 32, quantity: 1, optionChoiceIds: [51] }], menu)
   expect(r.ok).toBe(false)
 })

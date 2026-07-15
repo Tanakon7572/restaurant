@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
+import { buildDiyItem, translateDiyLine } from '@/lib/options'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
+import DiyEntryCard from '@/components/DiyEntryCard'
 
 interface OrderStatusItem {
   itemName?: string
@@ -194,6 +196,7 @@ function QROrderPage() {
             id: c.id as number,
             name: c.name as string,
             order: (c.order as number) ?? 0,
+            diy: !!c.diy,
             items: Array.isArray(c.items) ? (c.items as Record<string, unknown>[]).map(toMenuItem) : [],
           }))
           setCategories(cats)
@@ -267,6 +270,13 @@ function QROrderPage() {
   }
 
   function handleAdd(line: CartLine) {
+    // Lines from the synthetic DIY item carry a negative id; remap the chosen
+    // crust to be the real base menu item before the line enters the cart.
+    if (line.menuItemId < 0 && sheetItem) {
+      const translated = translateDiyLine(line, sheetItem)
+      if (!translated) return
+      line = translated
+    }
     setCart(prev => addLine(prev, line))
     showToast('เพิ่มลงตะกร้าแล้ว')
   }
@@ -483,10 +493,11 @@ function QROrderPage() {
   const trimmedSearch = search.trim().toLowerCase()
   const isSearching = trimmedSearch.length > 0
   const searchResults = isSearching
-    ? categories.flatMap(cat => cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch)))
+    ? categories.flatMap(cat => (cat.diy ? [] : cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch))))
     : []
   const activeCat = categories.find(c => c.id === activeCategory)
-  const displayItems = isSearching ? searchResults : (activeCat?.items ?? [])
+  const isDiyView = !isSearching && !!activeCat?.diy
+  const displayItems = isSearching ? searchResults : isDiyView ? [] : (activeCat?.items ?? [])
 
   if (menuLoading) {
     return (
@@ -540,8 +551,10 @@ function QROrderPage() {
         </p>
       )}
 
-      {/* Menu items grid */}
-      {displayItems.length === 0 ? (
+      {/* DIY category → single entry card opening the step sheet */}
+      {isDiyView && activeCat ? (
+        <DiyEntryCard category={activeCat} onStart={() => setSheetItem(buildDiyItem(activeCat))} />
+      ) : displayItems.length === 0 ? (
         <div className="glass-panel" style={{ marginBottom: '14px' }}>
           <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
             {isSearching ? 'ไม่พบเมนูที่ค้นหา' : 'ไม่มีเมนูในหมวดนี้'}

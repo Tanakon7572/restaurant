@@ -34,10 +34,14 @@ export async function GET() {
       allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: true })))
     }
 
+    // Categories referenced as an ingredient source = DIY pools; when visible,
+    // the client renders them as a single "build your own" entry.
+    const poolIds = new Set(categories.map(c => c.ingredientCategoryId).filter((x): x is number => !!x))
+
     const browsable = categories
       .filter(c => !c.hidden && c.items.length > 0)
       .map(c => ({
-        id: c.id, name: c.name, order: c.order,
+        id: c.id, name: c.name, order: c.order, diy: poolIds.has(c.id),
         items: c.items.map(it => {
           const groups = it.optionGroups.length > 0
             ? it.optionGroups

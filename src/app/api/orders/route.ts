@@ -3,11 +3,14 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
+import { sweepExpiredOrdersThrottled } from '@/lib/retention'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function GET(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  await sweepExpiredOrdersThrottled(prisma)
 
   try {
     const { searchParams } = new URL(request.url)
