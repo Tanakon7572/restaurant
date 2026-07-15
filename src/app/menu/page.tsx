@@ -283,6 +283,7 @@ export default function MenuPage() {
   const [editItemName, setEditItemName] = useState('')
   const [editItemPrice, setEditItemPrice] = useState('')
   const [editItemImageUrl, setEditItemImageUrl] = useState('')
+  const [editItemCategoryId, setEditItemCategoryId] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'item'; id: number; name: string } | null>(null)
   const [optionsItem, setOptionsItem] = useState<{ id: number; name: string } | null>(null)
   const router = useRouter()
@@ -361,10 +362,11 @@ export default function MenuPage() {
         name: editItemName.trim(),
         price: editItemPrice,
         imageUrl: editItemImageUrl.trim() || null,
+        ...(editItemCategoryId != null ? { categoryId: editItemCategoryId } : {}),
       }),
     })
     setEditingItem(null)
-    fetchCategories()
+    fetchCategories(true)
   }
 
   async function toggleAvailable(item: MenuItem) {
@@ -472,27 +474,23 @@ export default function MenuPage() {
           {/* Category options config */}
           {editingCat !== cat.id && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)', background: 'var(--c-surface-2)' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 8px', fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-                <span>ดึงตัวเลือกจากหมวด (เลือกได้หลายหมวด — แต่ละหมวดเป็น 1 ขั้นตอน):</span>
-                {categories.filter(o => o.id !== cat.id).map(o => {
-                  const selected = linksOf(cat).includes(o.id)
-                  return (
-                    <button
-                      key={o.id}
-                      className={`chip${selected ? ' chip-active' : ''}`}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => {
-                        const current = linksOf(cat)
-                        const next = selected ? current.filter(x => x !== o.id) : [...current, o.id]
-                        // Clear the legacy single link when adopting multi-links.
-                        updateCategoryField(cat.id, { ingredientCategoryIds: next, ingredientCategoryId: null })
-                      }}
-                    >
-                      {o.name}
-                    </button>
-                  )
-                })}
-              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                ดึงตัวเลือกอัตโนมัติจาก
+                <select
+                  className="input"
+                  value={linksOf(cat)[0] ?? ''}
+                  onChange={e => updateCategoryField(cat.id, {
+                    ingredientCategoryId: e.target.value ? Number(e.target.value) : null,
+                    ingredientCategoryIds: [],
+                  })}
+                  style={{ width: 'auto', padding: '6px 10px' }}
+                >
+                  <option value="">— ไม่ใช้ —</option>
+                  {categories.filter(o => o.id !== cat.id).map(o => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
                 <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
                 ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)
@@ -527,6 +525,19 @@ export default function MenuPage() {
                       </div>
                     </div>
                     <ImageInput value={editItemImageUrl} onChange={setEditItemImageUrl} />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                      หมวดหมู่
+                      <select
+                        className="input"
+                        value={editItemCategoryId ?? item.categoryId}
+                        onChange={e => setEditItemCategoryId(Number(e.target.value))}
+                        style={{ width: 'auto', padding: '6px 10px' }}
+                      >
+                        {categories.map(o => (
+                          <option key={o.id} value={o.id}>{o.name}{o.hidden ? ' (ซ่อน)' : ''}</option>
+                        ))}
+                      </select>
+                    </label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button className="btn btn-primary btn-sm" onClick={() => updateItem(item.id)}>บันทึก</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditingItem(null)}>ยกเลิก</button>
@@ -569,7 +580,7 @@ export default function MenuPage() {
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
-                          onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || '') }}
+                          onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) }}
                           style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                         >
                           แก้ไข

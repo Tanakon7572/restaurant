@@ -366,19 +366,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ─── Animations ────────────────────────────────────────── */
+/* End states must be `transform: none` — a retained transform (via
+   animation-fill-mode) turns the element into a containing block, which
+   breaks position:fixed children (cart bar, bottom nav) on long pages. */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes dialogIn {
   from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes overlayIn {
@@ -388,7 +391,7 @@ a { color: inherit; text-decoration: none; }
 
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 
 .fade-in     { animation: fadeIn 0.20s ease-out both; }
