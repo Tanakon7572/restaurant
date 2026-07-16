@@ -1,56 +1,56 @@
 :root {
-  /* ── POS dark theme — warm charcoal chrome, amber action ── */
+  /* ── POS light theme — airy gray canvas, white cards, vivid orange ── */
 
   /* Backgrounds */
-  --c-bg:        oklch(0.165 0.010 55);
-  --c-surface:   oklch(0.215 0.012 55);
-  --c-surface-2: oklch(0.255 0.013 55);
-  --c-surface-3: oklch(0.300 0.014 55);
+  --c-bg:        oklch(0.970 0.003 250);
+  --c-surface:   oklch(1 0 0);
+  --c-surface-2: oklch(0.965 0.004 250);
+  --c-surface-3: oklch(0.940 0.005 250);
 
   /* Borders */
-  --c-border:    oklch(0.315 0.014 55);
-  --c-border-2:  oklch(0.390 0.016 55);
+  --c-border:    oklch(0.922 0.004 250);
+  --c-border-2:  oklch(0.870 0.006 250);
 
   /* Text */
-  --c-text:      oklch(0.955 0.008 70);
-  --c-text-2:    oklch(0.800 0.012 65);
-  --c-text-3:    oklch(0.640 0.012 60);
-  --c-text-4:    oklch(0.480 0.010 58);
+  --c-text:      oklch(0.230 0.012 260);
+  --c-text-2:    oklch(0.430 0.012 260);
+  --c-text-3:    oklch(0.580 0.012 260);
+  --c-text-4:    oklch(0.720 0.008 260);
 
-  /* Primary — bright amber, dark ink on top */
-  --c-primary:       oklch(0.760 0.150 55);
-  --c-primary-dark:  oklch(0.700 0.155 52);
-  --c-primary-light: oklch(0.310 0.045 55);
-  --c-primary-glow:  oklch(0.760 0.150 55 / 0.22);
-  --c-primary-muted: oklch(0.760 0.150 55 / 0.10);
-  --c-on-primary:    oklch(0.180 0.025 55);
+  /* Primary — vivid POS orange, white ink on top */
+  --c-primary:       oklch(0.705 0.190 42);
+  --c-primary-dark:  oklch(0.640 0.195 40);
+  --c-primary-light: oklch(0.945 0.045 48);
+  --c-primary-glow:  oklch(0.705 0.190 42 / 0.25);
+  --c-primary-muted: oklch(0.705 0.190 42 / 0.08);
+  --c-on-primary:    oklch(1 0 0);
 
-  /* Semantics — bright text tones for dark surfaces */
-  --c-success:       oklch(0.740 0.160 150);
-  --c-success-bg:    oklch(0.740 0.160 150 / 0.13);
-  --c-warning:       oklch(0.800 0.140 80);
-  --c-warning-bg:    oklch(0.800 0.140 80 / 0.13);
-  --c-danger:        oklch(0.660 0.200 27);
-  --c-danger-bg:     oklch(0.660 0.200 27 / 0.15);
-  --c-info:          oklch(0.720 0.115 235);
-  --c-info-bg:       oklch(0.720 0.115 235 / 0.13);
+  /* Semantics — readable on white, soft pastel chips */
+  --c-success:       oklch(0.600 0.160 150);
+  --c-success-bg:    oklch(0.600 0.160 150 / 0.11);
+  --c-warning:       oklch(0.640 0.150 70);
+  --c-warning-bg:    oklch(0.780 0.150 80 / 0.16);
+  --c-danger:        oklch(0.560 0.210 27);
+  --c-danger-bg:     oklch(0.560 0.210 27 / 0.09);
+  --c-info:          oklch(0.540 0.160 255);
+  --c-info-bg:       oklch(0.540 0.160 255 / 0.09);
 
   /* Solid action fills (white text passes on these) */
-  --c-success-solid: oklch(0.560 0.145 150);
-  --c-danger-solid:  oklch(0.540 0.190 27);
+  --c-success-solid: oklch(0.580 0.160 150);
+  --c-danger-solid:  oklch(0.550 0.200 27);
 
-  /* Radius */
-  --radius:    10px;
-  --radius-sm:  8px;
-  --radius-xs:  6px;
-  --radius-lg: 14px;
+  /* Radius — soft, card-heavy POS look */
+  --radius:    14px;
+  --radius-sm: 10px;
+  --radius-xs:  8px;
+  --radius-lg: 18px;
   --radius-full: 999px;
 
-  /* Shadows — deep, black-based */
-  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.30);
-  --shadow:    0 1px 3px oklch(0 0 0 / 0.35), 0 1px 2px oklch(0 0 0 / 0.25);
-  --shadow-md: 0 4px 14px oklch(0 0 0 / 0.40), 0 2px 4px oklch(0 0 0 / 0.28);
-  --shadow-lg: 0 10px 36px oklch(0 0 0 / 0.50), 0 2px 8px oklch(0 0 0 / 0.32);
+  /* Shadows — airy, cool-gray */
+  --shadow-xs: 0 1px 2px oklch(0.25 0.02 260 / 0.05);
+  --shadow:    0 1px 3px oklch(0.25 0.02 260 / 0.07), 0 1px 2px oklch(0.25 0.02 260 / 0.04);
+  --shadow-md: 0 6px 18px oklch(0.25 0.02 260 / 0.09), 0 2px 5px oklch(0.25 0.02 260 / 0.05);
+  --shadow-lg: 0 12px 40px oklch(0.25 0.02 260 / 0.13), 0 3px 10px oklch(0.25 0.02 260 / 0.06);
 
   /* Typography scale */
   --text-xs:   0.72rem;
@@ -194,7 +194,7 @@ a { color: inherit; text-decoration: none; }
 .input {
   width: 100%;
   padding: 11px 14px;
-  background: var(--c-surface-2);
+  background: var(--c-surface);
   border: 1.5px solid var(--c-border);
   border-radius: var(--radius-sm);
   color: var(--c-text);
@@ -215,9 +215,9 @@ a { color: inherit; text-decoration: none; }
 
 .input::placeholder { color: var(--c-text-4); }
 
-.input[type="date"] { color-scheme: dark; }
+.input[type="date"] { color-scheme: light; }
 
-select.input { color-scheme: dark; }
+select.input { color-scheme: light; }
 
 /* ─── Badges ────────────────────────────────────────────── */
 .badge {
@@ -235,27 +235,27 @@ select.input { color-scheme: dark; }
 .badge-pending {
   background: var(--c-warning-bg);
   color: var(--c-warning);
-  border-color: oklch(0.80 0.14 80 / 0.35);
+  border-color: oklch(0.64 0.15 70 / 0.25);
 }
 .badge-preparing {
   background: var(--c-info-bg);
   color: var(--c-info);
-  border-color: oklch(0.72 0.115 235 / 0.35);
+  border-color: oklch(0.54 0.16 255 / 0.25);
 }
 .badge-completed {
   background: var(--c-success-bg);
   color: var(--c-success);
-  border-color: oklch(0.74 0.16 150 / 0.35);
+  border-color: oklch(0.60 0.16 150 / 0.25);
 }
 .badge-cancelled {
-  background: oklch(0.60 0 0 / 0.12);
+  background: oklch(0.50 0 0 / 0.08);
   color: var(--c-text-3);
-  border-color: oklch(0.60 0 0 / 0.20);
+  border-color: oklch(0.50 0 0 / 0.14);
 }
 .badge-awaiting {
   background: var(--c-warning-bg);
   color: var(--c-warning);
-  border-color: oklch(0.80 0.14 80 / 0.45);
+  border-color: oklch(0.64 0.15 70 / 0.35);
 }
 
 /* ─── Price ─────────────────────────────────────────────── */
@@ -346,15 +346,15 @@ select.input { color-scheme: dark; }
 }
 
 .toast-success {
-  background: oklch(0.28 0.05 150);
-  color: var(--c-success);
-  border-color: oklch(0.74 0.16 150 / 0.35);
+  background: oklch(0.96 0.03 150);
+  color: oklch(0.42 0.14 150);
+  border-color: oklch(0.60 0.16 150 / 0.30);
 }
 
 .toast-error {
-  background: oklch(0.28 0.06 27);
-  color: oklch(0.80 0.13 27);
-  border-color: oklch(0.66 0.20 27 / 0.35);
+  background: oklch(0.96 0.02 27);
+  color: oklch(0.46 0.19 27);
+  border-color: oklch(0.56 0.21 27 / 0.30);
 }
 
 /* ─── Chip / Tag ────────────────────────────────────────── */
@@ -432,7 +432,7 @@ select.input { color-scheme: dark; }
 .sheet-overlay {
   /* Above BottomNav (z-index 1000) so the sheet footer isn't covered */
   position: fixed; inset: 0; z-index: 1100;
-  background: oklch(0 0 0 / 0.62);
+  background: oklch(0.20 0.01 260 / 0.45);
   display: flex; align-items: stretch; justify-content: center;
   animation: overlayIn 0.18s ease-out both;
 }
