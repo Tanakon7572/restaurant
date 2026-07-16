@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
 
@@ -646,16 +646,18 @@ export default function MenuPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="page-header">
-          <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+      <PosShell>
+        <div className="page-container">
+          <div className="page-header">
+            <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+          </div>
         </div>
-        <BottomNav />
-      </div>
+      </PosShell>
     )
   }
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">จัดการเมนู</h1>
@@ -898,7 +900,7 @@ export default function MenuPage() {
         isDanger
       />
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
 import { buildDiyItem, translateDiyLine } from '@/lib/options'
@@ -129,20 +129,63 @@ export default function NewOrderPage() {
     }
   }
 
+  // Right-hand "current order" panel (desktop POS layout)
+  const cartPanel = (
+    <>
+      <div className="pos-cart-head">ออเดอร์ปัจจุบัน</div>
+      <div className="pos-cart-body">
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <input className="input" placeholder="เลขโต๊ะ" value={tableNumber} onChange={e => setTableNumber(e.target.value)} style={{ flex: '0 0 84px', padding: '9px 10px' }} />
+          <input className="input" placeholder="ชื่อลูกค้า" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ flex: 1, padding: '9px 10px' }} />
+        </div>
+        <input className="input" placeholder="หมายเหตุรวม" value={note} onChange={e => setNote(e.target.value)} style={{ marginBottom: '12px', padding: '9px 10px' }} />
+        {cart.length === 0 ? (
+          <p style={{ color: 'var(--c-text-4)', textAlign: 'center', padding: '40px 0', fontSize: '0.88rem' }}>ยังไม่มีรายการ</p>
+        ) : (
+          <Cart
+            lines={cart}
+            onQty={(key, q) => setCart(prev => setQuantity(prev, key, q))}
+            onRemove={key => setCart(prev => removeLine(prev, key))}
+          />
+        )}
+      </div>
+      <div className="pos-cart-foot">
+        <div className="pos-cart-row">
+          <span>{totalItems} รายการ</span>
+        </div>
+        <div className="pos-cart-total">
+          <span>รวม</span>
+          <span className="price-tag-lg">฿{totalPrice.toLocaleString('th-TH')}</span>
+        </div>
+        {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem' }}>{error}</p>}
+        <button
+          className="btn btn-primary btn-full"
+          onClick={submitOrder}
+          disabled={submitting || cart.length === 0}
+          style={{ padding: '14px', fontSize: '1rem' }}
+        >
+          {submitting ? 'กำลังบันทึก…' : 'บันทึกออเดอร์'}
+        </button>
+      </div>
+    </>
+  )
+
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="page-header">
-          <div style={{ height: '28px', width: '100px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+      <PosShell>
+        <div className="page-container">
+          <div className="page-header">
+            <div style={{ height: '28px', width: '100px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+          </div>
         </div>
-        <BottomNav />
-      </div>
+      </PosShell>
     )
   }
 
   // ── Cart phase ───────────────────────────────────────────────────
   if (phase === 'cart') {
     return (
+      <PosShell cart={cartPanel}>
       <div className="page-container fade-in">
         <div className="page-header" style={{ gap: 10, justifyContent: 'flex-start' }}>
           <button className="btn-icon btn-ghost" onClick={() => setPhase('ordering')} aria-label="กลับ">←</button>
@@ -161,7 +204,7 @@ export default function NewOrderPage() {
           onRemove={key => setCart(prev => removeLine(prev, key))}
         />
         {cart.length > 0 && (
-          <div style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
+          <div className="hide-desktop" style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
             {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>{error}</p>}
             <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting}
               style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
@@ -170,8 +213,8 @@ export default function NewOrderPage() {
             </button>
           </div>
         )}
-        <BottomNav />
       </div>
+      </PosShell>
     )
   }
 
@@ -186,6 +229,7 @@ export default function NewOrderPage() {
   const availableItems = isSearching ? searchResults : isDiyView ? [] : (activeCat?.items ?? [])
 
   return (
+    <PosShell cart={cartPanel}>
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">สั่งอาหาร</h1>
@@ -265,7 +309,7 @@ export default function NewOrderPage() {
       <ItemOptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={handleAdd} />
 
       {cart.length > 0 && (
-        <div style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
+        <div className="hide-desktop" style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
           <button className="btn btn-primary btn-full" onClick={() => setPhase('cart')}
             style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
             <span>ดูตะกร้า · {totalItems} รายการ</span>
@@ -273,8 +317,7 @@ export default function NewOrderPage() {
           </button>
         </div>
       )}
-
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

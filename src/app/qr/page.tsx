@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 
 const QRCode = dynamic(() => import('react-qr-code'), { ssr: false })
 
@@ -65,6 +65,7 @@ export default function QRPage() {
   }
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">QR สั่งอาหาร</h1>
@@ -254,7 +255,7 @@ export default function QRPage() {
         </div>
       </div>
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

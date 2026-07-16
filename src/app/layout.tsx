@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   // Match the POS canvas so the mobile status bar blends in
-  themeColor: '#f5f6f8',
+  themeColor: '#111111',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

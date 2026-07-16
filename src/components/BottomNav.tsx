@@ -81,6 +81,7 @@ export default function BottomNav() {
 
   return (
     <nav
+      className="bottom-nav"
       style={{
         position: 'fixed',
         bottom: 0,

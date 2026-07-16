@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 import { fetchWithCache } from '@/lib/cache'
 
 interface OrderItem {
@@ -68,7 +68,6 @@ function DashboardSkeleton() {
         {[...Array(4)].map((_, i) => <div key={i} className="skeleton" style={{ height: '72px', borderRadius: '12px' }} />)}
       </div>
       <div className="skeleton" style={{ height: '160px', borderRadius: '12px', marginBottom: '16px' }} />
-      <BottomNav />
     </div>
   )
 }
@@ -101,7 +100,7 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  if (loading) return <DashboardSkeleton />
+  if (loading) return <PosShell><DashboardSkeleton /></PosShell>
 
   const active = orders.filter(o => o.status !== 'cancelled' && o.status !== 'awaiting')
   const stats = {
@@ -160,6 +159,7 @@ export default function DashboardPage() {
     : `${periodConfig.days} วันล่าสุด`
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       {/* Header */}
       <div className="page-header">
@@ -350,7 +350,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

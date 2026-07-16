@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 
 function todayStr() {
@@ -129,16 +129,18 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="page-header">
-          <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+      <PosShell>
+        <div className="page-container">
+          <div className="page-header">
+            <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+          </div>
         </div>
-        <BottomNav />
-      </div>
+      </PosShell>
     )
   }
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">ตั้งค่า</h1>
@@ -318,7 +320,7 @@ export default function SettingsPage() {
         onCancel={() => setClearConfirmOpen(false)}
       />
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

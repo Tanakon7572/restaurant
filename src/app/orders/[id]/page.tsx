@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 
 interface OrderItemData {
@@ -156,17 +156,19 @@ export default function OrderDetailPage() {
 
   if (loading || !order) {
     return (
-      <div className="page-container">
-        <div className="page-header">
-          <div style={{ height: '28px', width: '140px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+      <PosShell>
+        <div className="page-container">
+          <div className="page-header">
+            <div style={{ height: '28px', width: '140px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+          </div>
         </div>
-        <BottomNav />
-      </div>
+      </PosShell>
     )
   }
 
   if (editing) {
     return (
+      <PosShell>
       <div className="page-container fade-in">
         <div className="page-header">
           <h1 className="page-title">แก้ไขออเดอร์ #{order.id}</h1>
@@ -307,8 +309,8 @@ export default function OrderDetailPage() {
           </button>
         </div>
 
-        <BottomNav />
       </div>
+      </PosShell>
     )
   }
 
@@ -361,6 +363,7 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
   }
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -534,7 +537,7 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
         isDanger
       />
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }

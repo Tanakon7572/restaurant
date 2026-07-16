@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import PosShell from '@/components/PosShell'
 
 interface OrderItem {
   id: number
@@ -136,6 +136,7 @@ export default function OrdersPage() {
   const today = toDateStr(new Date())
 
   return (
+    <PosShell>
     <div className="page-container fade-in">
       <div className="page-header">
         <h1 className="page-title">ออเดอร์</h1>
@@ -189,7 +190,7 @@ export default function OrdersPage() {
         <button
           className="btn btn-full"
           onClick={() => setStatus('awaiting')}
-          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'var(--c-warning)', border: '1px solid oklch(0.64 0.15 70 / 0.30)' }}
+          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'var(--c-warning)', border: '1px solid oklch(0.80 0.14 80 / 0.40)' }}
         >
           <span>🔔 มีคำขอจากลูกค้ารอยืนยัน {orders.filter(o => o.status === 'awaiting').length} รายการ</span>
           <span style={{ fontWeight: 700 }}>ดู →</span>
@@ -285,7 +286,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <BottomNav />
     </div>
+    </PosShell>
   )
 }
