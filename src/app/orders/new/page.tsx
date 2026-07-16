@@ -248,9 +248,9 @@ export default function NewOrderPage() {
       </div>
 
       {!isSearching && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', overflowX: 'auto', paddingBottom: '2px', scrollbarWidth: 'none' }}>
+        <div className="seg" style={{ marginBottom: '16px' }}>
           {categories.map(cat => (
-            <button key={cat.id} className={`btn btn-sm ${activeCategory === cat.id ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveCategory(cat.id)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <button key={cat.id} className={`seg-item${activeCategory === cat.id ? ' active' : ''}`} onClick={() => setActiveCategory(cat.id)}>
               {cat.name}
             </button>
           ))}

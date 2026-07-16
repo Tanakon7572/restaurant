@@ -1,43 +1,43 @@
 :root {
-  /* ── POS dark theme (WIGA-style) — neutral near-black, orange action ── */
+  /* ── POS light theme — airy gray canvas, white cards, vivid orange ── */
 
   /* Backgrounds */
-  --c-bg:        oklch(0.145 0 0);
-  --c-surface:   oklch(0.190 0 0);
-  --c-surface-2: oklch(0.230 0 0);
-  --c-surface-3: oklch(0.275 0 0);
+  --c-bg:        oklch(0.970 0.003 250);
+  --c-surface:   oklch(1 0 0);
+  --c-surface-2: oklch(0.960 0.004 250);
+  --c-surface-3: oklch(0.935 0.005 250);
 
   /* Borders */
-  --c-border:    oklch(0.280 0 0);
-  --c-border-2:  oklch(0.350 0 0);
+  --c-border:    oklch(0.922 0.004 250);
+  --c-border-2:  oklch(0.870 0.006 250);
 
   /* Text */
-  --c-text:      oklch(0.965 0 0);
-  --c-text-2:    oklch(0.800 0 0);
-  --c-text-3:    oklch(0.630 0 0);
-  --c-text-4:    oklch(0.460 0 0);
+  --c-text:      oklch(0.230 0.012 260);
+  --c-text-2:    oklch(0.430 0.012 260);
+  --c-text-3:    oklch(0.580 0.012 260);
+  --c-text-4:    oklch(0.720 0.008 260);
 
   /* Primary — vivid POS orange, white ink on top */
   --c-primary:       oklch(0.705 0.190 42);
   --c-primary-dark:  oklch(0.640 0.195 40);
-  --c-primary-light: oklch(0.310 0.055 45);
-  --c-primary-glow:  oklch(0.705 0.190 42 / 0.28);
-  --c-primary-muted: oklch(0.705 0.190 42 / 0.12);
+  --c-primary-light: oklch(0.945 0.045 48);
+  --c-primary-glow:  oklch(0.705 0.190 42 / 0.22);
+  --c-primary-muted: oklch(0.705 0.190 42 / 0.08);
   --c-on-primary:    oklch(1 0 0);
 
-  /* Semantics — bright text tones for dark surfaces */
-  --c-success:       oklch(0.740 0.155 150);
-  --c-success-bg:    oklch(0.740 0.155 150 / 0.14);
-  --c-warning:       oklch(0.800 0.140 80);
-  --c-warning-bg:    oklch(0.800 0.140 80 / 0.14);
-  --c-danger:        oklch(0.680 0.190 27);
-  --c-danger-bg:     oklch(0.680 0.190 27 / 0.15);
-  --c-info:          oklch(0.720 0.115 240);
-  --c-info-bg:       oklch(0.720 0.115 240 / 0.14);
+  /* Semantics — readable on white, soft pastel chips */
+  --c-success:       oklch(0.600 0.160 150);
+  --c-success-bg:    oklch(0.600 0.160 150 / 0.11);
+  --c-warning:       oklch(0.640 0.150 70);
+  --c-warning-bg:    oklch(0.780 0.150 80 / 0.16);
+  --c-danger:        oklch(0.560 0.210 27);
+  --c-danger-bg:     oklch(0.560 0.210 27 / 0.09);
+  --c-info:          oklch(0.540 0.160 255);
+  --c-info-bg:       oklch(0.540 0.160 255 / 0.09);
 
   /* Solid action fills (white text passes on these) */
-  --c-success-solid: oklch(0.560 0.145 150);
-  --c-danger-solid:  oklch(0.540 0.190 27);
+  --c-success-solid: oklch(0.580 0.160 150);
+  --c-danger-solid:  oklch(0.550 0.200 27);
 
   /* Radius — soft, card-heavy POS look */
   --radius:    14px;
@@ -46,11 +46,11 @@
   --radius-lg: 18px;
   --radius-full: 999px;
 
-  /* Shadows — deep, black-based */
-  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.30);
-  --shadow:    0 1px 3px oklch(0 0 0 / 0.35), 0 1px 2px oklch(0 0 0 / 0.25);
-  --shadow-md: 0 5px 16px oklch(0 0 0 / 0.40), 0 2px 4px oklch(0 0 0 / 0.28);
-  --shadow-lg: 0 12px 40px oklch(0 0 0 / 0.50), 0 3px 10px oklch(0 0 0 / 0.32);
+  /* Shadows — airy, cool-gray */
+  --shadow-xs: 0 1px 2px oklch(0.25 0.02 260 / 0.05);
+  --shadow:    0 1px 3px oklch(0.25 0.02 260 / 0.07), 0 1px 2px oklch(0.25 0.02 260 / 0.04);
+  --shadow-md: 0 6px 18px oklch(0.25 0.02 260 / 0.09), 0 2px 5px oklch(0.25 0.02 260 / 0.05);
+  --shadow-lg: 0 12px 40px oklch(0.25 0.02 260 / 0.13), 0 3px 10px oklch(0.25 0.02 260 / 0.06);
 
   /* Typography scale */
   --text-xs:   0.72rem;
@@ -215,9 +215,9 @@ a { color: inherit; text-decoration: none; }
 
 .input::placeholder { color: var(--c-text-4); }
 
-.input[type="date"] { color-scheme: dark; }
+.input[type="date"] { color-scheme: light; }
 
-select.input { color-scheme: dark; }
+select.input { color-scheme: light; }
 
 /* ─── Badges ────────────────────────────────────────────── */
 .badge {
@@ -235,27 +235,27 @@ select.input { color-scheme: dark; }
 .badge-pending {
   background: var(--c-warning-bg);
   color: var(--c-warning);
-  border-color: oklch(0.80 0.14 80 / 0.35);
+  border-color: oklch(0.64 0.15 70 / 0.25);
 }
 .badge-preparing {
   background: var(--c-info-bg);
   color: var(--c-info);
-  border-color: oklch(0.72 0.115 240 / 0.35);
+  border-color: oklch(0.54 0.16 255 / 0.25);
 }
 .badge-completed {
   background: var(--c-success-bg);
   color: var(--c-success);
-  border-color: oklch(0.74 0.155 150 / 0.35);
+  border-color: oklch(0.60 0.16 150 / 0.25);
 }
 .badge-cancelled {
-  background: oklch(0.60 0 0 / 0.12);
+  background: oklch(0.50 0 0 / 0.08);
   color: var(--c-text-3);
-  border-color: oklch(0.60 0 0 / 0.20);
+  border-color: oklch(0.50 0 0 / 0.14);
 }
 .badge-awaiting {
   background: var(--c-warning-bg);
   color: var(--c-warning);
-  border-color: oklch(0.80 0.14 80 / 0.45);
+  border-color: oklch(0.64 0.15 70 / 0.35);
 }
 
 /* ─── Price ─────────────────────────────────────────────── */
@@ -346,15 +346,15 @@ select.input { color-scheme: dark; }
 }
 
 .toast-success {
-  background: oklch(0.26 0.05 150);
-  color: var(--c-success);
-  border-color: oklch(0.74 0.155 150 / 0.35);
+  background: oklch(0.96 0.03 150);
+  color: oklch(0.42 0.14 150);
+  border-color: oklch(0.60 0.16 150 / 0.30);
 }
 
 .toast-error {
-  background: oklch(0.26 0.06 27);
-  color: oklch(0.80 0.12 27);
-  border-color: oklch(0.68 0.19 27 / 0.35);
+  background: oklch(0.96 0.02 27);
+  color: oklch(0.46 0.19 27);
+  border-color: oklch(0.56 0.21 27 / 0.30);
 }
 
 /* ─── Chip / Tag ────────────────────────────────────────── */
@@ -432,7 +432,7 @@ select.input { color-scheme: dark; }
 .sheet-overlay {
   /* Above BottomNav (z-index 1000) so the sheet footer isn't covered */
   position: fixed; inset: 0; z-index: 1100;
-  background: oklch(0 0 0 / 0.62);
+  background: oklch(0.20 0.01 260 / 0.45);
   display: flex; align-items: stretch; justify-content: center;
   animation: overlayIn 0.18s ease-out both;
 }
@@ -471,6 +471,38 @@ select.input { color-scheme: dark; }
 .qty-stepper { display: flex; align-items: center; gap: 4px; }
 .qty-n { min-width: 28px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* ─── Segmented category tabs (POS pill row) ────────────── */
+.seg {
+  display: flex;
+  gap: 4px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.seg::-webkit-scrollbar { display: none; }
+.seg-item {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--c-text-3);
+  font-family: var(--font);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
+}
+.seg-item:hover { color: var(--c-text); }
+.seg-item.active {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
 /* ─── POS shell — sidebar + main + order panel ──────────── */
 .pos-shell { display: flex; min-height: 100dvh; }
 
@@ -482,7 +514,7 @@ select.input { color-scheme: dark; }
   position: sticky;
   top: 0;
   height: 100dvh;
-  background: var(--c-bg);
+  background: var(--c-surface);
   border-right: 1px solid var(--c-border);
   padding: 16px 12px;
   gap: 4px;
@@ -511,7 +543,7 @@ select.input { color-scheme: dark; }
   transition: background var(--t-fast), color var(--t-fast);
   position: relative;
 }
-.pos-nav-item:hover { background: var(--c-surface); color: var(--c-text); }
+.pos-nav-item:hover { background: var(--c-surface-2); color: var(--c-text); }
 .pos-nav-item.active {
   background: var(--c-primary);
   color: var(--c-on-primary);
