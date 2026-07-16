@@ -546,7 +546,7 @@ export default function MenuPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.8rem', fontWeight: 700,
                     background: selectedIds.includes(item.id) ? 'var(--c-primary)' : 'var(--c-surface)',
-                    color: selectedIds.includes(item.id) ? '#fff' : 'var(--c-text-3)',
+                    color: selectedIds.includes(item.id) ? 'var(--c-on-primary)' : 'var(--c-text-3)',
                     border: '1px solid var(--c-border)',
                   }}
                 >

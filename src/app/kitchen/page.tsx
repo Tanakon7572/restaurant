@@ -49,10 +49,10 @@ function ElapsedTimer({ createdAt, warn }: { createdAt: string; warn: number }) 
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         fontSize: '0.78rem', fontWeight: isWarn ? 700 : 500,
-        color: isWarn ? '#b91c1c' : '#6b7280',
-        background: isWarn ? '#fee2e2' : '#f3f4f6',
+        color: isWarn ? 'var(--c-danger)' : 'var(--c-text-3)',
+        background: isWarn ? 'var(--c-danger-bg)' : 'var(--c-surface-2)',
         padding: '2px 8px', borderRadius: '99px',
-        border: isWarn ? '1px solid #fca5a5' : '1px solid #e5e7eb',
+        border: isWarn ? '1px solid oklch(0.66 0.20 27 / 0.45)' : '1px solid var(--c-border)',
       }}
     >
       {isWarn && (
@@ -75,16 +75,15 @@ function OrderCard({
   onAction: () => void
 }) {
   const isPending = order.status === 'pending'
+  const accent = isPending ? 'var(--c-warning)' : 'var(--c-info)'
 
   return (
     <div
       style={{
-        background: '#fff',
-        borderRadius: '14px',
-        border: `1.5px solid ${isPending ? '#fcd34d' : '#93c5fd'}`,
-        boxShadow: isPending
-          ? '0 2px 12px rgba(251,191,36,0.12), 0 1px 3px rgba(0,0,0,0.06)'
-          : '0 2px 12px rgba(59,130,246,0.10), 0 1px 3px rgba(0,0,0,0.06)',
+        background: 'var(--c-surface)',
+        borderRadius: '12px',
+        border: `1.5px solid ${isPending ? 'oklch(0.80 0.14 80 / 0.45)' : 'oklch(0.72 0.115 235 / 0.45)'}`,
+        boxShadow: 'var(--shadow-md)',
         overflow: 'hidden',
         opacity: updating ? 0.55 : 1,
         transition: 'opacity 0.18s, transform 0.18s',
@@ -93,23 +92,23 @@ function OrderCard({
       }}
     >
       {/* Accent bar */}
-      <div style={{ height: '4px', background: isPending ? '#f59e0b' : '#3b82f6' }} />
+      <div style={{ height: '4px', background: accent }} />
 
       {/* Header */}
       <div style={{
         padding: '14px 16px 10px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        borderBottom: '1px solid #f3f4f6',
+        borderBottom: '1px solid var(--c-border)',
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#111827' }}>
+            <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>
               #{order.id}
             </span>
             {order.tableNumber && (
               <span style={{
-                background: '#f9fafb', color: '#374151',
-                border: '1px solid #e5e7eb',
+                background: 'var(--c-surface-2)', color: 'var(--c-text-2)',
+                border: '1px solid var(--c-border)',
                 padding: '2px 10px', borderRadius: '99px',
                 fontSize: '0.82rem', fontWeight: 600,
               }}>
@@ -118,8 +117,8 @@ function OrderCard({
             )}
             {order.customerName && (
               <span style={{
-                background: '#f9fafb', color: '#374151',
-                border: '1px solid #e5e7eb',
+                background: 'var(--c-surface-2)', color: 'var(--c-text-2)',
+                border: '1px solid var(--c-border)',
                 padding: '2px 10px', borderRadius: '99px',
                 fontSize: '0.82rem', fontWeight: 600,
               }}>
@@ -132,9 +131,9 @@ function OrderCard({
 
         {/* Item count badge */}
         <span style={{
-          background: isPending ? '#fef3c7' : '#eff6ff',
-          color: isPending ? '#92400e' : '#1e40af',
-          border: `1px solid ${isPending ? '#fde68a' : '#bfdbfe'}`,
+          background: isPending ? 'var(--c-warning-bg)' : 'var(--c-info-bg)',
+          color: accent,
+          border: `1px solid ${isPending ? 'oklch(0.80 0.14 80 / 0.40)' : 'oklch(0.72 0.115 235 / 0.40)'}`,
           borderRadius: '99px', padding: '3px 10px',
           fontSize: '0.75rem', fontWeight: 700,
         }}>
@@ -150,23 +149,23 @@ function OrderCard({
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
               padding: '8px 0',
-              borderBottom: idx < order.items.length - 1 ? '1px solid #f3f4f6' : 'none',
+              borderBottom: idx < order.items.length - 1 ? '1px solid var(--c-border)' : 'none',
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#1f2937', lineHeight: 1.3 }}>
+              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--c-text)', lineHeight: 1.3 }}>
                 {item.itemName || item.menuItem?.name || '(ลบแล้ว)'}
               </span>
               {item.options && item.options.length > 0 && (
-                <ul style={{ listStyle: 'none', margin: '2px 0 0', paddingLeft: 2, fontSize: '0.92rem', color: '#4b5563', lineHeight: 1.4 }}>
+                <ul style={{ listStyle: 'none', margin: '2px 0 0', paddingLeft: 2, fontSize: '0.92rem', color: 'var(--c-text-2)', lineHeight: 1.4 }}>
                   {item.options.map((o, i) => <li key={i}>• {o.choiceName}</li>)}
                 </ul>
               )}
-              {item.note && <p style={{ fontSize: '0.92rem', color: '#b45309', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
+              {item.note && <p style={{ fontSize: '0.92rem', color: 'var(--c-warning)', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
             </div>
             <span style={{
               fontSize: '1.25rem', fontWeight: 800,
-              color: isPending ? '#d97706' : '#2563eb',
+              color: accent,
               fontVariantNumeric: 'tabular-nums',
               marginLeft: '12px', flexShrink: 0,
             }}>
@@ -179,10 +178,10 @@ function OrderCard({
           <div style={{
             margin: '8px 0 4px',
             padding: '8px 10px',
-            background: '#fffbeb',
-            border: '1px solid #fde68a',
+            background: 'var(--c-warning-bg)',
+            border: '1px solid oklch(0.80 0.14 80 / 0.40)',
             borderRadius: '8px',
-            fontSize: '0.82rem', color: '#92400e', fontStyle: 'italic',
+            fontSize: '0.82rem', color: 'var(--c-warning)', fontStyle: 'italic',
           }}>
             ⚠ {order.note}
           </div>
@@ -195,16 +194,14 @@ function OrderCard({
           onClick={onAction}
           disabled={updating}
           style={{
-            width: '100%', padding: '13px',
+            width: '100%', padding: '14px',
             borderRadius: '10px', border: 'none',
-            background: isPending ? '#f59e0b' : '#22c55e',
-            color: '#fff',
-            fontFamily: 'var(--font)', fontSize: '1rem', fontWeight: 700,
+            background: isPending ? 'var(--c-primary)' : 'var(--c-success-solid)',
+            color: isPending ? 'var(--c-on-primary)' : '#fff',
+            fontFamily: 'var(--font)', fontSize: '1.05rem', fontWeight: 800,
             cursor: updating ? 'wait' : 'pointer',
             letterSpacing: '-0.01em',
-            boxShadow: isPending
-              ? '0 2px 8px rgba(245,158,11,0.30)'
-              : '0 2px 8px rgba(34,197,94,0.30)',
+            boxShadow: 'var(--shadow)',
             transition: 'opacity 0.12s, transform 0.12s',
           }}
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.97)' }}
@@ -233,12 +230,13 @@ function Column({
         position: 'sticky', top: '65px', zIndex: 10,
       }}>
         <span style={{ color }}>{icon}</span>
-        <span style={{ fontWeight: 700, fontSize: '1rem', color: '#111827' }}>{title}</span>
+        <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--c-text)' }}>{title}</span>
         <span style={{
-          background: count > 0 ? color : '#e5e7eb',
-          color: count > 0 ? '#fff' : '#9ca3af',
+          background: count > 0 ? color : 'var(--c-surface-3)',
+          color: count > 0 ? 'var(--c-on-primary)' : 'var(--c-text-3)',
           borderRadius: '99px', padding: '1px 10px',
-          fontSize: '0.8rem', fontWeight: 700, marginLeft: 'auto',
+          fontSize: '0.8rem', fontWeight: 800, marginLeft: 'auto',
+          fontVariantNumeric: 'tabular-nums',
         }}>
           {count}
         </span>
@@ -302,24 +300,24 @@ export default function KitchenPage() {
   return (
     <div style={{
       minHeight: '100dvh',
-      background: '#f8fafc',
+      background: 'var(--c-bg)',
       fontFamily: 'var(--font)',
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Top bar */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 20,
-        background: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        background: 'var(--c-surface)',
+        borderBottom: '1px solid var(--c-border)',
         padding: '0 20px',
         height: '65px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
+        boxShadow: 'var(--shadow)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
             width: '36px', height: '36px', borderRadius: '10px',
-            background: 'oklch(0.93 0.040 52)',
+            background: 'var(--c-primary-light)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -329,8 +327,8 @@ export default function KitchenPage() {
             </svg>
           </div>
           <div>
-            <p style={{ fontWeight: 700, fontSize: '1rem', color: '#111827', lineHeight: 1 }}>Kitchen Display</p>
-            <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '2px', lineHeight: 1 }}>
+            <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--c-text)', lineHeight: 1 }}>Kitchen Display</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', marginTop: '2px', lineHeight: 1 }}>
               {lastRefresh
                 ? `อัปเดต ${lastRefresh.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
                 : 'กำลังโหลด…'}
@@ -339,7 +337,7 @@ export default function KitchenPage() {
           {/* Live pulse dot */}
           <div style={{
             width: '8px', height: '8px', borderRadius: '50%',
-            background: pulse ? '#22c55e' : '#d1fae5',
+            background: pulse ? 'var(--c-success)' : 'var(--c-surface-3)',
             transition: 'background 0.3s',
           }} />
         </div>
@@ -347,8 +345,8 @@ export default function KitchenPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {orders.length > 0 && (
             <span style={{
-              background: '#fef3c7', color: '#92400e',
-              border: '1px solid #fde68a',
+              background: 'var(--c-warning-bg)', color: 'var(--c-warning)',
+              border: '1px solid oklch(0.80 0.14 80 / 0.40)',
               borderRadius: '99px', padding: '4px 14px',
               fontSize: '0.82rem', fontWeight: 700,
             }}>
@@ -359,8 +357,8 @@ export default function KitchenPage() {
             onClick={fetchOrders}
             style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              background: '#f9fafb', border: '1px solid #e5e7eb',
-              color: '#374151', borderRadius: '8px', padding: '7px 14px',
+              background: 'var(--c-surface-2)', border: '1px solid var(--c-border)',
+              color: 'var(--c-text-2)', borderRadius: '8px', padding: '7px 14px',
               fontFamily: 'var(--font)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
             }}
           >
@@ -376,8 +374,8 @@ export default function KitchenPage() {
       {/* Body */}
       {loading ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid #e5e7eb', borderTopColor: 'var(--c-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>กำลังโหลดออเดอร์…</p>
+          <div style={{ width: '36px', height: '36px', border: '3px solid var(--c-border)', borderTopColor: 'var(--c-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>กำลังโหลดออเดอร์…</p>
         </div>
       ) : (
         <div style={{
@@ -386,15 +384,15 @@ export default function KitchenPage() {
           gridTemplateColumns: '1fr 1fr',
           gap: 0,
           alignItems: 'start',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: '1px solid var(--c-border)',
         }}>
           {/* Pending column */}
-          <div style={{ borderRight: '1px solid #e5e7eb', minHeight: '100%' }}>
+          <div style={{ borderRight: '1px solid var(--c-border)', minHeight: '100%' }}>
             <Column
               title="รอรับ"
               count={pending.length}
-              color="#f59e0b"
-              accentBg="#fffbeb"
+              color="var(--c-warning)"
+              accentBg="oklch(0.24 0.030 80)"
               icon={
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -402,10 +400,10 @@ export default function KitchenPage() {
               }
               empty={
                 <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
                     <circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>
                   </svg>
-                  <p style={{ color: '#d1d5db', fontSize: '0.9rem', fontWeight: 500 }}>ไม่มีออเดอร์ใหม่</p>
+                  <p style={{ color: 'var(--c-text-4)', fontSize: '0.9rem', fontWeight: 500 }}>ไม่มีออเดอร์ใหม่</p>
                 </div>
               }
             >
@@ -420,8 +418,8 @@ export default function KitchenPage() {
             <Column
               title="กำลังทำ"
               count={preparing.length}
-              color="#3b82f6"
-              accentBg="#eff6ff"
+              color="var(--c-info)"
+              accentBg="oklch(0.23 0.025 235)"
               icon={
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/>
@@ -430,11 +428,11 @@ export default function KitchenPage() {
               }
               empty={
                 <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
                     <path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/>
                     <path d="M6 10v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8"/>
                   </svg>
-                  <p style={{ color: '#d1d5db', fontSize: '0.9rem', fontWeight: 500 }}>ยังไม่มีออเดอร์กำลังทำ</p>
+                  <p style={{ color: 'var(--c-text-4)', fontSize: '0.9rem', fontWeight: 500 }}>ยังไม่มีออเดอร์กำลังทำ</p>
                 </div>
               }
             >

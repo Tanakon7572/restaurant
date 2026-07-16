@@ -471,7 +471,7 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
       {/* Awaiting confirmation — customer request needs approval */}
       {order.status === 'awaiting' && (
         <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '10px', borderColor: 'var(--c-warning)', background: 'var(--c-warning-bg)' }}>
-          <p style={{ fontWeight: 700, color: 'oklch(0.44 0.145 68)', marginBottom: '2px' }}>คำขอจากลูกค้า · รอยืนยัน</p>
+          <p style={{ fontWeight: 700, color: 'var(--c-warning)', marginBottom: '2px' }}>คำขอจากลูกค้า · รอยืนยัน</p>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', marginBottom: '12px' }}>กดยืนยันเพื่อส่งเข้าครัว หรือปฏิเสธเพื่อยกเลิกคำขอ</p>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-success" style={{ flex: 1 }} onClick={() => updateStatus('pending')}>ยืนยันออเดอร์</button>

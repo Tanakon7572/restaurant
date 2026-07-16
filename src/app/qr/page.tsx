@@ -227,7 +227,7 @@ export default function QRPage() {
                 background: selectedTable === t && !customTable.trim()
                   ? 'var(--c-primary-glow)'
                   : 'var(--c-surface)',
-                border: `1px solid ${selectedTable === t && !customTable.trim() ? 'oklch(0.70 0.12 162 / 0.4)' : 'var(--c-border)'}`,
+                border: `1.5px solid ${selectedTable === t && !customTable.trim() ? 'var(--c-primary)' : 'var(--c-border)'}`,
                 borderRadius: 'var(--radius-sm)',
                 padding: '12px 8px',
                 cursor: 'pointer',

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { IBM_Plex_Sans_Thai } from 'next/font/google'
 import './globals.css'
 
@@ -13,6 +13,11 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 export const metadata: Metadata = {
   title: 'Food Order | ระบบสั่งอาหาร',
   description: 'ระบบจัดการเมนูและสั่งอาหารสำหรับร้านอาหาร',
+}
+
+export const viewport: Viewport = {
+  // Match the POS dark chrome so the mobile status bar blends in
+  themeColor: '#211d1a',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

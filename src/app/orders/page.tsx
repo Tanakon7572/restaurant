@@ -189,7 +189,7 @@ export default function OrdersPage() {
         <button
           className="btn btn-full"
           onClick={() => setStatus('awaiting')}
-          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'oklch(0.44 0.145 68)', border: '1px solid oklch(0.55 0.150 72 / 0.30)' }}
+          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'var(--c-warning)', border: '1px solid oklch(0.80 0.14 80 / 0.40)' }}
         >
           <span>🔔 มีคำขอจากลูกค้ารอยืนยัน {orders.filter(o => o.status === 'awaiting').length} รายการ</span>
           <span style={{ fontWeight: 700 }}>ดู →</span>

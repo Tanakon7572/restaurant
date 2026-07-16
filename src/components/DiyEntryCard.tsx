@@ -42,7 +42,7 @@ export default function DiyEntryCard({ category, onStart }: Props) {
         aria-hidden
         style={{
           width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
-          background: 'var(--c-primary)', color: '#fff',
+          background: 'var(--c-primary)', color: 'var(--c-on-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '1.5rem',
         }}

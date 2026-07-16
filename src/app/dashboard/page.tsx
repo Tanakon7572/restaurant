@@ -199,14 +199,14 @@ export default function DashboardPage() {
 
       {/* Revenue hero card */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '10px', background: 'var(--c-primary)', border: 'none', boxShadow: 'var(--shadow-md)' }}>
-        <p style={{ color: 'oklch(1 0 0 / 0.7)', fontSize: 'var(--text-xs)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
+        <p style={{ color: 'oklch(0.28 0.04 55 / 0.85)', fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
           รายได้{period === 'today' ? 'วันนี้' : ` ${periodConfig.days} วัน`}
         </p>
-        <p style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, letterSpacing: '-0.035em', color: '#fff', lineHeight: 1 }}>
+        <p style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, letterSpacing: '-0.035em', color: 'var(--c-on-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
           ฿{stats.revenue.toLocaleString('th-TH')}
         </p>
         {stats.avgOrder > 0 && (
-          <p style={{ color: 'oklch(1 0 0 / 0.6)', fontSize: 'var(--text-xs)', marginTop: '8px' }}>
+          <p style={{ color: 'oklch(0.28 0.04 55 / 0.75)', fontSize: 'var(--text-xs)', marginTop: '8px', fontWeight: 600 }}>
             เฉลี่ยต่อออเดอร์ ฿{stats.avgOrder.toLocaleString('th-TH')}
           </p>
         )}
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                   style={{
                     width: '24px', height: '24px', borderRadius: '50%',
                     background: idx === 0 ? 'var(--c-primary)' : idx === 1 ? 'var(--c-surface-3)' : 'var(--c-surface-2)',
-                    color: idx === 0 ? '#fff' : 'var(--c-text-3)',
+                    color: idx === 0 ? 'var(--c-on-primary)' : 'var(--c-text-3)',
                     fontSize: 'var(--text-xs)', fontWeight: 700,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   }}
