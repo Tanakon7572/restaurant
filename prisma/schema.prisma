@@ -45,6 +45,7 @@ model Order {
   id          Int         @id @default(autoincrement())
   tableNumber String?
   customerName String?
+  sessionToken String?
   status      String      @default("pending")
   totalPrice  Float       @default(0)
   note        String?
@@ -97,6 +98,16 @@ model OptionChoice {
 model TableReset {
   tableNumber String   @id
   resetAt     DateTime @default(now())
+}
+
+// One random ordering link per seating. The QR encodes /q?s=<token>;
+// the link dies (active=false) when its orders are all finished or staff
+// closes it, so old URLs can't be reused.
+model TableSession {
+  token       String   @id
+  tableNumber String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 model OrderItemOption {

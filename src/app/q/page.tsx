@@ -40,14 +40,11 @@ interface SessionData {
   orders: number[]
 }
 
-function sessionKey(table: string) {
-  return `food-order-session-${table || 'notab'}`
+function sessionKey(token: string) {
+  return `food-order-session-${token || 'notab'}`
 }
-function cartKey(table: string) {
-  return `food-order-cart-${table || 'notab'}`
-}
-function resetKey(table: string) {
-  return `food-order-reset-${table || 'notab'}`
+function cartKey(token: string) {
+  return `food-order-cart-${token || 'notab'}`
 }
 
 function loadSession(table: string): SessionData {
@@ -126,14 +123,18 @@ function ItemThumb({ imageUrl, name, size = 40, cover = false }: { imageUrl?: st
 
 function QROrderPage() {
   const searchParams = useSearchParams()
-  const tableParam = searchParams.get('table') || ''
+  // Random per-seating link: /q?s=<token>. The token maps to a table on the
+  // server and dies once the food is done, so old URLs stop working.
+  const sessionToken = searchParams.get('s') || ''
 
   const [categories, setCategories] = useState<MenuCategoryDTO[]>([])
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
   const [sheetItem, setSheetItem] = useState<MenuItemDTO | null>(null)
   const [customerName, setCustomerName] = useState('')
-  const [tableInput, setTableInput] = useState('')
+  const [tableNumber, setTableNumber] = useState('')
+  const [linkState, setLinkState] = useState<'checking' | 'valid' | 'invalid'>('checking')
+  const [linkActive, setLinkActive] = useState(true)
   const [toast, setToast] = useState('')
   const [menuLoading, setMenuLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -147,45 +148,35 @@ function QROrderPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const toastRef = useRef<NodeJS.Timeout | null>(null)
 
-  // ── Restore session + cart on mount, after checking for table reset ──
+  // ── Validate the link, then restore this device's session + cart ──
   useEffect(() => {
-    setTableInput(tableParam)
     let cancelled = false
     async function init() {
-      // Detect a staff "close table" since this device last acknowledged it.
-      let serverReset: string | null = null
+      if (!sessionToken) { setLinkState('invalid'); return }
       try {
-        const r = await fetch(`/api/public/table-reset?table=${encodeURIComponent(tableParam)}`)
-        if (r.ok) serverReset = (await r.json()).resetAt ?? null
-      } catch { /* ignore */ }
-      if (cancelled) return
-
-      const ack = (() => { try { return localStorage.getItem(resetKey(tableParam)) } catch { return null } })()
-      if (serverReset && serverReset !== ack) {
-        // New seating → wipe this device's session + cart.
-        clearSession(tableParam)
-        saveCart(tableParam, [])
-        try { localStorage.setItem(resetKey(tableParam), serverReset) } catch { /* ignore */ }
-        setSessionOrderIds([])
-        setOrderStatuses(new Map())
-        setCart([])
-        setPhase('ordering')
+        const r = await fetch(`/api/public/session?token=${encodeURIComponent(sessionToken)}`)
+        const data = await r.json()
+        if (cancelled) return
+        if (!data.valid) { setLinkState('invalid'); return }
+        setTableNumber(data.tableNumber ?? '')
+        setLinkState('valid')
+      } catch {
+        if (!cancelled) setLinkState('invalid')
         return
       }
-
-      const session = loadSession(tableParam)
+      const session = loadSession(sessionToken)
       if (session.orders.length > 0) {
         setSessionOrderIds(session.orders)
         setPhase('tracking')
       }
-      setCart(loadCart(tableParam))
+      setCart(loadCart(sessionToken))
     }
     init()
     return () => { cancelled = true }
-  }, [tableParam])
+  }, [sessionToken])
 
   // ── Persist cart on change ───────────────────────────────────────
-  useEffect(() => { saveCart(tableParam, cart) }, [tableParam, cart])
+  useEffect(() => { saveCart(sessionToken, cart) }, [sessionToken, cart])
 
   // ── Fetch menu ───────────────────────────────────────────────────
   useEffect(() => {
@@ -216,8 +207,8 @@ function QROrderPage() {
           if (r.status === 404) {
             setSessionOrderIds(prev => {
               const next = prev.filter(x => x !== id)
-              if (next.length === 0) { clearSession(tableParam); setPhase('ordering') }
-              else saveSession(tableParam, { orders: next })
+              if (next.length === 0) { clearSession(sessionToken); setPhase('ordering') }
+              else saveSession(sessionToken, { orders: next })
               return next
             })
             return null
@@ -226,34 +217,24 @@ function QROrderPage() {
         })
         .then(data => { if (data?.id) setOrderStatuses(prev => new Map(prev).set(data.id, data)) })
     })
-  }, [tableParam])
+  }, [sessionToken])
 
-  // Detect a staff "close table" while the customer is on the tracking screen.
-  const checkReset = useCallback(async () => {
+  // The link dies when the kitchen finishes — stop offering "order more".
+  const checkLink = useCallback(async () => {
     try {
-      const r = await fetch(`/api/public/table-reset?table=${encodeURIComponent(tableParam)}`)
+      const r = await fetch(`/api/public/session?token=${encodeURIComponent(sessionToken)}`)
       if (!r.ok) return
-      const serverReset: string | null = (await r.json()).resetAt ?? null
-      const ack = (() => { try { return localStorage.getItem(resetKey(tableParam)) } catch { return null } })()
-      if (serverReset && serverReset !== ack) {
-        clearSession(tableParam)
-        saveCart(tableParam, [])
-        try { localStorage.setItem(resetKey(tableParam), serverReset) } catch { /* ignore */ }
-        setSessionOrderIds([])
-        setOrderStatuses(new Map())
-        setCart([])
-        setCustomerName('')
-        setPhase('ordering')
-      }
+      const data = await r.json()
+      setLinkActive(!!data.valid)
     } catch { /* ignore */ }
-  }, [tableParam])
+  }, [sessionToken])
 
   useEffect(() => {
     if (phase !== 'tracking' || sessionOrderIds.length === 0) return
     pollAll(sessionOrderIds)
-    pollRef.current = setInterval(() => { pollAll(sessionOrderIds); checkReset() }, 5000)
+    pollRef.current = setInterval(() => { pollAll(sessionOrderIds); checkLink() }, 5000)
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [phase, sessionOrderIds, pollAll, checkReset])
+  }, [phase, sessionOrderIds, pollAll, checkLink])
 
   function showToast(msg: string) {
     setToast(msg)
@@ -290,8 +271,8 @@ function QROrderPage() {
   // ── Submit ───────────────────────────────────────────────────────
   async function submitOrder() {
     if (cart.length === 0) return
-    if (!customerName.trim() || !tableInput.trim()) {
-      setError('กรุณากรอกชื่อและเลขโต๊ะ')
+    if (!customerName.trim()) {
+      setError('กรุณากรอกชื่อผู้สั่ง')
       return
     }
     setSubmitting(true)
@@ -301,7 +282,7 @@ function QROrderPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tableNumber: tableInput.trim(),
+          sessionToken,
           customerName: customerName.trim(),
           items: cart.map(l => ({
             menuItemId: l.menuItemId, quantity: l.quantity,
@@ -312,16 +293,17 @@ function QROrderPage() {
       if (!res.ok) {
         const data = await res.json()
         setError(data.error || 'เกิดข้อผิดพลาด')
+        if (res.status === 403) setLinkState('invalid')
         return
       }
       const order = await res.json()
       const newIds = [...sessionOrderIds, order.id]
-      saveSession(tableParam, { orders: newIds })
+      saveSession(sessionToken, { orders: newIds })
       setSessionOrderIds(newIds)
       setOrderStatuses(prev => new Map(prev).set(order.id, order))
       setPhase('tracking')
       setCart([])
-      saveCart(tableParam, [])
+      saveCart(sessionToken, [])
       setSearch('')
     } catch {
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
@@ -332,21 +314,35 @@ function QROrderPage() {
 
   function orderMore() {
     setCart([])
-    saveCart(tableParam, [])
+    saveCart(sessionToken, [])
     setSearch('')
     setError('')
     setPhase('ordering')
   }
 
-  function startNewSession() {
-    clearSession(tableParam)
-    setSessionOrderIds([])
-    setOrderStatuses(new Map())
-    setPhase('ordering')
-    setCart([])
-    saveCart(tableParam, [])
-    setSearch('')
-    setError('')
+  // ── Invalid / expired link ───────────────────────────────────────
+  if (linkState === 'invalid') {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div className="glass-panel" style={{ maxWidth: '360px', width: '100%', padding: '36px 24px', textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--c-danger-bg)', color: 'var(--c-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.6rem' }} aria-hidden>
+            ✕
+          </div>
+          <h1 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>ลิงก์นี้ใช้ไม่ได้แล้ว</h1>
+          <p style={{ color: 'var(--c-text-2)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            ลิงก์สั่งอาหารหมดอายุหรือถูกปิดแล้ว<br />กรุณาติดต่อพนักงานเพื่อขอ QR ใหม่
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (linkState === 'checking') {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>กำลังตรวจสอบลิงก์…</p>
+      </div>
+    )
   }
 
   // ── Tracking screen ──────────────────────────────────────────────
@@ -377,6 +373,11 @@ function QROrderPage() {
           {(latestOrder.tableNumber || latestOrder.customerName) && (
             <p style={{ color: 'var(--c-text-3)', fontSize: '0.85rem', marginTop: '6px' }}>
               {latestOrder.customerName ? `${latestOrder.customerName} · ` : ''}{latestOrder.tableNumber ? `โต๊ะ ${latestOrder.tableNumber}` : ''}
+            </p>
+          )}
+          {!linkActive && (
+            <p style={{ color: 'var(--c-text-3)', fontSize: '0.8rem', marginTop: '6px' }}>
+              ลิงก์นี้ปิดการสั่งแล้ว หากต้องการสั่งเพิ่มกรุณาติดต่อพนักงาน
             </p>
           )}
         </div>
@@ -441,8 +442,9 @@ function QROrderPage() {
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button className="btn btn-primary btn-full" onClick={orderMore} style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)' }}>สั่งเพิ่ม</button>
-          <button className="btn btn-ghost btn-full" onClick={startNewSession}>เริ่มออเดอร์ใหม่ทั้งหมด</button>
+          {linkActive && (
+            <button className="btn btn-primary btn-full" onClick={orderMore} style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)' }}>สั่งเพิ่ม</button>
+          )}
           {!info.done && <p style={{ textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.75rem' }}>อัปเดตอัตโนมัติทุก 5 วินาที</p>}
         </div>
 
@@ -465,10 +467,9 @@ function QROrderPage() {
               <label style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--c-text-2)' }}>ชื่อผู้สั่ง <span style={{ color: 'var(--c-danger)' }}>*</span></label>
               <input className="input" placeholder="เช่น คุณเอ" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ marginTop: 4 }} />
             </div>
-            <div>
-              <label style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--c-text-2)' }}>เลขโต๊ะ <span style={{ color: 'var(--c-danger)' }}>*</span></label>
-              <input className="input" placeholder="เช่น 1" value={tableInput} onChange={e => setTableInput(e.target.value)} style={{ marginTop: 4 }} />
-            </div>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+              โต๊ะ <strong>{tableNumber || '-'}</strong> (กำหนดจากลิงก์ของโต๊ะ)
+            </p>
           </div>
         )}
         <Cart
@@ -480,7 +481,7 @@ function QROrderPage() {
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)', padding: '12px 16px env(safe-area-inset-bottom, 12px)', zIndex: 100, boxShadow: '0 -2px 12px oklch(0 0 0 / 0.08)' }}>
             <div style={{ maxWidth: '480px', margin: '0 auto' }}>
               {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px' }}>{error}</p>}
-              <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting || !customerName.trim() || !tableInput.trim()}
+              <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting || !customerName.trim()}
                 style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
                 <span>{submitting ? 'กำลังส่งออเดอร์…' : 'ยืนยันสั่ง'}</span>
                 {!submitting && <span style={{ fontWeight: 700 }}>฿{totalPrice.toLocaleString('th-TH')}</span>}
@@ -516,7 +517,7 @@ function QROrderPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em' }}>สั่งอาหาร</h1>
-            {tableParam && <p style={{ color: 'var(--c-text-2)', fontSize: '0.85rem', marginTop: '2px' }}>โต๊ะ {tableParam}</p>}
+            {tableNumber && <p style={{ color: 'var(--c-text-2)', fontSize: '0.85rem', marginTop: '2px' }}>โต๊ะ {tableNumber}</p>}
           </div>
           {sessionOrderIds.length > 0 && (
             <button className="btn btn-ghost btn-sm" onClick={() => setPhase('tracking')} style={{ marginTop: '4px' }}>

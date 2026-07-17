@@ -6,12 +6,22 @@ import type { OrderItemInput } from '@/lib/types'
 
 export async function POST(request: Request) {
   try {
-    const { tableNumber, customerName, note, items } = await request.json() as
-      { tableNumber?: string; customerName?: string; note?: string; items: OrderItemInput[] }
+    const { customerName, note, items, sessionToken } = await request.json() as
+      { customerName?: string; note?: string; items: OrderItemInput[]; sessionToken?: string }
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'ต้องมีรายการอาหารอย่างน้อย 1 รายการ' }, { status: 400 })
     }
+
+    // Orders must come from a live ordering link; the table number comes
+    // from the link itself, never from the client.
+    const session = sessionToken
+      ? await prisma.tableSession.findUnique({ where: { token: sessionToken } })
+      : null
+    if (!session || !session.active) {
+      return NextResponse.json({ error: 'ลิงก์สั่งอาหารนี้ใช้ไม่ได้แล้ว กรุณาติดต่อพนักงาน' }, { status: 403 })
+    }
+    const tableNumber = session.tableNumber
 
     const menu = await loadMenuForPricing(prisma, items.map(i => i.menuItemId), true)
 
@@ -22,6 +32,7 @@ export async function POST(request: Request) {
       data: {
         tableNumber: tableNumber || null,
         customerName: customerName || null,
+        sessionToken: session.token,
         note: note || null,
         status: 'awaiting',
         totalPrice: result.totalPrice,

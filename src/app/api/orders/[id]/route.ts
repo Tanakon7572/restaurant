@@ -75,6 +75,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data: updateData,
       include: { items: { include: { menuItem: true, options: true } } },
     })
+    // Finishing or cancelling the last open order retires the ordering link.
+    if (body.status === 'completed' || body.status === 'cancelled') {
+      const { deactivateSessionIfFinished } = await import('@/lib/tableSession')
+      await deactivateSessionIfFinished(prisma, order.sessionToken)
+    }
     return NextResponse.json(order)
   } catch (err) {
     return NextResponse.json({ error: 'Failed to update order', detail: String(err) }, { status: 500 })

@@ -13,7 +13,7 @@ interface KitchenOrderItem {
 
 interface KitchenOrder {
   id: number
-  status: 'pending' | 'preparing'
+  status: 'awaiting' | 'pending' | 'preparing'
   tableNumber: string | null
   customerName: string | null
   note: string | null
@@ -74,7 +74,8 @@ function OrderCard({
   updating: boolean
   onAction: () => void
 }) {
-  const isPending = order.status === 'pending'
+  const isPending = order.status !== 'preparing'
+  const isAwaiting = order.status === 'awaiting'
   const accent = isPending ? 'var(--c-warning)' : 'var(--c-info)'
 
   return (
@@ -105,6 +106,7 @@ function OrderCard({
             <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>
               #{order.id}
             </span>
+            {isAwaiting && <span className="badge badge-awaiting">คำขอใหม่จากลูกค้า</span>}
             {order.tableNumber && (
               <span style={{
                 background: 'var(--c-surface-2)', color: 'var(--c-text-2)',
@@ -207,7 +209,7 @@ function OrderCard({
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.97)' }}
           onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)' }}
         >
-          {isPending ? 'รับออเดอร์' : 'เสร็จแล้ว ✓'}
+          {isAwaiting ? 'ยืนยัน + เริ่มทำ' : isPending ? 'รับออเดอร์' : 'เสร็จแล้ว ✓'}
         </button>
       </div>
     </div>
@@ -294,7 +296,7 @@ export default function KitchenPage() {
     }
   }
 
-  const pending   = orders.filter(o => o.status === 'pending')
+  const pending   = orders.filter(o => o.status === 'pending' || o.status === 'awaiting')
   const preparing = orders.filter(o => o.status === 'preparing')
 
   return (
