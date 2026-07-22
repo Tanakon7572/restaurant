@@ -14,6 +14,26 @@ export function isCrust(name: string): boolean {
   return name.startsWith('แป้ง')
 }
 
+// Vanilla is the standard Signature crust (free baseline). Accepts both
+// common Thai spellings (วานิลลา / วนิลลา).
+export function isVanilla(name: string): boolean {
+  return name.includes('วานิลลา') || name.includes('วนิลลา')
+}
+
+// Baseline crust price for Signature pricing: the vanilla crust's price, or
+// the cheapest crust when no vanilla is present.
+export function crustBaseline(crusts: { name: string; price: number }[]): number {
+  const vanilla = crusts.find(c => isVanilla(c.name))
+  if (vanilla) return vanilla.price
+  return crusts.length > 0 ? Math.min(...crusts.map(c => c.price)) : 0
+}
+
+// Signature crust upcharge = difference from the standard (vanilla) crust,
+// never negative. Vanilla itself costs +0.
+function sigCrustDelta(price: number, baseline: number): number {
+  return Math.max(0, price - baseline)
+}
+
 /**
  * Build derived option groups for a Signature-style item from the ingredient list:
  *  - "เลือกแป้ง": required, single-select, free swap (priceDelta 0)
@@ -26,9 +46,10 @@ export function deriveOptionGroups(ingredients: Ingredient[]): OptionGroupDTO[] 
   const groups: OptionGroupDTO[] = []
 
   if (crusts.length > 0) {
+    const baseline = crustBaseline(crusts)
     groups.push({
       id: CRUST_GROUP_ID, name: 'เลือกแป้ง', required: true, minSelect: 1, maxSelect: 1, order: 0,
-      choices: crusts.map((c, i) => ({ id: c.id, name: c.name, priceDelta: 0, available: c.available, order: i })),
+      choices: crusts.map((c, i) => ({ id: c.id, name: c.name, priceDelta: sigCrustDelta(c.price, baseline), available: c.available, order: i })),
     })
   }
   if (extras.length > 0) {
@@ -93,13 +114,14 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
 
   // Base group: every item of a แป้ง-named pool, plus แป้ง-named items still
   // sitting in mixed pools (e.g. the parent category during reorganization).
-  const crustChoices = pools.flatMap(p =>
+  const crustItems = pools.flatMap(p =>
     (isCrustCategory(p.name) ? p.items : p.items.filter(i => isCrust(i.name))))
-    .map((i, j) => ({
-      id: i.id, name: i.name,
-      priceDelta: mode === 'signature' ? 0 : i.price,
-      available: i.available, order: j,
-    }))
+  const crustBase = crustBaseline(crustItems)
+  const crustChoices = crustItems.map((i, j) => ({
+    id: i.id, name: i.name,
+    priceDelta: mode === 'signature' ? sigCrustDelta(i.price, crustBase) : i.price,
+    available: i.available, order: j,
+  }))
   if (crustChoices.length > 0) {
     groups.push({
       id: CRUST_GROUP_ID, name: 'เลือกแป้ง',

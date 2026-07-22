@@ -13,6 +13,7 @@ interface KitchenOrderItem {
 
 interface KitchenOrder {
   id: number
+  dailyNumber?: number
   status: 'awaiting' | 'pending' | 'preparing'
   tableNumber: string | null
   customerName: string | null
@@ -104,7 +105,7 @@ function OrderCard({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>
-              #{order.id}
+              #{order.dailyNumber ?? order.id}
             </span>
             {isAwaiting && <span className="badge badge-awaiting">คำขอใหม่จากลูกค้า</span>}
             {order.tableNumber && (

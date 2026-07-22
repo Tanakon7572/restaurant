@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
+import { isPermanentToken, PERMANENT_SESSION_TOKEN } from '@/lib/tableSession'
+import { dailyNumberFor } from '@/lib/orderNumber'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function POST(request: Request) {
@@ -13,15 +15,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ต้องมีรายการอาหารอย่างน้อย 1 รายการ' }, { status: 400 })
     }
 
-    // Orders must come from a live ordering link; the table number comes
-    // from the link itself, never from the client.
-    const session = sessionToken
-      ? await prisma.tableSession.findUnique({ where: { token: sessionToken } })
-      : null
-    if (!session || !session.active) {
-      return NextResponse.json({ error: 'ลิงก์สั่งอาหารนี้ใช้ไม่ได้แล้ว กรุณาติดต่อพนักงาน' }, { status: 403 })
+    // Orders come from the shop's permanent link (single QR, no table): the
+    // customer identifies the order by name. Legacy per-table links still work.
+    let tableNumber: string | null = null
+    let resolvedToken: string
+    if (isPermanentToken(sessionToken)) {
+      if (!customerName || !customerName.trim()) {
+        return NextResponse.json({ error: 'กรุณากรอกชื่อผู้สั่ง' }, { status: 400 })
+      }
+      resolvedToken = PERMANENT_SESSION_TOKEN
+    } else {
+      const session = sessionToken
+        ? await prisma.tableSession.findUnique({ where: { token: sessionToken } })
+        : null
+      if (!session || !session.active) {
+        return NextResponse.json({ error: 'ลิงก์สั่งอาหารนี้ใช้ไม่ได้แล้ว กรุณาติดต่อพนักงาน' }, { status: 403 })
+      }
+      tableNumber = session.tableNumber
+      resolvedToken = session.token
     }
-    const tableNumber = session.tableNumber
 
     const menu = await loadMenuForPricing(prisma, items.map(i => i.menuItemId), true)
 
@@ -32,7 +44,7 @@ export async function POST(request: Request) {
       data: {
         tableNumber: tableNumber || null,
         customerName: customerName || null,
-        sessionToken: session.token,
+        sessionToken: resolvedToken,
         note: note || null,
         status: 'awaiting',
         totalPrice: result.totalPrice,
@@ -52,9 +64,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       id: order.id,
+      dailyNumber: await dailyNumberFor(prisma, order),
       status: order.status,
       totalPrice: order.totalPrice,
       tableNumber: order.tableNumber,
+      customerName: order.customerName,
       items: order.items.map(i => ({
         itemName: i.itemName,
         menuItem: { name: i.itemName },

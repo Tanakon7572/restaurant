@@ -18,6 +18,7 @@ interface OrderItemData {
 
 interface Order {
   id: number
+  dailyNumber?: number
   status: string
   totalPrice: number
   tableNumber: string | null
@@ -171,7 +172,7 @@ export default function OrderDetailPage() {
       <PosShell>
       <div className="page-container fade-in">
         <div className="page-header">
-          <h1 className="page-title">แก้ไขออเดอร์ #{order.id}</h1>
+          <h1 className="page-title">แก้ไขออเดอร์ #{order.dailyNumber ?? order.id}</h1>
           <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>
             ยกเลิก
           </button>
@@ -330,7 +331,7 @@ export default function OrderDetailPage() {
       return `<tr><td>${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}${opts}${note}</td><td style="text-align:right;vertical-align:top">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
     }).join('')
     const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
-<title>ใบเสร็จ #${order.id}</title>
+<title>ใบเสร็จ #${order.dailyNumber ?? order.id}</title>
 <style>
   body{font-family:'IBM Plex Sans Thai',sans-serif;max-width:320px;margin:0 auto;padding:20px;font-size:13px;color:#111}
   h2{text-align:center;font-size:1rem;margin-bottom:4px}
@@ -343,7 +344,7 @@ export default function OrderDetailPage() {
 </style></head><body>
 <h2>ใบเสร็จรับเงิน</h2>
 <div class="meta">
-  ออเดอร์ #${order.id}${order.tableNumber ? ` · โต๊ะ ${order.tableNumber}` : ''}${order.customerName ? ` · ${order.customerName}` : ''}<br>
+  ออเดอร์ #${order.dailyNumber ?? order.id}${order.tableNumber ? ` · โต๊ะ ${order.tableNumber}` : ''}${order.customerName ? ` · ${order.customerName}` : ''}<br>
   ${dt}
 </div>
 <table>
@@ -375,7 +376,7 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
           >
             ←
           </button>
-          <h1 className="page-title">ออเดอร์ #{order.id}</h1>
+          <h1 className="page-title">ออเดอร์ #{order.dailyNumber ?? order.id}</h1>
         </div>
         <span className={`badge badge-${order.status}`}>{STATUS_LABELS[order.status]}</span>
       </div>
@@ -530,7 +531,7 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
       <ConfirmModal
         isOpen={cancelConfirm}
         title="ยกเลิกออเดอร์"
-        message={`ต้องการยกเลิกออเดอร์ #${order.id} ใช่หรือไม่?`}
+        message={`ต้องการยกเลิกออเดอร์ #${order.dailyNumber ?? order.id} ใช่หรือไม่?`}
         confirmText="ยกเลิกออเดอร์"
         onConfirm={() => updateStatus('cancelled')}
         onCancel={() => setCancelConfirm(false)}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { dailyNumberFor } from '@/lib/orderNumber'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       include: { items: { include: { menuItem: true, options: true } } },
     })
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-    return NextResponse.json(order)
+    return NextResponse.json({ ...order, dailyNumber: await dailyNumberFor(prisma, order) })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch order', detail: String(err) }, { status: 500 })
   }

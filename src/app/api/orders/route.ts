@@ -4,6 +4,7 @@ import { getSession } from '@/lib/session'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
 import { sweepExpiredOrdersThrottled } from '@/lib/retention'
+import { withDailyNumbers, dailyNumberFor } from '@/lib/orderNumber'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function GET(request: Request) {
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
         items: { include: { menuItem: true } },
       },
     })
-    return NextResponse.json(orders)
+    return NextResponse.json(await withDailyNumbers(prisma, orders))
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch orders', detail: String(err) }, { status: 500 })
   }
@@ -95,7 +96,8 @@ export async function POST(request: Request) {
       include: { items: { include: { menuItem: true, options: true } } },
     })
 
-    return NextResponse.json(order, { status: 201 })
+    const dailyNumber = await dailyNumberFor(prisma, order)
+    return NextResponse.json({ ...order, dailyNumber }, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create order', detail: String(err) }, { status: 500 })
   }

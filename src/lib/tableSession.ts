@@ -1,6 +1,15 @@
 import type { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'crypto'
 
+// The shop uses a single permanent ordering link (one QR for the whole shop).
+// This reserved token is always valid, carries no table number, and never
+// expires — customers identify their order by name instead of by table.
+export const PERMANENT_SESSION_TOKEN = 'permanent'
+
+export function isPermanentToken(token: string | null | undefined): boolean {
+  return token === PERMANENT_SESSION_TOKEN
+}
+
 export function newSessionToken(): string {
   return randomUUID().replace(/-/g, '')
 }

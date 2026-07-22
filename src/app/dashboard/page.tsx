@@ -15,6 +15,7 @@ interface OrderItem {
 
 interface Order {
   id: number
+  dailyNumber?: number
   status: string
   totalPrice: number
   tableNumber: string | null
@@ -318,7 +319,7 @@ export default function DashboardPage() {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-              <span style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>#{order.id}</span>
+              <span style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>#{order.dailyNumber ?? order.id}</span>
               {order.tableNumber && (
                 <span style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-xs)', background: 'var(--c-surface-2)', padding: '2px 7px', borderRadius: 'var(--radius-full)', border: '1px solid var(--c-border)' }}>
                   โต๊ะ {order.tableNumber}

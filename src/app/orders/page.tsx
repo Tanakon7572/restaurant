@@ -14,6 +14,7 @@ interface OrderItem {
 
 interface Order {
   id: number
+  dailyNumber?: number
   status: string
   totalPrice: number
   tableNumber: string | null
@@ -72,7 +73,7 @@ function exportCSV(orders: Order[]) {
       hour: '2-digit', minute: '2-digit',
     })
     return [
-      o.id,
+      o.dailyNumber ?? o.id,
       o.tableNumber ?? '-',
       STATUS_LABELS[o.status] ?? o.status,
       `"${items}"`,
@@ -248,7 +249,7 @@ export default function OrdersPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '7px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 700, fontSize: 'var(--text-md)' }}>#{order.id}</span>
+                <span style={{ fontWeight: 700, fontSize: 'var(--text-md)' }}>#{order.dailyNumber ?? order.id}</span>
                 {order.tableNumber && (
                   <span style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)', background: 'var(--c-surface-2)', padding: '2px 8px', borderRadius: 'var(--radius-full)', border: '1px solid var(--c-border)' }}>
                     โต๊ะ {order.tableNumber}

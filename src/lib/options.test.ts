@@ -27,7 +27,9 @@ it('builds a required single crust group and an optional multi extras group', ()
   expect(crust.name).toBe('เลือกแป้ง')
   expect(crust.required).toBe(true)
   expect(crust.maxSelect).toBe(1)
-  expect(crust.choices.every(c => c.priceDelta === 0)).toBe(true)
+  // Signature crust = difference from the vanilla baseline (แป้งวานิลลา = 20)
+  expect(crust.choices.find(c => c.id === 31)!.priceDelta).toBe(0)  // vanilla
+  expect(crust.choices.find(c => c.id === 32)!.priceDelta).toBe(5)  // charcoal 25 − 20
   expect(extra.name).toBe('เพิ่มไส้ / ท็อปปิ้ง')
   expect(extra.required).toBe(false)
   expect(extra.maxSelect).toBe(2)
@@ -41,11 +43,11 @@ it('prices a Signature item with derived groups (crust free + extras added)', ()
     optionGroups: deriveGroupsForPricing(ingredients),
   }
   const menu = new Map([[6, item]])
-  // pick crust 32 (free) + extra 50 (+10)
+  // pick crust 32 (charcoal +5 vs vanilla) + extra 50 (+10)
   const r = priceOrderItems([{ menuItemId: 6, quantity: 1, optionChoiceIds: [32, 50] }], menu)
   expect(r.ok).toBe(true)
   if (!r.ok) return
-  expect(r.items[0].price).toBe(50) // 40 + 0 + 10
+  expect(r.items[0].price).toBe(55) // 40 + 5 + 10
 })
 
 it('rejects a Signature item with no crust selected (required)', () => {
@@ -172,9 +174,10 @@ it('keeps the crust step during reorganization (แป้ง items still in the 
   expect(crust.choices.map(c => c.id)).toEqual([31, 32])
   expect(crust.choices[1].priceDelta).toBe(25)
   expect(groups[1].choices.map(c => c.id)).toEqual([59])
-  // signature mode: same shape, free crust swap
+  // signature mode: same shape, crust priced as the difference from vanilla
   const sig = deriveGroupsFromPools(transitional, 'signature')
-  expect(sig[0].choices.every(c => c.priceDelta === 0)).toBe(true)
+  expect(sig[0].choices.find(c => c.id === 31)!.priceDelta).toBe(0) // แป้งวานิลลา
+  expect(sig[0].choices.find(c => c.id === 32)!.priceDelta).toBe(5) // แป้งชาร์โคล 25 − 20
 })
 
 it('labels a generic parent pool\'s leftovers as toppings, not by category name', () => {
@@ -224,9 +227,10 @@ it('derives one group per pool, named after the category', () => {
   expect(groups[3].choices[0].available).toBe(false)
 })
 
-it('signature mode keeps the crust swap free across pools', () => {
+it('signature mode prices the crust as the difference from vanilla across pools', () => {
   const groups = deriveGroupsFromPools(pools, 'signature')
-  expect(groups[0].choices.every(c => c.priceDelta === 0)).toBe(true)
+  expect(groups[0].choices.find(c => c.id === 31)!.priceDelta).toBe(0) // วานิลลา (baseline 20)
+  expect(groups[0].choices.find(c => c.id === 32)!.priceDelta).toBe(5) // ชาร์โคล 25 − 20
   expect(groups[1].choices[0].priceDelta).toBe(10)
 })
 

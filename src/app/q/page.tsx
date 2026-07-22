@@ -20,6 +20,7 @@ interface OrderStatusItem {
 
 interface OrderStatus {
   id: number
+  dailyNumber?: number
   status: string
   totalPrice: number
   tableNumber: string | null
@@ -123,16 +124,15 @@ function ItemThumb({ imageUrl, name, size = 40, cover = false }: { imageUrl?: st
 
 function QROrderPage() {
   const searchParams = useSearchParams()
-  // Random per-seating link: /q?s=<token>. The token maps to a table on the
-  // server and dies once the food is done, so old URLs stop working.
-  const sessionToken = searchParams.get('s') || ''
+  // Single permanent shop link: /q?s=permanent (also the default when no token
+  // is present). Customers identify their order by name, not by table.
+  const sessionToken = searchParams.get('s') || 'permanent'
 
   const [categories, setCategories] = useState<MenuCategoryDTO[]>([])
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
   const [sheetItem, setSheetItem] = useState<MenuItemDTO | null>(null)
   const [customerName, setCustomerName] = useState('')
-  const [tableNumber, setTableNumber] = useState('')
   const [linkState, setLinkState] = useState<'checking' | 'valid' | 'invalid'>('checking')
   const [linkActive, setLinkActive] = useState(true)
   const [toast, setToast] = useState('')
@@ -158,7 +158,6 @@ function QROrderPage() {
         const data = await r.json()
         if (cancelled) return
         if (!data.valid) { setLinkState('invalid'); return }
-        setTableNumber(data.tableNumber ?? '')
         setLinkState('valid')
       } catch {
         if (!cancelled) setLinkState('invalid')
@@ -368,11 +367,11 @@ function QROrderPage() {
             หมายเลขคิว
           </p>
           <p style={{ fontSize: '5rem', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--c-text)' }}>
-            {latestOrder.id}
+            {latestOrder.dailyNumber ?? latestOrder.id}
           </p>
-          {(latestOrder.tableNumber || latestOrder.customerName) && (
+          {latestOrder.customerName && (
             <p style={{ color: 'var(--c-text-3)', fontSize: '0.85rem', marginTop: '6px' }}>
-              {latestOrder.customerName ? `${latestOrder.customerName} · ` : ''}{latestOrder.tableNumber ? `โต๊ะ ${latestOrder.tableNumber}` : ''}
+              {latestOrder.customerName}
             </p>
           )}
           {!linkActive && (
@@ -431,7 +430,7 @@ function QROrderPage() {
               return (
                 <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--c-text-2)' }}>#{id}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--c-text-2)' }}>#{order?.dailyNumber ?? id}</span>
                     {prevInfo && <span style={{ fontSize: '0.75rem', fontWeight: 600, color: prevInfo.color }}>{prevInfo.label}</span>}
                   </div>
                   {order && <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--c-text-2)' }}>฿{order.totalPrice.toLocaleString('th-TH')}</span>}
@@ -467,9 +466,6 @@ function QROrderPage() {
               <label style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--c-text-2)' }}>ชื่อผู้สั่ง <span style={{ color: 'var(--c-danger)' }}>*</span></label>
               <input className="input" placeholder="เช่น คุณเอ" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ marginTop: 4 }} />
             </div>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
-              โต๊ะ <strong>{tableNumber || '-'}</strong> (กำหนดจากลิงก์ของโต๊ะ)
-            </p>
           </div>
         )}
         <Cart
@@ -517,7 +513,6 @@ function QROrderPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em' }}>สั่งอาหาร</h1>
-            {tableNumber && <p style={{ color: 'var(--c-text-2)', fontSize: '0.85rem', marginTop: '2px' }}>โต๊ะ {tableNumber}</p>}
           </div>
           {sessionOrderIds.length > 0 && (
             <button className="btn btn-ghost btn-sm" onClick={() => setPhase('tracking')} style={{ marginTop: '4px' }}>
