@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
+import Cart from '@/components/Cart'
+import MenuBrowser from '@/components/MenuBrowser'
+import ItemOptionSheet from '@/components/ItemOptionSheet'
+import { addLine, setQuantity, removeLine, cartTotal, lineKey } from '@/lib/cart'
+import { translateDiyLine } from '@/lib/options'
+import type { CartLine, MenuCategoryDTO, MenuItemDTO } from '@/lib/types'
 
 interface OrderItemData {
   id: number
@@ -14,6 +20,10 @@ interface OrderItemData {
   price: number
   note: string | null
   options?: { groupName: string; choiceName: string; priceDelta: number }[]
+  // Added by GET /api/orders/[id]: the stored option snapshots mapped back to
+  // live choice ids so an edit can re-submit them.
+  optionChoiceIds?: number[]
+  optionsResolved?: boolean
 }
 
 interface Order {
@@ -27,12 +37,6 @@ interface Order {
   createdAt: string
   updatedAt: string
   items: OrderItemData[]
-}
-
-interface Category {
-  id: number
-  name: string
-  items: { id: number; name: string; price: number; available: boolean }[]
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -55,10 +59,14 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [editItems, setEditItems] = useState<{ menuItemId: number; name: string; price: number; quantity: number }[]>([])
+  const [categories, setCategories] = useState<MenuCategoryDTO[]>([])
+  const [editLines, setEditLines] = useState<CartLine[]>([])
+  const [sheetItem, setSheetItem] = useState<MenuItemDTO | null>(null)
   const [editTable, setEditTable] = useState('')
+  const [editCustomer, setEditCustomer] = useState('')
   const [editNote, setEditNote] = useState('')
+  const [editWarning, setEditWarning] = useState('')
+  const [saveError, setSaveError] = useState('')
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
@@ -79,53 +87,98 @@ export default function OrderDetailPage() {
 
   function startEditing() {
     if (!order) return
-    setEditItems(order.items.filter(i => i.menuItemId != null).map(i => ({
-      menuItemId: i.menuItemId as number,
-      name: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
-      price: i.menuItem?.price ?? i.price,
-      quantity: i.quantity,
-    })))
+    // Rebuild each stored line as a cart line so options and per-item notes
+    // ride along through the edit instead of being dropped on save.
+    const lines = order.items
+      .filter(i => i.menuItemId != null)
+      .reduce<CartLine[]>((acc, i) => {
+        const choices = (i.options ?? []).map(o => ({
+          groupName: o.groupName, choiceName: o.choiceName, priceDelta: o.priceDelta,
+        }))
+        const delta = choices.reduce((s, c) => s + c.priceDelta, 0)
+        const ids = i.optionChoiceIds ?? []
+        return addLine(acc, {
+          key: lineKey(i.menuItemId as number, ids, i.note),
+          menuItemId: i.menuItemId as number,
+          name: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
+          basePrice: i.price - delta,
+          quantity: i.quantity,
+          note: i.note,
+          optionChoiceIds: ids,
+          choices,
+          unitPrice: i.price,
+        })
+      }, [])
+
+    const deleted = order.items.filter(i => i.menuItemId == null).length
+    const unmatched = order.items.filter(i => i.optionsResolved === false).length
+    setEditWarning([
+      deleted > 0 ? `${deleted} รายการถูกลบออกจากเมนูแล้ว จะหายไปเมื่อบันทึก` : '',
+      unmatched > 0 ? `${unmatched} รายการมีตัวเลือกที่ไม่มีในเมนูปัจจุบันแล้ว กรุณาตรวจสอบก่อนบันทึก` : '',
+    ].filter(Boolean).join(' · '))
+
+    setEditLines(lines)
     setEditTable(order.tableNumber || '')
+    setEditCustomer(order.customerName || '')
     setEditNote(order.note || '')
-    fetch('/api/menu-categories').then(r => r.json()).then(setCategories)
+    setSaveError('')
+    fetch('/api/public/menu')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setCategories(data as MenuCategoryDTO[]) })
     setEditing(true)
   }
 
-  function addEditItem(item: { id: number; name: string; price: number }) {
-    setEditItems(prev => {
-      const existing = prev.find(e => e.menuItemId === item.id)
-      if (existing) return prev.map(e => e.menuItemId === item.id ? { ...e, quantity: e.quantity + 1 } : e)
-      return [...prev, { menuItemId: item.id, name: item.name, price: item.price, quantity: 1 }]
-    })
+  function openEditItem(item: MenuItemDTO) {
+    if (item.available === false) return
+    if (item.optionGroups.length > 0) { setSheetItem(item); return }
+    setEditLines(prev => addLine(prev, {
+      key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
+      quantity: 1, note: null, optionChoiceIds: [], choices: [], unitPrice: item.price,
+    }))
   }
 
-  function updateEditQty(menuItemId: number, delta: number) {
-    setEditItems(prev =>
-      prev.map(e => {
-        if (e.menuItemId !== menuItemId) return e
-        const newQty = e.quantity + delta
-        return newQty <= 0 ? null : { ...e, quantity: newQty }
-      }).filter(Boolean) as typeof prev
-    )
+  function handleEditAdd(line: CartLine) {
+    // Synthetic DIY lines carry a negative id; remap to the chosen crust.
+    if (line.menuItemId < 0 && sheetItem) {
+      const translated = translateDiyLine(line, sheetItem)
+      if (!translated) return
+      line = translated
+    }
+    setEditLines(prev => addLine(prev, line))
   }
 
-  const editTotal = editItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const editTotal = cartTotal(editLines)
 
   async function saveEdit() {
-    if (editItems.length === 0) return
+    if (editLines.length === 0) return
     setSaving(true)
+    setSaveError('')
     try {
-      await fetch(`/api/orders/${params.id}`, {
+      const res = await fetch(`/api/orders/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: editItems.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+          items: editLines.map(l => ({
+            menuItemId: l.menuItemId,
+            quantity: l.quantity,
+            note: l.note,
+            optionChoiceIds: l.optionChoiceIds,
+          })),
           tableNumber: editTable || null,
+          customerName: editCustomer || null,
           note: editNote || null,
         }),
       })
+      if (res.status === 401) { router.push('/'); return }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setSaveError(data.error || 'บันทึกไม่สำเร็จ')
+        return
+      }
       setEditing(false)
       fetchOrder()
+    } catch {
+      setSaveError('เกิดข้อผิดพลาด กรุณาลองใหม่')
     } finally {
       setSaving(false)
     }
@@ -178,7 +231,13 @@ export default function OrderDetailPage() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        {editWarning && (
+          <div className="glass-panel" style={{ padding: '10px 14px', marginBottom: '12px', borderColor: 'var(--c-warning)', background: 'var(--c-warning-bg)' }}>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-warning)', fontWeight: 600 }}>⚠ {editWarning}</p>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <input
             className="input"
             placeholder="เลขโต๊ะ"
@@ -188,98 +247,37 @@ export default function OrderDetailPage() {
           />
           <input
             className="input"
-            placeholder="หมายเหตุ"
-            value={editNote}
-            onChange={e => setEditNote(e.target.value)}
+            placeholder="ชื่อลูกค้า"
+            value={editCustomer}
+            onChange={e => setEditCustomer(e.target.value)}
             style={{ flex: 1, padding: '10px 12px' }}
           />
         </div>
+        <input
+          className="input"
+          placeholder="หมายเหตุรวม"
+          value={editNote}
+          onChange={e => setEditNote(e.target.value)}
+          style={{ width: '100%', padding: '10px 12px', marginBottom: '16px' }}
+        />
 
-        {editItems.length > 0 && (
-          <>
-            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
-              รายการปัจจุบัน
-            </p>
-            <div className="glass-panel" style={{ marginBottom: '16px', overflow: 'hidden' }}>
-              {editItems.map((item, idx) => (
-                <div
-                  key={item.menuItemId}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    borderBottom: idx < editItems.length - 1 ? '1px solid var(--c-border)' : 'none',
-                    background: 'var(--c-primary-glow)',
-                  }}
-                >
-                  <div>
-                    <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.name}</p>
-                    <p className="price-tag" style={{ marginTop: '1px' }}>฿{item.price.toLocaleString('th-TH')}</p>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => updateEditQty(item.menuItemId, -1)}
-                      style={{ width: '30px', height: '30px', padding: 0, borderRadius: '50%' }}
-                    >
-                      −
-                    </button>
-                    <span style={{ fontWeight: 700, minWidth: '20px', textAlign: 'center' }}>
-                      {item.quantity}
-                    </span>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => updateEditQty(item.menuItemId, 1)}
-                      style={{ width: '30px', height: '30px', padding: 0, borderRadius: '50%' }}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
+          รายการปัจจุบัน
+        </p>
+        <div style={{ marginBottom: '16px' }}>
+          <Cart
+            lines={editLines}
+            onQty={(key, q) => setEditLines(prev => setQuantity(prev, key, q))}
+            onRemove={key => setEditLines(prev => removeLine(prev, key))}
+          />
+        </div>
 
         <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
           เพิ่มรายการ
         </p>
-        {categories.map(cat => (
-          <div key={cat.id} style={{ marginBottom: '12px' }}>
-            <p
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: 'var(--c-text-3)',
-                marginBottom: '6px',
-                letterSpacing: '0.03em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {cat.name}
-            </p>
-            <div className="glass-panel" style={{ overflow: 'hidden' }}>
-              {cat.items.filter(i => i.available).map((item, idx, arr) => (
-                <div
-                  key={item.id}
-                  onClick={() => addEditItem(item)}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '11px 16px',
-                    borderBottom: idx < arr.length - 1 ? '1px solid var(--c-border)' : 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span style={{ fontSize: '0.9rem' }}>{item.name}</span>
-                  <span className="price-tag">฿{item.price.toLocaleString('th-TH')}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+        <MenuBrowser categories={categories} onSelect={openEditItem} emptyText="ยังไม่มีเมนู" />
+
+        <ItemOptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={handleEditAdd} />
 
         <div
           style={{
@@ -292,10 +290,13 @@ export default function OrderDetailPage() {
             zIndex: 100,
           }}
         >
+          {saveError && (
+            <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>{saveError}</p>
+          )}
           <button
             className="btn btn-primary btn-full"
             onClick={saveEdit}
-            disabled={saving || editItems.length === 0}
+            disabled={saving || editLines.length === 0}
             style={{
               padding: '14px 20px',
               fontSize: '0.95rem',
@@ -316,7 +317,6 @@ export default function OrderDetailPage() {
   }
 
   const nextStatuses = STATUS_FLOW[order.status] || []
-  const canEdit = order.status === 'pending' || order.status === 'preparing'
 
   function printReceipt() {
     if (!order) return
@@ -500,11 +500,10 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
           ใบเสร็จ
         </button>
 
-        {canEdit && (
-          <button className="btn btn-ghost" onClick={startEditing} style={{ flex: 1 }}>
-            แก้ไขรายการ
-          </button>
-        )}
+        {/* Editable at any status — staff correct closed and cancelled tickets too */}
+        <button className="btn btn-ghost" onClick={startEditing} style={{ flex: 1 }}>
+          แก้ไขรายการ
+        </button>
         {nextStatuses.map(s =>
           s === 'cancelled' ? (
             <button

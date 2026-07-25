@@ -149,6 +149,12 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
   return groups
 }
 
+// Drop the base (แป้ง) step — used when a Signature category has the crust
+// step switched off. Never applied to DIY, whose base item IS the crust.
+export function withoutCrustStep<T extends { id: number }>(groups: T[]): T[] {
+  return groups.filter(g => g.id !== CRUST_GROUP_ID)
+}
+
 export function deriveGroupsFromPoolsForPricing(pools: IngredientPool[], mode: 'signature' | 'diy'): GroupForPricing[] {
   return deriveGroupsFromPools(pools, mode).map(g => ({
     id: g.id, name: g.name, required: g.required, minSelect: g.minSelect, maxSelect: g.maxSelect,

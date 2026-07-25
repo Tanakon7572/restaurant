@@ -471,6 +471,74 @@ select.input { color-scheme: light; }
 .qty-stepper { display: flex; align-items: center; gap: 4px; }
 .qty-n { min-width: 28px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 
+/* ─── Ordering menu grid — fixed 3 columns, photo-forward ─ */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.menu-card {
+  display: flex; flex-direction: column;
+  position: relative; min-width: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.menu-card:active { border-color: var(--c-primary); box-shadow: var(--shadow-md); }
+/* Square media keeps the photo readable at ~110px on a phone. */
+.menu-card-media {
+  aspect-ratio: 1 / 1;
+  background: var(--c-primary-light);
+  overflow: hidden; flex-shrink: 0;
+}
+.menu-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.menu-card-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-primary); font-weight: 700; font-size: 1.6rem;
+}
+.menu-card-body {
+  padding: 6px 7px 7px;
+  display: flex; flex-direction: column; gap: 3px;
+  flex: 1; min-width: 0;
+}
+.menu-card-name {
+  font-size: 0.78rem; font-weight: 500; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; word-break: break-word;
+}
+.menu-card-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 4px; margin-top: auto;
+}
+.menu-card-foot .price-tag { font-size: 0.82rem; }
+.menu-card-add {
+  width: 24px; height: 24px; padding: 0; border-radius: 50%;
+  font-size: 1rem; line-height: 1; flex-shrink: 0;
+}
+.menu-card-sold {
+  position: absolute; top: 5px; left: 5px; z-index: 2;
+  background: var(--c-danger); color: #fff;
+  font-size: 0.65rem; font-weight: 700;
+  padding: 1px 6px; border-radius: var(--radius-full);
+}
+.menu-card.is-sold { opacity: 0.6; cursor: not-allowed; }
+.menu-card.is-sold .menu-card-media { filter: grayscale(1); }
+.menu-card.is-sold .menu-card-name { color: var(--c-text-3); }
+.menu-card.is-sold .menu-card-name,
+.menu-card.is-sold .price-tag { text-decoration: line-through; }
+@media (min-width: 700px) {
+  .menu-grid { gap: 10px; }
+  .menu-card-body { padding: 8px 10px 9px; }
+  .menu-card-name { font-size: 0.85rem; }
+  .menu-card-foot .price-tag { font-size: 0.9rem; }
+  .menu-card-add { width: 28px; height: 28px; font-size: 1.1rem; }
+}
+
 /* ─── Segmented category tabs (POS pill row) ────────────── */
 .seg {
   display: flex;

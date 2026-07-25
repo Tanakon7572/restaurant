@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 import type { MenuItemForPricing } from './order'
 import {
-  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, expandPoolIds,
+  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, expandPoolIds, withoutCrustStep,
   DIY_NAME_PREFIX, type Ingredient, type IngredientPool,
 } from './options'
 
@@ -36,9 +36,13 @@ export async function loadMenuForPricing(
 
   // All category link structures (cheap: categories are few).
   const cats = await prisma.menuCategory.findMany({
-    select: { id: true, name: true, parentId: true, ingredientCategoryId: true, ingredientCategoryIds: true },
+    select: {
+      id: true, name: true, parentId: true,
+      ingredientCategoryId: true, ingredientCategoryIds: true, showCrustStep: true,
+    },
   })
   const nameByCat = new Map(cats.map(c => [c.id, c.name]))
+  const showCrustByCat = new Map(cats.map(c => [c.id, c.showCrustStep]))
   const childrenOf = new Map<number, number[]>()
   for (const c of cats) {
     if (c.parentId) childrenOf.set(c.parentId, [...(childrenOf.get(c.parentId) ?? []), c.id])
@@ -95,8 +99,11 @@ export async function loadMenuForPricing(
       const ownLinks = linksByCat.get(it.categoryId) ?? []
       const siblings = poolSetContaining(it.categoryId)
       if (ownLinks.length > 0) {
-        // Signature item: category links pools.
+        // Signature item: category links pools. Mirror the customer menu when
+        // the category has its "เลือกแป้ง" step switched off, or pricing would
+        // reject an order the UI never offered a crust for.
         groups = deriveGroupsFromPoolsForPricing(poolsOf(ownLinks), 'signature')
+        if (showCrustByCat.get(it.categoryId) === false) groups = withoutCrustStep(groups)
       } else if (siblings) {
         // DIY base (crust) ordered directly: extras from all sibling pools.
         groups = deriveDiyExtrasFromPools(poolsOf(siblings))

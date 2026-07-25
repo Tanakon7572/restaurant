@@ -1,0 +1,106 @@
+'use client'
+
+import { useState } from 'react'
+import type { MenuCategoryDTO, MenuItemDTO } from '@/lib/types'
+import { buildDiyItem } from '@/lib/options'
+import DiyEntryCard from './DiyEntryCard'
+
+function ItemThumb({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [imgError, setImgError] = useState(false)
+  if (imageUrl && !imgError) {
+    return <img src={imageUrl} alt={name} onError={() => setImgError(true)} />
+  }
+  return <div className="menu-card-fallback">{name.charAt(0)}</div>
+}
+
+type Props = {
+  categories: MenuCategoryDTO[]
+  /** Receives the tapped item — a DIY category yields its synthetic builder item. */
+  onSelect: (item: MenuItemDTO) => void
+  emptyText?: string
+}
+
+/**
+ * Search + category tabs + the 3-column menu grid, shared by the customer
+ * ordering screen, staff order taking and the staff order editor so all three
+ * stay visually and behaviourally identical.
+ */
+export default function MenuBrowser({ categories, onSelect, emptyText = 'ยังไม่มีเมนู' }: Props) {
+  const [pickedCategory, setPickedCategory] = useState<number | null>(null)
+  const [search, setSearch] = useState('')
+
+  // Derived, not synced: the first category stands in until one is tapped, and
+  // a menu reload that drops the picked category falls back to the first.
+  const activeCat = categories.find(c => c.id === pickedCategory) ?? categories[0]
+
+  const trimmedSearch = search.trim().toLowerCase()
+  const isSearching = trimmedSearch.length > 0
+  const searchResults = isSearching
+    ? categories.flatMap(cat => (cat.diy ? [] : cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch))))
+    : []
+  const isDiyView = !isSearching && !!activeCat?.diy
+  const displayItems = isSearching ? searchResults : isDiyView ? [] : (activeCat?.items ?? [])
+
+  return (
+    <>
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: '12px' }}>
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)', pointerEvents: 'none' }}>
+          <circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17" y2="17"/>
+        </svg>
+        <input className="input" placeholder="ค้นหาเมนู…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '36px' }} />
+        {search && (
+          <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: '1.1rem', lineHeight: 1 }} aria-label="ล้างการค้นหา">×</button>
+        )}
+      </div>
+
+      {!isSearching && categories.length > 0 && (
+        <div className="seg" style={{ marginBottom: '16px' }}>
+          {categories.map(cat => (
+            <button key={cat.id} className={`seg-item${activeCat?.id === cat.id ? ' active' : ''}`} onClick={() => setPickedCategory(cat.id)}>
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isSearching && (
+        <p style={{ fontSize: '0.82rem', color: 'var(--c-text-3)', marginBottom: '10px' }}>
+          {searchResults.length > 0 ? `พบ ${searchResults.length} รายการ` : 'ไม่พบเมนูที่ค้นหา'}
+        </p>
+      )}
+
+      {isDiyView && activeCat ? (
+        <DiyEntryCard category={activeCat} onStart={() => onSelect(buildDiyItem(activeCat))} />
+      ) : displayItems.length === 0 ? (
+        <div className="glass-panel" style={{ marginBottom: '14px' }}>
+          <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
+            {isSearching ? 'ไม่พบเมนูที่ค้นหา' : categories.length === 0 ? emptyText : 'ไม่มีเมนูในหมวดนี้'}
+          </p>
+        </div>
+      ) : (
+        <div className="menu-grid">
+          {displayItems.map(item => {
+            const soldOut = item.available === false
+            return (
+              <div key={item.id} className={`menu-card${soldOut ? ' is-sold' : ''}`} onClick={() => onSelect(item)}>
+                {soldOut && <span className="menu-card-sold">หมด</span>}
+                <div className="menu-card-media">
+                  <ItemThumb imageUrl={item.imageUrl} name={item.name} />
+                </div>
+                <div className="menu-card-body">
+                  <p className="menu-card-name">{item.name}</p>
+                  <div className="menu-card-foot">
+                    <p className="price-tag">฿{item.price.toLocaleString('th-TH')}</p>
+                    {!soldOut && <span className="btn btn-primary menu-card-add" aria-hidden>+</span>}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
+  )
+}

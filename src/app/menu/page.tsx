@@ -52,6 +52,7 @@ interface Category {
   parentId?: number | null
   ingredientCategoryId?: number | null
   ingredientCategoryIds?: number[]
+  showCrustStep?: boolean
   items: MenuItem[]
 }
 
@@ -766,6 +767,21 @@ export default function MenuPage() {
                   <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
                   ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)
                 </label>
+                {/* Only meaningful for Signature categories, i.e. ones that pull
+                    their options from an ingredient pool. */}
+                {linksOf(cat).length > 0 && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                    <input
+                      type="checkbox"
+                      checked={cat.showCrustStep !== false}
+                      onChange={e => updateCategoryField(cat.id, { showCrustStep: e.target.checked })}
+                    />
+                    แสดงขั้นตอน &quot;เลือกแป้ง&quot;
+                    <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)' }}>
+                      (ปิด = เมนู Signature ในหมวดนี้ไม่ต้องเลือกแป้ง)
+                    </span>
+                  </label>
+                )}
               </div>
             )}
 

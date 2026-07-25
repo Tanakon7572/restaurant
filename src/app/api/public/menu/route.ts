@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { deriveGroupsFromPools, expandPoolIds, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { deriveGroupsFromPools, expandPoolIds, withoutCrustStep, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
       orderBy: { order: 'asc' },
       select: {
         id: true, name: true, order: true, hidden: true, parentId: true,
-        ingredientCategoryId: true, ingredientCategoryIds: true,
+        ingredientCategoryId: true, ingredientCategoryIds: true, showCrustStep: true,
         items: {
           // Unavailable items are included so the UI can show them struck
           // through with a "หมด" badge; ordering them is blocked client- and
@@ -93,9 +93,13 @@ export async function GET() {
           diy: isDiy,
           diyGroups: isDiy ? diyGroups : [],
           items: tabItems.map(it => {
-            const groups = it.optionGroups.length > 0
+            let groups = it.optionGroups.length > 0
               ? it.optionGroups
               : (links.length > 0 && !isDiy ? deriveGroupsFromPools(poolsOf(links), 'signature') : [])
+            // Staff can switch the "เลือกแป้ง" step off per category.
+            if (it.optionGroups.length === 0 && !isDiy && c.showCrustStep === false) {
+              groups = withoutCrustStep(groups)
+            }
             return { id: it.id, name: it.name, price: it.price, imageUrl: it.imageUrl, available: it.available, optionGroups: groups }
           }),
         }

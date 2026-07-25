@@ -22,6 +22,10 @@ model MenuCategory {
   // option group in the DIY/Signature sheet (แป้ง / แยม / ไส้หวาน / ไส้เค็ม).
   // Supersedes ingredientCategoryId when non-empty.
   ingredientCategoryIds Int[] @default([])
+  // Signature items in this category normally open with a "เลือกแป้ง" step.
+  // Turn this off to drop that step (the item is then priced on its own base
+  // price). DIY builders ignore the flag — there the crust IS the base item.
+  showCrustStep Boolean @default(true)
   items      MenuItem[]
 }
 

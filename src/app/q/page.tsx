@@ -4,10 +4,10 @@ import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
-import { buildDiyItem, translateDiyLine } from '@/lib/options'
+import { translateDiyLine } from '@/lib/options'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
-import DiyEntryCard from '@/components/DiyEntryCard'
+import MenuBrowser from '@/components/MenuBrowser'
 
 interface OrderStatusItem {
   itemName?: string
@@ -94,34 +94,6 @@ function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
   }
 }
 
-function ItemThumb({ imageUrl, name, size = 40, cover = false }: { imageUrl?: string | null; name: string; size?: number; cover?: boolean }) {
-  const [imgError, setImgError] = useState(false)
-  if (cover) {
-    if (imageUrl && !imgError) {
-      return (
-        <img src={imageUrl} alt={name} onError={() => setImgError(true)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-      )
-    }
-    return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: '1.8rem' }}>
-        {name.charAt(0)}
-      </div>
-    )
-  }
-  if (imageUrl && !imgError) {
-    return (
-      <img src={imageUrl} alt={name} width={size} onError={() => setImgError(true)}
-        style={{ width: size, height: 'auto', borderRadius: '8px', flexShrink: 0, display: 'block' }} />
-    )
-  }
-  return (
-    <div style={{ width: size, height: size, borderRadius: '8px', background: 'var(--c-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: size * 0.38, flexShrink: 0 }}>
-      {name.charAt(0)}
-    </div>
-  )
-}
-
 function QROrderPage() {
   const searchParams = useSearchParams()
   // Single permanent shop link: /q?s=permanent (also the default when no token
@@ -129,7 +101,6 @@ function QROrderPage() {
   const sessionToken = searchParams.get('s') || 'permanent'
 
   const [categories, setCategories] = useState<MenuCategoryDTO[]>([])
-  const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<CartLine[]>([])
   const [sheetItem, setSheetItem] = useState<MenuItemDTO | null>(null)
   const [customerName, setCustomerName] = useState('')
@@ -139,7 +110,6 @@ function QROrderPage() {
   const [menuLoading, setMenuLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
 
   const [phase, setPhase] = useState<'ordering' | 'cart' | 'tracking'>('ordering')
   const [sessionOrderIds, setSessionOrderIds] = useState<number[]>([])
@@ -192,7 +162,6 @@ function QROrderPage() {
             items: Array.isArray(c.items) ? (c.items as Record<string, unknown>[]).map(toMenuItem) : [],
           }))
           setCategories(cats)
-          if (cats.length > 0) setActiveCategory(cats[0].id)
         }
       })
       .finally(() => setMenuLoading(false))
@@ -303,7 +272,6 @@ function QROrderPage() {
       setPhase('tracking')
       setCart([])
       saveCart(sessionToken, [])
-      setSearch('')
     } catch {
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
     } finally {
@@ -314,7 +282,6 @@ function QROrderPage() {
   function orderMore() {
     setCart([])
     saveCart(sessionToken, [])
-    setSearch('')
     setError('')
     setPhase('ordering')
   }
@@ -490,15 +457,6 @@ function QROrderPage() {
   }
 
   // ── Ordering screen ──────────────────────────────────────────────
-  const trimmedSearch = search.trim().toLowerCase()
-  const isSearching = trimmedSearch.length > 0
-  const searchResults = isSearching
-    ? categories.flatMap(cat => (cat.diy ? [] : cat.items.filter(i => i.name.toLowerCase().includes(trimmedSearch))))
-    : []
-  const activeCat = categories.find(c => c.id === activeCategory)
-  const isDiyView = !isSearching && !!activeCat?.diy
-  const displayItems = isSearching ? searchResults : isDiyView ? [] : (activeCat?.items ?? [])
-
   if (menuLoading) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -522,77 +480,7 @@ function QROrderPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div style={{ position: 'relative', marginBottom: '12px' }}>
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-          style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--c-text-3)', pointerEvents: 'none' }}>
-          <circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17" y2="17"/>
-        </svg>
-        <input className="input" placeholder="ค้นหาเมนู…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '36px' }} />
-        {search && (
-          <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: '1.1rem', lineHeight: 1 }} aria-label="ล้างการค้นหา">×</button>
-        )}
-      </div>
-
-      {!isSearching && (
-        <div className="seg" style={{ marginBottom: '16px' }}>
-          {categories.map(cat => (
-            <button key={cat.id} className={`seg-item${activeCategory === cat.id ? ' active' : ''}`} onClick={() => setActiveCategory(cat.id)}>
-              {cat.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isSearching && (
-        <p style={{ fontSize: '0.82rem', color: 'var(--c-text-3)', marginBottom: '10px' }}>
-          {searchResults.length > 0 ? `พบ ${searchResults.length} รายการ` : 'ไม่พบเมนูที่ค้นหา'}
-        </p>
-      )}
-
-      {/* DIY category → single entry card opening the step sheet */}
-      {isDiyView && activeCat ? (
-        <DiyEntryCard category={activeCat} onStart={() => setSheetItem(buildDiyItem(activeCat))} />
-      ) : displayItems.length === 0 ? (
-        <div className="glass-panel" style={{ marginBottom: '14px' }}>
-          <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
-            {isSearching ? 'ไม่พบเมนูที่ค้นหา' : 'ไม่มีเมนูในหมวดนี้'}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginBottom: '14px' }}>
-          {displayItems.map(item => {
-            const soldOut = item.available === false
-            return (
-              <div key={item.id}
-                style={{ borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)', overflow: 'hidden', background: 'var(--c-surface)', transition: 'border-color 0.15s', display: 'flex', flexDirection: 'column', cursor: soldOut ? 'not-allowed' : 'pointer', minWidth: 0, position: 'relative', opacity: soldOut ? 0.6 : 1 }}
-                onClick={() => openItem(item)}>
-                {soldOut && (
-                  <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 2, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
-                    หมด
-                  </span>
-                )}
-                <div style={{ aspectRatio: '4 / 3', background: 'var(--c-primary-light)', overflow: 'hidden', flexShrink: 0, filter: soldOut ? 'grayscale(1)' : 'none' }}>
-                  <ItemThumb imageUrl={item.imageUrl} name={item.name} cover />
-                </div>
-                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: soldOut ? 'line-through' : 'none', color: soldOut ? 'var(--c-text-3)' : 'inherit' }}>{item.name}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    <p className="price-tag" style={{ fontSize: '0.9rem', textDecoration: soldOut ? 'line-through' : 'none' }}>฿{item.price.toLocaleString('th-TH')}</p>
-                    {!soldOut && <span className="btn btn-primary" style={{ width: 28, height: 28, padding: 0, borderRadius: '50%', fontSize: '1.1rem', lineHeight: 1 }} aria-hidden>+</span>}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {categories.length === 0 && (
-        <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>ยังไม่มีเมนูเปิดให้บริการ</p>
-        </div>
-      )}
+      <MenuBrowser categories={categories} onSelect={openItem} emptyText="ยังไม่มีเมนูเปิดให้บริการ" />
 
       {/* Toast */}
       {toast && (
