@@ -4,6 +4,10 @@ export type OptionChoiceDTO = {
   priceDelta: number
   available: boolean
   order: number
+  // Only derived choices carry one: they are ingredient menu items, so the
+  // picker can show the same photo the item has. Hand-made option choices
+  // have no image and fall back to a letter tile.
+  imageUrl?: string | null
 }
 
 export type OptionGroupDTO = {

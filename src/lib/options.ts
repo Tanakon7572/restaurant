@@ -3,7 +3,7 @@ import type { GroupForPricing } from './order'
 import { lineKey } from './cart'
 
 // An ingredient is just a menu item from the linked (hidden) ingredient category.
-export type Ingredient = { id: number; name: string; price: number; available: boolean }
+export type Ingredient = { id: number; name: string; price: number; available: boolean; imageUrl?: string | null }
 
 // Synthetic, item-local group ids for derived groups (negative to never collide
 // with real OptionGroup ids, which are positive autoincrement).
@@ -49,13 +49,13 @@ export function deriveOptionGroups(ingredients: Ingredient[]): OptionGroupDTO[] 
     const baseline = crustBaseline(crusts)
     groups.push({
       id: CRUST_GROUP_ID, name: 'เลือกแป้ง', required: true, minSelect: 1, maxSelect: 1, order: 0,
-      choices: crusts.map((c, i) => ({ id: c.id, name: c.name, priceDelta: sigCrustDelta(c.price, baseline), available: c.available, order: i })),
+      choices: crusts.map((c, i) => ({ id: c.id, name: c.name, priceDelta: sigCrustDelta(c.price, baseline), available: c.available, order: i, imageUrl: c.imageUrl ?? null })),
     })
   }
   if (extras.length > 0) {
     groups.push({
       id: EXTRA_GROUP_ID, name: 'เพิ่มไส้ / ท็อปปิ้ง', required: false, minSelect: 0, maxSelect: extras.length, order: 1,
-      choices: extras.map((e, i) => ({ id: e.id, name: e.name, priceDelta: e.price, available: e.available, order: i })),
+      choices: extras.map((e, i) => ({ id: e.id, name: e.name, priceDelta: e.price, available: e.available, order: i, imageUrl: e.imageUrl ?? null })),
     })
   }
   return groups
@@ -120,7 +120,7 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
   const crustChoices = crustItems.map((i, j) => ({
     id: i.id, name: i.name,
     priceDelta: mode === 'signature' ? sigCrustDelta(i.price, crustBase) : i.price,
-    available: i.available, order: j,
+    available: i.available, order: j, imageUrl: i.imageUrl ?? null,
   }))
   if (crustChoices.length > 0) {
     groups.push({
@@ -142,7 +142,7 @@ export function deriveGroupsFromPools(pools: IngredientPool[], mode: 'signature'
       id: POOL_GROUP_BASE_ID - idx,
       name: mixed || p.generic ? 'เพิ่มไส้ / ท็อปปิ้ง' : p.name,
       required: false, minSelect: 0, maxSelect: rest.length, order: order++,
-      choices: rest.map((i, j) => ({ id: i.id, name: i.name, priceDelta: i.price, available: i.available, order: j })),
+      choices: rest.map((i, j) => ({ id: i.id, name: i.name, priceDelta: i.price, available: i.available, order: j, imageUrl: i.imageUrl ?? null })),
     })
   })
 

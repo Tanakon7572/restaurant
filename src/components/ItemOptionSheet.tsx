@@ -5,6 +5,14 @@ import { lineKey } from '@/lib/cart'
 
 type Props = { item: MenuItemDTO | null; onClose: () => void; onAdd: (line: CartLine) => void }
 
+function ChoiceThumb({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
+  const [imgError, setImgError] = useState(false)
+  if (imageUrl && !imgError) {
+    return <img src={imageUrl} alt="" onError={() => setImgError(true)} />
+  }
+  return <div className="opt-tile-fallback">{name.charAt(0)}</div>
+}
+
 export default function ItemOptionSheet({ item, onClose, onAdd }: Props) {
   const [selected, setSelected] = useState<Record<number, number[]>>({})
   const [qty, setQty] = useState(1)
@@ -68,27 +76,33 @@ export default function ItemOptionSheet({ item, onClose, onAdd }: Props) {
                 <p className="opt-hint">
                   {g.maxSelect === 1 ? 'กรุณาเลือก 1 ข้อ' : `เลือกสูงสุด ${g.maxSelect} ข้อ`}
                 </p>
-                {g.choices.map(c => {
-                  const checked = picks.includes(c.id)
-                  const blocked = !checked && g.maxSelect > 1 && picks.length >= g.maxSelect
-                  return (
-                    <label key={c.id} className={`opt-row${!c.available ? ' opt-row-off' : ''}`}>
-                      <input
-                        type={g.maxSelect === 1 ? 'radio' : 'checkbox'}
-                        name={`g${g.id}`} checked={checked}
-                        disabled={!c.available || blocked}
-                        onChange={() => toggle(g, c.id)} />
-                      <span className="opt-name" style={!c.available ? { textDecoration: 'line-through', color: 'var(--c-text-3)' } : undefined}>
-                        {c.name}
-                      </span>
-                      {!c.available ? (
-                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-danger)', flexShrink: 0 }}>หมด</span>
-                      ) : (
-                        <span className="opt-price">{c.priceDelta > 0 ? `+฿${c.priceDelta}` : '฿0'}</span>
-                      )}
-                    </label>
-                  )
-                })}
+                <div className="opt-grid">
+                  {g.choices.map(c => {
+                    const checked = picks.includes(c.id)
+                    const blocked = !checked && g.maxSelect > 1 && picks.length >= g.maxSelect
+                    const state = !c.available ? ' is-off' : blocked ? ' is-blocked' : ''
+                    return (
+                      <label key={c.id} className={`opt-tile${checked ? ' selected' : ''}${state}`}>
+                        <input
+                          type={g.maxSelect === 1 ? 'radio' : 'checkbox'}
+                          name={`g${g.id}`} checked={checked}
+                          disabled={!c.available || blocked}
+                          onChange={() => toggle(g, c.id)} />
+                        {!c.available && <span className="opt-tile-off-badge">หมด</span>}
+                        {checked && <span className="opt-tile-check" aria-hidden>✓</span>}
+                        <div className="opt-tile-media">
+                          <ChoiceThumb imageUrl={c.imageUrl} name={c.name} />
+                        </div>
+                        <div className="opt-tile-body">
+                          <span className="opt-tile-name">{c.name}</span>
+                          <span className="opt-tile-price">
+                            {c.priceDelta > 0 ? `+฿${c.priceDelta.toLocaleString('th-TH')}` : '฿0'}
+                          </span>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
             )
           })}

@@ -36,7 +36,7 @@ export async function GET() {
     const nameByCat = new Map<number, string>()
     const childrenOf = new Map<number, number[]>()
     for (const c of categories) {
-      allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: i.available })))
+      allItemsByCat.set(c.id, c.items.map(i => ({ id: i.id, name: i.name, price: i.price, available: i.available, imageUrl: i.imageUrl })))
       nameByCat.set(c.id, c.name)
       if (c.parentId) childrenOf.set(c.parentId, [...(childrenOf.get(c.parentId) ?? []), c.id])
     }
