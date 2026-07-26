@@ -155,6 +155,26 @@ export function withoutCrustStep<T extends { id: number }>(groups: T[]): T[] {
   return groups.filter(g => g.id !== CRUST_GROUP_ID)
 }
 
+// The group id deriveGroupsFromPools gives the pool at `index`. Mirrors the id
+// scheme above, including the legacy single-mixed-pool shortcut.
+export function poolGroupId(pools: IngredientPool[], index: number): number {
+  if (pools.length === 1 && !isCrustCategory(pools[0].name)) return EXTRA_GROUP_ID
+  return POOL_GROUP_BASE_ID - index
+}
+
+// Drop whole steps a Signature category has switched off (เพิ่ม checkbox per
+// pool in the menu manager). The pools stay linked — this only hides the
+// picker step, so the ingredients remain orderable from elsewhere.
+// The crust step is spread across pools and has its own showCrustStep flag.
+export function withoutHiddenPools<T extends { id: number }>(
+  groups: T[], pools: IngredientPool[], hiddenPoolIds: number[],
+): T[] {
+  if (hiddenPoolIds.length === 0) return groups
+  const drop = new Set(
+    pools.flatMap((p, i) => (hiddenPoolIds.includes(p.id) ? [poolGroupId(pools, i)] : [])))
+  return groups.filter(g => !drop.has(g.id))
+}
+
 export function deriveGroupsFromPoolsForPricing(pools: IngredientPool[], mode: 'signature' | 'diy'): GroupForPricing[] {
   return deriveGroupsFromPools(pools, mode).map(g => ({
     id: g.id, name: g.name, required: g.required, minSelect: g.minSelect, maxSelect: g.maxSelect,

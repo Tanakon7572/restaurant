@@ -26,6 +26,10 @@ model MenuCategory {
   // Turn this off to drop that step (the item is then priced on its own base
   // price). DIY builders ignore the flag — there the crust IS the base item.
   showCrustStep Boolean @default(true)
+  // Linked pool category ids whose derived step is hidden for Signature items
+  // in this category. The ingredients stay linked (so existing orders and the
+  // pool itself are untouched) — only the picker step disappears.
+  hiddenPoolCategoryIds Int[] @default([])
   items      MenuItem[]
 }
 

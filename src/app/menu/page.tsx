@@ -6,6 +6,7 @@ import Cropper from 'react-easy-crop'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
+import { isCrust, isCrustCategory } from '@/lib/options'
 
 async function resizeToDataUrl(dataUrl: string, maxPx = 1400): Promise<string> {
   return new Promise(resolve => {
@@ -53,6 +54,7 @@ interface Category {
   ingredientCategoryId?: number | null
   ingredientCategoryIds?: number[]
   showCrustStep?: boolean
+  hiddenPoolCategoryIds?: number[]
   items: MenuItem[]
 }
 
@@ -468,6 +470,29 @@ export default function MenuPage() {
     ])
   }
 
+  // Steps a Signature category can switch off: every linked pool (and its
+  // sub-pools) that actually contributes one. แป้ง pools are left out — that
+  // step is spread across pools and has its own toggle.
+  function hideablePools(cat: Category): Category[] {
+    const seen = new Set<number>()
+    return linksOf(cat)
+      .flatMap(id => [id, ...childCats(id).map(c => c.id)])
+      .flatMap(id => {
+        if (seen.has(id)) return []
+        seen.add(id)
+        const pool = categories.find(c => c.id === id)
+        if (!pool || isCrustCategory(pool.name)) return []
+        return pool.items.some(i => !isCrust(i.name)) ? [pool] : []
+      })
+  }
+
+  function togglePoolStep(cat: Category, poolId: number, show: boolean) {
+    const hidden = cat.hiddenPoolCategoryIds ?? []
+    updateCategoryField(cat.id, {
+      hiddenPoolCategoryIds: show ? hidden.filter(id => id !== poolId) : [...hidden, poolId],
+    })
+  }
+
   function renderItemGrid(items: MenuItem[]) {
     if (items.length === 0) return null
     return (
@@ -782,6 +807,19 @@ export default function MenuPage() {
                     </span>
                   </label>
                 )}
+                {/* One toggle per remaining step. Unticking hides the step from
+                    customers but keeps the pool linked, so it can come back
+                    without re-configuring anything. */}
+                {hideablePools(cat).map(pool => (
+                  <label key={pool.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                    <input
+                      type="checkbox"
+                      checked={!(cat.hiddenPoolCategoryIds ?? []).includes(pool.id)}
+                      onChange={e => togglePoolStep(cat, pool.id, e.target.checked)}
+                    />
+                    แสดงขั้นตอน &quot;{pool.name}&quot;
+                  </label>
+                ))}
               </div>
             )}
 

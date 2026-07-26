@@ -3,6 +3,7 @@ import {
   deriveOptionGroups, isCrust, deriveGroupsForPricing,
   deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
   deriveGroupsFromPools, deriveDiyExtrasFromPools, isCrustCategory, expandPoolIds,
+  withoutCrustStep, withoutHiddenPools,
   CRUST_GROUP_ID, DIY_NAME_PREFIX, type IngredientPool,
 } from './options'
 import { priceOrderItems, type MenuItemForPricing } from './order'
@@ -232,6 +233,27 @@ it('signature mode prices the crust as the difference from vanilla across pools'
   expect(groups[0].choices.find(c => c.id === 31)!.priceDelta).toBe(0) // วานิลลา (baseline 20)
   expect(groups[0].choices.find(c => c.id === 32)!.priceDelta).toBe(5) // ชาร์โคล 25 − 20
   expect(groups[1].choices[0].priceDelta).toBe(10)
+})
+
+it('hides the steps a category switched off, leaving the rest priced as before', () => {
+  const all = deriveGroupsFromPools(pools, 'signature')
+  const groups = withoutHiddenPools(all, pools, [11, 13])
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง', 'ไส้หวาน'])
+  // The remaining steps keep their ids, so a half-built cart stays valid.
+  expect(groups[1].id).toBe(all[2].id)
+  expect(withoutHiddenPools(all, pools, [])).toBe(all)
+})
+
+it('hides the legacy single-pool extras group too', () => {
+  const single: IngredientPool[] = [{ id: 4, name: 'DIY', items: ingredients }]
+  const groups = withoutHiddenPools(deriveGroupsFromPools(single, 'signature'), single, [4])
+  expect(groups.map(g => g.name)).toEqual(['เลือกแป้ง'])
+})
+
+it('combines the crust toggle with hidden pools', () => {
+  const groups = withoutHiddenPools(
+    withoutCrustStep(deriveGroupsFromPools(pools, 'signature')), pools, [11, 12, 13])
+  expect(groups).toEqual([])
 })
 
 it('falls back to legacy split for a single mixed pool', () => {

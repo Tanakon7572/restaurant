@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { deriveGroupsFromPools, expandPoolIds, withoutCrustStep, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { deriveGroupsFromPools, expandPoolIds, withoutCrustStep, withoutHiddenPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 
 export async function GET() {
   try {
@@ -8,7 +8,8 @@ export async function GET() {
       orderBy: { order: 'asc' },
       select: {
         id: true, name: true, order: true, hidden: true, parentId: true,
-        ingredientCategoryId: true, ingredientCategoryIds: true, showCrustStep: true,
+        ingredientCategoryId: true, ingredientCategoryIds: true,
+        showCrustStep: true, hiddenPoolCategoryIds: true,
         items: {
           // Unavailable items are included so the UI can show them struck
           // through with a "หมด" badge; ordering them is blocked client- and
@@ -88,6 +89,8 @@ export async function GET() {
         // Normal categories flatten their sub-categories' items into the tab.
         const tabItems = isDiy ? c.items : [...c.items, ...(childrenOf.get(c.id) ?? []).flatMap(childId =>
           categories.find(x => x.id === childId)?.items ?? [])]
+        // Signature pools, resolved once: every item in the tab derives from them.
+        const sigPools = !isDiy && links.length > 0 ? poolsOf(links) : []
         return {
           id: c.id, name: c.name, order: c.order,
           diy: isDiy,
@@ -95,10 +98,11 @@ export async function GET() {
           items: tabItems.map(it => {
             let groups = it.optionGroups.length > 0
               ? it.optionGroups
-              : (links.length > 0 && !isDiy ? deriveGroupsFromPools(poolsOf(links), 'signature') : [])
-            // Staff can switch the "เลือกแป้ง" step off per category.
-            if (it.optionGroups.length === 0 && !isDiy && c.showCrustStep === false) {
-              groups = withoutCrustStep(groups)
+              : (sigPools.length > 0 ? deriveGroupsFromPools(sigPools, 'signature') : [])
+            // Staff can switch individual steps off per category.
+            if (it.optionGroups.length === 0 && !isDiy) {
+              if (c.showCrustStep === false) groups = withoutCrustStep(groups)
+              groups = withoutHiddenPools(groups, sigPools, c.hiddenPoolCategoryIds)
             }
             return { id: it.id, name: it.name, price: it.price, imageUrl: it.imageUrl, available: it.available, optionGroups: groups }
           }),
