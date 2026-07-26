@@ -40,6 +40,15 @@ function IconReceipt() {
   )
 }
 
+function IconCash() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </svg>
+  )
+}
+
 function IconSettings() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -53,6 +62,7 @@ const NAV_ITEMS = [
   { href: '/dashboard',  label: 'หน้าหลัก',  Icon: IconDashboard },
   { href: '/menu',       label: 'เมนู',       Icon: IconMenu },
   { href: '/orders/new', label: 'สั่งอาหาร',  Icon: IconPlus },
+  { href: '/checkout',   label: 'เก็บเงิน',   Icon: IconCash },
   { href: '/orders',     label: 'ออเดอร์',    Icon: IconReceipt },
   { href: '/settings',   label: 'ตั้งค่า',    Icon: IconSettings },
 ]

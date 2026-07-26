@@ -6,6 +6,7 @@ import PosShell from '@/components/PosShell'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
+import { submitOrder as submitOrderOrQueue } from '@/lib/offlineQueue'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
 import MenuBrowser from '@/components/MenuBrowser'
@@ -31,6 +32,7 @@ export default function NewOrderPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [queuedNotice, setQueuedNotice] = useState(false)
   const [phase, setPhase] = useState<'ordering' | 'cart'>('ordering')
   const router = useRouter()
 
@@ -82,28 +84,32 @@ export default function NewOrderPage() {
     if (cart.length === 0) return
     setSubmitting(true)
     setError('')
+    const payload = {
+      tableNumber: tableNumber || null,
+      customerName: customerName || null,
+      note: note || null,
+      items: cart.map(l => ({
+        menuItemId: l.menuItemId, quantity: l.quantity,
+        note: l.note, optionChoiceIds: l.optionChoiceIds,
+      })),
+    }
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableNumber: tableNumber || null,
-          customerName: customerName || null,
-          note: note || null,
-          items: cart.map(l => ({
-            menuItemId: l.menuItemId, quantity: l.quantity,
-            note: l.note, optionChoiceIds: l.optionChoiceIds,
-          })),
-        }),
-      })
-      if (res.status === 401) { router.push('/'); return }
-      if (!res.ok) {
-        const data = await res.json()
+      const result = await submitOrderOrQueue(payload)
+      // No connection: the ticket is parked and sent automatically later, so
+      // the till clears and staff carry on serving.
+      if (result.queued) {
+        setCart([])
+        setTableNumber(''); setCustomerName(''); setNote('')
+        setQueuedNotice(true)
+        setTimeout(() => setQueuedNotice(false), 6000)
+        return
+      }
+      const data = result.data as { id?: number; error?: string }
+      if (!result.ok) {
         setError(data.error || 'เกิดข้อผิดพลาด')
         return
       }
-      const order = await res.json()
-      router.push(`/orders/${order.id}`)
+      router.push(`/orders/${data.id}`)
     } catch {
       setError('เกิดข้อผิดพลาด กรุณาลองใหม่')
     } finally {
@@ -140,6 +146,11 @@ export default function NewOrderPage() {
           <span className="price-tag-lg">฿{totalPrice.toLocaleString('th-TH')}</span>
         </div>
         {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem' }}>{error}</p>}
+        {queuedNotice && (
+          <p style={{ color: 'var(--c-warning)', fontSize: '0.82rem' }}>
+            บันทึกออเดอร์ไว้แล้ว — จะส่งเข้าระบบให้เองเมื่อเน็ตกลับมา
+          </p>
+        )}
         <button
           className="btn btn-primary btn-full"
           onClick={submitOrder}
@@ -188,6 +199,11 @@ export default function NewOrderPage() {
         {cart.length > 0 && (
           <div className="hide-desktop" style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
             {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>{error}</p>}
+            {queuedNotice && (
+              <p style={{ color: 'var(--c-warning)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>
+                บันทึกออเดอร์ไว้แล้ว — จะส่งเข้าระบบให้เองเมื่อเน็ตกลับมา
+              </p>
+            )}
             <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting}
               style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
               <span>{submitting ? 'กำลังบันทึก…' : 'บันทึกออเดอร์'}</span>

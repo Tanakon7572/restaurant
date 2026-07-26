@@ -59,7 +59,54 @@ model Order {
   note        String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  // Set once the order is paid for. Orders without a bill are still open, so
+  // this is what the checkout screen looks at — not `status`, which tracks
+  // the kitchen.
+  billId      Int?
+  bill        Bill?       @relation(fields: [billId], references: [id], onDelete: SetNull)
   items       OrderItem[]
+
+  @@index([billId])
+}
+
+// One payment closing out one table. Orders are grouped into it; the money
+// figures are snapshots so a later menu-price or VAT-rate change never
+// rewrites history.
+model Bill {
+  id            Int      @id @default(autoincrement())
+  tableNumber   String?
+  subtotal      Float    @default(0)
+  discount      Float    @default(0)
+  discountNote  String?
+  serviceCharge Float    @default(0)
+  vat           Float    @default(0)
+  total         Float    @default(0)
+  // cash | promptpay | transfer | card
+  method        String   @default("cash")
+  // Cash handed over and change given back; null for every other method.
+  received      Float?
+  changeDue     Float?
+  note          String?
+  // Set when the bill is voided. Voided bills reopen their orders and drop
+  // out of the day's totals, but the row stays for the audit trail.
+  voidedAt      DateTime?
+  voidReason    String?
+  createdAt     DateTime @default(now())
+  orders        Order[]
+
+  @@index([createdAt])
+}
+
+// Snapshot taken when staff close the day's till. Keyed by Bangkok day, so
+// re-closing the same day overwrites rather than duplicating.
+model DayClose {
+  dayKey       String   @id
+  closedAt     DateTime @default(now())
+  billCount    Int      @default(0)
+  totalSales   Float    @default(0)
+  expectedCash Float    @default(0)
+  countedCash  Float    @default(0)
+  note         String?
 }
 
 model OrderItem {
@@ -79,6 +126,18 @@ model AppSettings {
   id            Int     @id @default(autoincrement())
   shopName      String  @default("ร้านอาหาร")
   adminPassword String?
+  // none = ไม่คิด VAT | included = ราคาเมนูรวม VAT แล้ว (แยกให้ดูในใบเสร็จ)
+  // added = บวก VAT เพิ่มจากยอด
+  vatMode           String  @default("none")
+  vatRate           Float   @default(7)
+  serviceChargeRate Float   @default(0)
+  // Phone number or national/tax id. Empty = no PromptPay QR is offered.
+  promptPayId       String?
+  // Free text printed above the items (address, tax id) and at the foot.
+  receiptHeader     String?
+  receiptFooter     String?
+  // Thermal paper width in mm: 58 or 80.
+  receiptWidth      Int     @default(58)
 }
 
 model OptionGroup {

@@ -9,6 +9,8 @@ import MenuBrowser from '@/components/MenuBrowser'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import { addLine, setQuantity, removeLine, cartTotal, lineKey } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
+import { printSlip } from '@/lib/print'
+import { kitchenTicketHtml } from '@/lib/receipt'
 import type { CartLine, MenuCategoryDTO, MenuItemDTO } from '@/lib/types'
 
 interface OrderItemData {
@@ -69,8 +71,22 @@ export default function OrderDetailPage() {
   const [saveError, setSaveError] = useState('')
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
+  // Printed on the kitchen ticket header; falls back to the generic name so a
+  // failed settings fetch never blocks printing.
+  const [shopName, setShopName] = useState('ร้านอาหาร')
+  const [receiptWidth, setReceiptWidth] = useState(58)
   const router = useRouter()
   const params = useParams()
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (d?.shopName) setShopName(d.shopName)
+        if (d?.receiptWidth) setReceiptWidth(d.receiptWidth)
+      })
+      .catch(() => {})
+  }, [])
 
   function fetchOrder() {
     fetch(`/api/orders/${params.id}`)
@@ -318,49 +334,32 @@ export default function OrderDetailPage() {
 
   const nextStatuses = STATUS_FLOW[order.status] || []
 
-  function printReceipt() {
+  // The money receipt now comes from the bill at checkout; what this page
+  // prints is the ticket the kitchen works off — items, options and notes,
+  // no prices.
+  function printKitchenTicket() {
     if (!order) return
-    const dt = new Date(order.createdAt).toLocaleString('th-TH', {
-      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    })
-    const lines = order.items.map(i => {
-      const opts = (i.options && i.options.length > 0)
-        ? `<div style="font-size:11px;color:#666;padding-left:6px">${i.options.map(o => `• ${o.choiceName}${o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}`).join('<br>')}</div>`
-        : ''
-      const note = i.note ? `<div style="font-size:11px;color:#666;padding-left:6px">📝 ${i.note}</div>` : ''
-      return `<tr><td>${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}${opts}${note}</td><td style="text-align:right;vertical-align:top">฿${(i.price * i.quantity).toLocaleString('th-TH')}</td></tr>`
-    }).join('')
-    const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
-<title>ใบเสร็จ #${order.dailyNumber ?? order.id}</title>
-<style>
-  body{font-family:'IBM Plex Sans Thai',sans-serif;max-width:320px;margin:0 auto;padding:20px;font-size:13px;color:#111}
-  h2{text-align:center;font-size:1rem;margin-bottom:4px}
-  .meta{text-align:center;color:#666;font-size:11px;margin-bottom:12px;border-bottom:1px dashed #ccc;padding-bottom:10px}
-  table{width:100%;border-collapse:collapse}
-  td{padding:5px 0;vertical-align:top}
-  .total{border-top:2px solid #111;font-weight:700;font-size:14px;margin-top:4px}
-  .total td{padding:8px 0}
-  .footer{text-align:center;margin-top:16px;font-size:11px;color:#999;border-top:1px dashed #ccc;padding-top:10px}
-</style></head><body>
-<h2>ใบเสร็จรับเงิน</h2>
-<div class="meta">
-  ออเดอร์ #${order.dailyNumber ?? order.id}${order.tableNumber ? ` · โต๊ะ ${order.tableNumber}` : ''}${order.customerName ? ` · ${order.customerName}` : ''}<br>
-  ${dt}
-</div>
-<table>
-  ${lines}
-  <tr class="total"><td>รวมทั้งสิ้น</td><td style="text-align:right">฿${order.totalPrice.toLocaleString('th-TH')}</td></tr>
-</table>
-${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมายเหตุ: ${order.note}</p>` : ''}
-<div class="footer">ขอบคุณที่ใช้บริการ</div>
-</body></html>`
-
-    const win = window.open('', '_blank', 'width=400,height=600')
-    if (!win) return
-    win.document.write(html)
-    win.document.close()
-    win.focus()
-    win.print()
+    printSlip(
+      kitchenTicketHtml(
+        {
+          id: order.id,
+          dailyNumber: order.dailyNumber,
+          tableNumber: order.tableNumber,
+          customerName: order.customerName,
+          note: order.note,
+          createdAt: order.createdAt,
+          items: order.items.map(i => ({
+            itemName: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
+            quantity: i.quantity,
+            price: i.price,
+            note: i.note,
+            options: i.options,
+          })),
+        },
+        shopName,
+      ),
+      receiptWidth,
+    )
   }
 
   return (
@@ -486,18 +485,18 @@ ${order.note ? `<p style="margin-top:12px;font-size:11px;color:#666">หมา�
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
-        {/* Print receipt — always visible */}
+        {/* Kitchen ticket — always visible */}
         <button
           className="btn btn-ghost"
-          onClick={printReceipt}
+          onClick={printKitchenTicket}
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          title="พิมพ์ใบเสร็จ"
+          title="พิมพ์สลิปครัว"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
             <rect x="6" y="14" width="12" height="8"/>
           </svg>
-          ใบเสร็จ
+          สลิปครัว
         </button>
 
         {/* Editable at any status — staff correct closed and cancelled tickets too */}

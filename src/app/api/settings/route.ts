@@ -11,6 +11,13 @@ export async function GET() {
     return NextResponse.json({
       shopName: settings?.shopName ?? 'ร้านอาหาร',
       hasDbPassword: !!settings?.adminPassword,
+      vatMode: settings?.vatMode ?? 'none',
+      vatRate: settings?.vatRate ?? 7,
+      serviceChargeRate: settings?.serviceChargeRate ?? 0,
+      promptPayId: settings?.promptPayId ?? '',
+      receiptHeader: settings?.receiptHeader ?? '',
+      receiptFooter: settings?.receiptFooter ?? '',
+      receiptWidth: settings?.receiptWidth ?? 58,
     })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch settings', detail: String(err) }, { status: 500 })
@@ -22,7 +29,8 @@ export async function PATCH(request: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { shopName, currentPassword, newPassword } = await request.json()
+    const body = await request.json()
+    const { shopName, currentPassword, newPassword } = body
 
     if (newPassword !== undefined) {
       if (!currentPassword) {
@@ -38,9 +46,26 @@ export async function PATCH(request: Request) {
     }
 
     const existing = await prisma.appSettings.findFirst()
-    const data: Record<string, string> = {}
+    const data: Record<string, string | number> = {}
     if (shopName !== undefined) data.shopName = shopName.trim()
     if (newPassword !== undefined) data.adminPassword = newPassword.trim()
+
+    // Receipt / tax configuration. Rates are clamped here rather than trusted
+    // from the form, since every bill is priced off them.
+    if (body.vatMode !== undefined) {
+      if (!['none', 'included', 'added'].includes(body.vatMode)) {
+        return NextResponse.json({ error: 'รูปแบบ VAT ไม่ถูกต้อง' }, { status: 400 })
+      }
+      data.vatMode = body.vatMode
+    }
+    if (body.vatRate !== undefined) data.vatRate = Math.min(100, Math.max(0, Number(body.vatRate) || 0))
+    if (body.serviceChargeRate !== undefined) {
+      data.serviceChargeRate = Math.min(100, Math.max(0, Number(body.serviceChargeRate) || 0))
+    }
+    if (body.promptPayId !== undefined) data.promptPayId = String(body.promptPayId).trim()
+    if (body.receiptHeader !== undefined) data.receiptHeader = String(body.receiptHeader).trim()
+    if (body.receiptFooter !== undefined) data.receiptFooter = String(body.receiptFooter).trim()
+    if (body.receiptWidth !== undefined) data.receiptWidth = Number(body.receiptWidth) === 80 ? 80 : 58
 
     if (existing) {
       await prisma.appSettings.update({ where: { id: existing.id }, data })

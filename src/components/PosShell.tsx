@@ -51,6 +51,21 @@ function IconQr() {
     </svg>
   )
 }
+function IconCash() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>
+      <path d="M6 12h.01M18 12h.01"/>
+    </svg>
+  )
+}
+function IconReport() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+    </svg>
+  )
+}
 function IconSettings() {
   return (
     <svg width="19" height="19" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -63,6 +78,8 @@ function IconSettings() {
 const NAV = [
   { href: '/dashboard',  label: 'หน้าหลัก',    Icon: IconGrid },
   { href: '/orders/new', label: 'ขายหน้าร้าน', Icon: IconPos },
+  { href: '/checkout',   label: 'เก็บเงิน',    Icon: IconCash },
+  { href: '/reports',    label: 'ปิดรอบขาย',   Icon: IconReport },
   { href: '/orders',     label: 'ออเดอร์',     Icon: IconReceipt, badge: true },
   { href: '/menu',       label: 'จัดการเมนู',  Icon: IconMenu },
   { href: '/kitchen',    label: 'จอครัว',      Icon: IconKitchen, newTab: true },

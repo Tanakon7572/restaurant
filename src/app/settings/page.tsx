@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+      {children}
+    </label>
+  )
+}
+
 function todayStr() {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
@@ -29,6 +37,15 @@ export default function SettingsPage() {
   const [clearMsg, setClearMsg] = useState('')
   const [clearError, setClearError] = useState('')
 
+  // Receipt / tax block. Kept as strings so a half-typed number doesn't fight
+  // the input; they're coerced on save and clamped again server-side.
+  const [billing, setBilling] = useState({
+    vatMode: 'none', vatRate: '7', serviceChargeRate: '0',
+    promptPayId: '', receiptHeader: '', receiptFooter: '', receiptWidth: '58',
+  })
+  const [billingSaving, setBillingSaving] = useState(false)
+  const [billingMsg, setBillingMsg] = useState('')
+
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -39,10 +56,45 @@ export default function SettingsPage() {
         return res.json()
       })
       .then(data => {
-        if (data?.shopName) setShopName(data.shopName)
+        if (!data) return
+        if (data.shopName) setShopName(data.shopName)
+        setBilling({
+          vatMode: data.vatMode ?? 'none',
+          vatRate: String(data.vatRate ?? 7),
+          serviceChargeRate: String(data.serviceChargeRate ?? 0),
+          promptPayId: data.promptPayId ?? '',
+          receiptHeader: data.receiptHeader ?? '',
+          receiptFooter: data.receiptFooter ?? '',
+          receiptWidth: String(data.receiptWidth ?? 58),
+        })
       })
       .finally(() => setLoading(false))
   }, [router])
+
+  async function saveBilling() {
+    setBillingSaving(true)
+    setBillingMsg('')
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vatMode: billing.vatMode,
+          vatRate: Number(billing.vatRate) || 0,
+          serviceChargeRate: Number(billing.serviceChargeRate) || 0,
+          promptPayId: billing.promptPayId,
+          receiptHeader: billing.receiptHeader,
+          receiptFooter: billing.receiptFooter,
+          receiptWidth: Number(billing.receiptWidth),
+        }),
+      })
+      const data = await res.json()
+      setBillingMsg(res.ok ? 'บันทึกสำเร็จ' : (data.error || 'เกิดข้อผิดพลาด'))
+      if (res.ok) setTimeout(() => setBillingMsg(''), 3000)
+    } finally {
+      setBillingSaving(false)
+    }
+  }
 
   async function saveShopName() {
     if (!shopName.trim()) return
@@ -230,6 +282,87 @@ export default function SettingsPage() {
             disabled={passwordSaving}
           >
             {passwordSaving ? 'กำลังเปลี่ยน…' : 'เปลี่ยนรหัสผ่าน'}
+          </button>
+        </div>
+      </div>
+
+      {/* Receipt & tax */}
+      <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>ใบเสร็จ ภาษี และการชำระเงิน</h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
+          ใช้ตอนเก็บเงินและพิมพ์ใบเสร็จ ร้านที่ไม่ได้จด VAT ให้เลือก &quot;ไม่คิด VAT&quot;
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <Label>รูปแบบ VAT</Label>
+            <select className="input" value={billing.vatMode}
+              onChange={e => setBilling(b => ({ ...b, vatMode: e.target.value }))}>
+              <option value="none">ไม่คิด VAT</option>
+              <option value="included">ราคาเมนูรวม VAT แล้ว (แยกให้ดูในใบเสร็จ)</option>
+              <option value="added">บวก VAT เพิ่มจากยอด</option>
+            </select>
+          </div>
+
+          {billing.vatMode !== 'none' && (
+            <div>
+              <Label>อัตรา VAT (%)</Label>
+              <input className="input" type="number" min="0" max="100" step="0.1"
+                value={billing.vatRate}
+                onChange={e => setBilling(b => ({ ...b, vatRate: e.target.value }))} />
+            </div>
+          )}
+
+          <div>
+            <Label>ค่าบริการ (%)</Label>
+            <input className="input" type="number" min="0" max="100" step="0.1"
+              value={billing.serviceChargeRate}
+              onChange={e => setBilling(b => ({ ...b, serviceChargeRate: e.target.value }))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '4px' }}>
+              ใส่ 0 ถ้าไม่เก็บ
+            </p>
+          </div>
+
+          <div>
+            <Label>พร้อมเพย์ (เบอร์โทร หรือ เลขประจำตัวผู้เสียภาษี 13 หลัก)</Label>
+            <input className="input" inputMode="numeric" placeholder="0812345678"
+              value={billing.promptPayId}
+              onChange={e => setBilling(b => ({ ...b, promptPayId: e.target.value }))} />
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '4px' }}>
+              ใส่แล้วหน้าเก็บเงินจะสร้าง QR พร้อมยอดให้อัตโนมัติ เว้นว่าง = ปิดการใช้งาน
+            </p>
+          </div>
+
+          <div>
+            <Label>ขนาดกระดาษใบเสร็จ</Label>
+            <select className="input" value={billing.receiptWidth}
+              onChange={e => setBilling(b => ({ ...b, receiptWidth: e.target.value }))}>
+              <option value="58">58 มม. (เครื่องพิมพ์เล็ก)</option>
+              <option value="80">80 มม.</option>
+            </select>
+          </div>
+
+          <div>
+            <Label>ข้อความหัวใบเสร็จ</Label>
+            <textarea className="input" rows={2} placeholder="ที่อยู่ / เลขประจำตัวผู้เสียภาษี / เบอร์โทร"
+              value={billing.receiptHeader}
+              onChange={e => setBilling(b => ({ ...b, receiptHeader: e.target.value }))} />
+          </div>
+
+          <div>
+            <Label>ข้อความท้ายใบเสร็จ</Label>
+            <textarea className="input" rows={2} placeholder="ขอบคุณที่ใช้บริการ"
+              value={billing.receiptFooter}
+              onChange={e => setBilling(b => ({ ...b, receiptFooter: e.target.value }))} />
+          </div>
+
+          {billingMsg && (
+            <p style={{ fontSize: '0.82rem', color: billingMsg.startsWith('บันทึก') ? 'var(--c-success)' : 'var(--c-danger)' }}>
+              {billingMsg}
+            </p>
+          )}
+          <button className="btn btn-primary" onClick={saveBilling} disabled={billingSaving}>
+            {billingSaving ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่าใบเสร็จ'}
           </button>
         </div>
       </div>
