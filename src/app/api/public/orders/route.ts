@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
 import { isPermanentToken, PERMANENT_SESSION_TOKEN } from '@/lib/tableSession'
-import { dailyNumberFor } from '@/lib/orderNumber'
+import { reserveDailyNumber } from '@/lib/orderNumber'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function POST(request: Request) {
@@ -40,31 +40,36 @@ export async function POST(request: Request) {
     const result = priceOrderItems(items, menu)
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
 
-    const order = await prisma.order.create({
-      data: {
-        tableNumber: tableNumber || null,
-        customerName: customerName || null,
-        sessionToken: resolvedToken,
-        note: note || null,
-        status: 'awaiting',
-        totalPrice: result.totalPrice,
-        items: {
-          create: result.items.map(it => ({
-            menuItemId: it.menuItemId,
-            itemName: it.itemName,
-            quantity: it.quantity,
-            price: it.price,
-            note: it.note,
-            options: { create: it.options },
-          })),
+    const order = await prisma.$transaction(async tx => {
+      const { dayKey, dailyNumber } = await reserveDailyNumber(tx)
+      return tx.order.create({
+        data: {
+          tableNumber: tableNumber || null,
+          customerName: customerName || null,
+          sessionToken: resolvedToken,
+          note: note || null,
+          status: 'awaiting',
+          totalPrice: result.totalPrice,
+          dayKey,
+          dailyNumber,
+          items: {
+            create: result.items.map(it => ({
+              menuItemId: it.menuItemId,
+              itemName: it.itemName,
+              quantity: it.quantity,
+              price: it.price,
+              note: it.note,
+              options: { create: it.options },
+            })),
+          },
         },
-      },
-      include: { items: { include: { options: true } } },
+        include: { items: { include: { options: true } } },
+      })
     })
 
     return NextResponse.json({
       id: order.id,
-      dailyNumber: await dailyNumberFor(prisma, order),
+      dailyNumber: order.dailyNumber,
       status: order.status,
       totalPrice: order.totalPrice,
       tableNumber: order.tableNumber,

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { deactivateSessionIfFinished } from '@/lib/tableSession'
-import { withDailyNumbers } from '@/lib/orderNumber'
 
 export async function GET() {
   try {
@@ -19,7 +18,7 @@ export async function GET() {
         },
       },
     })
-    return NextResponse.json(await withDailyNumbers(prisma, orders))
+    return NextResponse.json(orders)
   } catch (err) {
     return NextResponse.json({ error: 'Failed', detail: String(err) }, { status: 500 })
   }

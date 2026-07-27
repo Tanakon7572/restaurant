@@ -59,6 +59,14 @@ model Order {
   note        String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  // The customer-facing number, frozen at creation. Stored rather than derived
+  // from position, because deleting one order must not renumber the rest —
+  // a receipt already in a customer's hand can't be reprinted.
+  // `dayKey` is the Asia/Bangkok calendar day (YYYY-MM-DD) the number belongs
+  // to. Both are nullable so rows predating the column keep working; Postgres
+  // treats NULLs as distinct, so the unique pair tolerates them.
+  dayKey      String?
+  dailyNumber Int?
   // Set once the order is paid for. Orders without a bill are still open, so
   // this is what the checkout screen looks at — not `status`, which tracks
   // the kitchen.
@@ -66,7 +74,17 @@ model Order {
   bill        Bill?       @relation(fields: [billId], references: [id], onDelete: SetNull)
   items       OrderItem[]
 
+  @@unique([dayKey, dailyNumber])
   @@index([billId])
+  @@index([dayKey])
+}
+
+// One row per Bangkok day holding the last number handed out. Claiming a
+// number is a single INSERT … ON CONFLICT DO UPDATE, which takes a row lock,
+// so two tills saving at the same instant can never be given the same number.
+model DailyCounter {
+  dayKey String @id
+  next   Int    @default(0)
 }
 
 // One payment closing out one table. Orders are grouped into it; the money

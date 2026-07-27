@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
-import { dailyNumberFor } from '@/lib/orderNumber'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
 import type { OrderItemInput } from '@/lib/types'
@@ -48,7 +47,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       }
     })
 
-    return NextResponse.json({ ...order, items, dailyNumber: await dailyNumberFor(prisma, order) })
+    return NextResponse.json({ ...order, items })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch order', detail: String(err) }, { status: 500 })
   }

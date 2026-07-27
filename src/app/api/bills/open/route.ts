@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { loadShopSettings } from '@/lib/shopSettings'
-import { withDailyNumbers } from '@/lib/orderNumber'
 
 /**
  * Everything still owing money, grouped into what the cashier will actually
@@ -21,10 +20,8 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
       include: { items: { include: { options: true } } },
     })
-    const numbered = await withDailyNumbers(prisma, orders)
-
-    const groups = new Map<string, typeof numbered>()
-    for (const o of numbered) {
+    const groups = new Map<string, typeof orders>()
+    for (const o of orders) {
       // Untabled orders never merge with each other — each is its own bill.
       const key = o.tableNumber ? `t:${o.tableNumber}` : `o:${o.id}`
       groups.set(key, [...(groups.get(key) ?? []), o])

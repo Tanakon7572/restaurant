@@ -4,7 +4,7 @@ import { getSession } from '@/lib/session'
 import { loadShopSettings } from '@/lib/shopSettings'
 import { computeBill, changeFor, isPaymentMethod } from '@/lib/billing'
 import { bangkokDayStart } from '@/lib/orderNumber'
-import { BILL_INCLUDE, withBillDailyNumbers, withBillDailyNumbersOne } from '@/lib/billQuery'
+import { BILL_INCLUDE } from '@/lib/billQuery'
 
 // Bills for one Bangkok day (defaults to today). Voided ones are included so
 // the day's list matches what was actually rung up.
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
       include: BILL_INCLUDE,
     })
-    return NextResponse.json(await withBillDailyNumbers(prisma, bills))
+    return NextResponse.json(bills)
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch bills', detail: String(err) }, { status: 500 })
   }
@@ -120,10 +120,9 @@ export async function POST(request: Request) {
       await prisma.tableSession.updateMany({ where: { tableNumber }, data: { active: false } })
     }
 
-    // Re-read with the orders attached: this response is what gets printed, so
-    // its order numbers must be the ones staff saw on the checkout screen.
+    // Re-read with the orders attached: this response is what gets printed.
     const full = await prisma.bill.findUniqueOrThrow({ where: { id: bill.id }, include: BILL_INCLUDE })
-    return NextResponse.json(await withBillDailyNumbersOne(prisma, full), { status: 201 })
+    return NextResponse.json(full, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create bill', detail: String(err) }, { status: 500 })
   }

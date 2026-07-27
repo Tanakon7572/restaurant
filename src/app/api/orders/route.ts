@@ -4,7 +4,7 @@ import { getSession } from '@/lib/session'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
 import { sweepExpiredOrdersThrottled } from '@/lib/retention'
-import { withDailyNumbers, dailyNumberFor } from '@/lib/orderNumber'
+import { reserveDailyNumber } from '@/lib/orderNumber'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function GET(request: Request) {
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         items: { include: { menuItem: true } },
       },
     })
-    return NextResponse.json(await withDailyNumbers(prisma, orders))
+    return NextResponse.json(orders)
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch orders', detail: String(err) }, { status: 500 })
   }
@@ -76,28 +76,34 @@ export async function POST(request: Request) {
     const result = priceOrderItems(items, menu)
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
 
-    const order = await prisma.order.create({
-      data: {
-        tableNumber: tableNumber || null,
-        customerName: customerName || null,
-        note: note || null,
-        totalPrice: result.totalPrice,
-        items: {
-          create: result.items.map(it => ({
-            menuItemId: it.menuItemId,
-            itemName: it.itemName,
-            quantity: it.quantity,
-            price: it.price,
-            note: it.note,
-            options: { create: it.options },
-          })),
+    // The number is claimed alongside the insert so it can never be handed to
+    // two orders, and is never spent if the insert fails.
+    const order = await prisma.$transaction(async tx => {
+      const { dayKey, dailyNumber } = await reserveDailyNumber(tx)
+      return tx.order.create({
+        data: {
+          tableNumber: tableNumber || null,
+          customerName: customerName || null,
+          note: note || null,
+          totalPrice: result.totalPrice,
+          dayKey,
+          dailyNumber,
+          items: {
+            create: result.items.map(it => ({
+              menuItemId: it.menuItemId,
+              itemName: it.itemName,
+              quantity: it.quantity,
+              price: it.price,
+              note: it.note,
+              options: { create: it.options },
+            })),
+          },
         },
-      },
-      include: { items: { include: { menuItem: true, options: true } } },
+        include: { items: { include: { menuItem: true, options: true } } },
+      })
     })
 
-    const dailyNumber = await dailyNumberFor(prisma, order)
-    return NextResponse.json({ ...order, dailyNumber }, { status: 201 })
+    return NextResponse.json(order, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to create order', detail: String(err) }, { status: 500 })
   }
