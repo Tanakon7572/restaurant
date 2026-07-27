@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
-
-const BILL_INCLUDE = {
-  orders: {
-    orderBy: { id: 'asc' as const },
-    include: { items: { include: { options: true } } },
-  },
-}
+import { BILL_INCLUDE, withBillDailyNumbersOne } from '@/lib/billQuery'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await getSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -16,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const { id } = await params
     const bill = await prisma.bill.findUnique({ where: { id: parseInt(id) }, include: BILL_INCLUDE })
     if (!bill) return NextResponse.json({ error: 'ไม่พบบิล' }, { status: 404 })
-    return NextResponse.json(bill)
+    return NextResponse.json(await withBillDailyNumbersOne(prisma, bill))
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch bill', detail: String(err) }, { status: 500 })
   }
