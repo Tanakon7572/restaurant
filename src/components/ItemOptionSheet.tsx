@@ -112,13 +112,17 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
                   {g.choices.map(c => {
                     const checked = picks.includes(c.id)
                     const blocked = !checked && g.maxSelect > 1 && picks.length >= g.maxSelect
+                    // A choice already on the line stays tickable even after it
+                    // sells out — otherwise staff can't take it back off. Once
+                    // removed it locks like any other sold-out choice.
+                    const locked = !c.available && !checked
                     const state = !c.available ? ' is-off' : blocked ? ' is-blocked' : ''
                     return (
                       <label key={c.id} className={`opt-tile${checked ? ' selected' : ''}${state}`}>
                         <input
                           type={g.maxSelect === 1 ? 'radio' : 'checkbox'}
                           name={`g${g.id}`} checked={checked}
-                          disabled={!c.available || blocked}
+                          disabled={locked || blocked}
                           onChange={() => toggle(g, c.id)} />
                         {!c.available && <span className="opt-tile-off-badge">หมด</span>}
                         {checked && <span className="opt-tile-check" aria-hidden>✓</span>}
