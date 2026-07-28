@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { MenuItemDTO, CartLine } from '@/lib/types'
 import { lineKey } from '@/lib/cart'
+import { partsTotal, setSaving } from '@/lib/setMenu'
 
 type Props = {
   item: MenuItemDTO | null
@@ -54,6 +55,10 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
 
   if (!item) return null
 
+  const parts = item.setParts ?? []
+  const separate = partsTotal(parts)
+  const saving = setSaving(parts, item.price)
+
   const toggle = (g: MenuItemDTO['optionGroups'][number], choiceId: number) => {
     setSelected(prev => {
       const cur = prev[g.id] ?? []
@@ -97,6 +102,34 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
           <span className="page-title" style={{ fontSize: 'var(--text-lg)' }}>{item.name}</span>
         </div>
         <div className="sheet-body">
+          {parts.length > 0 && (
+            <div className="opt-group">
+              <span className="section-label">ในเซ็ตนี้มี</span>
+              {parts.map((p, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 0', fontSize: 'var(--text-sm)' }}>
+                  <span>{p.name}{p.quantity > 1 ? ` ×${p.quantity}` : ''}</span>
+                  <span style={{ color: 'var(--c-text-3)', flexShrink: 0 }}>
+                    ฿{(p.price * p.quantity).toLocaleString('th-TH')}
+                  </span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 8, marginTop: 4, borderTop: '1px solid var(--c-border)', fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>
+                <span>ซื้อแยกทั้งหมด</span>
+                <span style={{ textDecoration: saving > 0 ? 'line-through' : 'none' }}>
+                  ฿{separate.toLocaleString('th-TH')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 6, fontWeight: 700 }}>
+                <span>ราคาเซ็ต</span>
+                <span className="price-tag">฿{item.price.toLocaleString('th-TH')}</span>
+              </div>
+              {saving > 0 && (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-success)', fontWeight: 600, marginTop: 4, textAlign: 'right' }}>
+                  ประหยัด ฿{saving.toLocaleString('th-TH')}
+                </p>
+              )}
+            </div>
+          )}
           {item.optionGroups.map(g => {
             const picks = selected[g.id] ?? []
             return (

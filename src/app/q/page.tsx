@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
+import { needsSheet } from '@/lib/needsSheet'
 import { bangkokDayKey } from '@/lib/orderNumber'
 import { stillTracking } from '@/lib/orderTracking'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
@@ -245,7 +246,7 @@ function QROrderPage() {
   // ── Add an item: open sheet if it has options, else add directly ──
   function openItem(item: MenuItemDTO) {
     if (item.available === false) { showToast('เมนูนี้หมดแล้ว'); return }
-    if (item.optionGroups.length > 0) { setSheetItem(item); return }
+    if (needsSheet(item)) { setSheetItem(item); return }
     setCart(prev => addLine(prev, {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
       quantity: 1, note: null, optionChoiceIds: [], choices: [], unitPrice: item.price,

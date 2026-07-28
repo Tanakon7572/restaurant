@@ -6,6 +6,7 @@ import PosShell from '@/components/PosShell'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
+import { needsSheet } from '@/lib/needsSheet'
 import { submitOrder as submitOrderOrQueue } from '@/lib/offlineQueue'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
@@ -59,7 +60,7 @@ export default function NewOrderPage() {
 
   function openItem(item: MenuItemDTO) {
     if (item.available === false) return
-    if (item.optionGroups.length > 0) { setSheetItem(item); return }
+    if (needsSheet(item)) { setSheetItem(item); return }
     setCart(prev => addLine(prev, {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
       quantity: 1, note: null, optionChoiceIds: [], choices: [], unitPrice: item.price,

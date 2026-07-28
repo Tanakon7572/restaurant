@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
+import SetEditor, { type SetEditorItem } from '@/components/SetEditor'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
 import { isCrust, isCrustCategory } from '@/lib/options'
+import { setDisplayName } from '@/lib/setMenu'
 
 async function resizeToDataUrl(dataUrl: string, maxPx = 1400): Promise<string> {
   return new Promise(resolve => {
@@ -44,6 +46,9 @@ interface MenuItem {
   available: boolean
   categoryId: number
   imageUrl?: string | null
+  // Non-empty = this item is a fixed set built from other menu items.
+  isSet?: boolean
+  setComponents?: { itemId: number; quantity: number; item: { name: string; price: number } }[]
 }
 
 interface Category {
@@ -282,6 +287,7 @@ export default function MenuPage() {
   const [newItemName, setNewItemName] = useState('')
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemImageUrl, setNewItemImageUrl] = useState('')
+  const [setEditing, setSetEditing] = useState<SetEditorItem | null>(null)
   const [editingItem, setEditingItem] = useState<number | null>(null)
   const [editItemName, setEditItemName] = useState('')
   const [editItemPrice, setEditItemPrice] = useState('')
@@ -595,6 +601,16 @@ export default function MenuPage() {
                   <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px', textDecoration: item.available ? 'none' : 'line-through' }}>
                     ฿{item.price.toLocaleString('th-TH')}
                   </p>
+                  {/* Sets show what they contain — the customer-facing name is
+                      generated from it, so staff can check it at a glance. */}
+                  {item.isSet && item.setComponents && item.setComponents.length > 0 && (
+                    <p style={{ fontSize: '0.68rem', color: 'var(--c-text-3)', marginTop: '3px', lineHeight: 1.4 }}>
+                      🎁 {setDisplayName(
+                        item.setComponents.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity })),
+                        item.name,
+                      )}
+                    </p>
+                  )}
                 </div>
                 {!selecting && (
                   <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '4px' }}>
@@ -611,6 +627,16 @@ export default function MenuPage() {
                       style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                     >
                       แก้ไข
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setSetEditing({
+                        id: item.id, name: item.name, price: item.price,
+                        parts: (item.setComponents ?? []).map(c => ({ itemId: c.itemId, quantity: c.quantity })),
+                      })}
+                      style={{ fontSize: '0.7rem', padding: '3px 8px', color: item.isSet ? 'var(--c-primary)' : undefined }}
+                    >
+                      {item.isSet ? 'แก้เซ็ต' : 'จัดเซ็ต'}
                     </button>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -953,6 +979,21 @@ export default function MenuPage() {
         onCancel={() => setDeleteTarget(null)}
         isDanger
       />
+
+      {setEditing && (
+        <SetEditor
+          item={setEditing}
+          // Hidden ingredient categories included on purpose: a set is often
+          // exactly a crust plus a few fillings, which live in those pools.
+          categories={categories.map(c => ({
+            id: c.id,
+            name: c.name,
+            items: c.items.map(i => ({ id: i.id, name: i.name, price: i.price, isSet: i.isSet })),
+          }))}
+          onClose={() => setSetEditing(null)}
+          onSaved={() => fetchCategories(true)}
+        />
+      )}
 
     </div>
     </PosShell>

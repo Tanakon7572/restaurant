@@ -4,6 +4,7 @@ import {
   deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, expandPoolIds, withoutCrustStep,
   withoutHiddenPools, DIY_NAME_PREFIX, type Ingredient, type IngredientPool,
 } from './options'
+import { setDisplayName } from './setMenu'
 
 type Prisma = PrismaClient
 
@@ -24,7 +25,11 @@ export async function loadMenuForPricing(
   const items = await prisma.menuItem.findMany({
     where: { id: { in: itemIds }, ...(onlyAvailable ? { available: true } : {}) },
     select: {
-      id: true, name: true, price: true, categoryId: true,
+      id: true, name: true, price: true, categoryId: true, isSet: true,
+      setComponents: {
+        orderBy: { order: 'asc' },
+        select: { quantity: true, item: { select: { name: true, price: true } } },
+      },
       optionGroups: {
         select: {
           id: true, name: true, required: true, minSelect: true, maxSelect: true,
@@ -97,6 +102,21 @@ export async function loadMenuForPricing(
   for (const it of items) {
     let groups = it.optionGroups
     let name = it.name
+    // A set is bought whole at its own price: it takes no option steps, and
+    // must not pick up its category's Signature pools. Its name is the parts,
+    // so the kitchen ticket and receipt say what to make.
+    if (it.isSet) {
+      map.set(it.id, {
+        id: it.id,
+        name: setDisplayName(
+          it.setComponents.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity })),
+          it.name,
+        ),
+        price: it.price,
+        optionGroups: [],
+      })
+      continue
+    }
     if (groups.length === 0) {
       const ownLinks = linksByCat.get(it.categoryId) ?? []
       const siblings = poolSetContaining(it.categoryId)

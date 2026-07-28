@@ -4,6 +4,7 @@ import type { BillSettings, VatMode } from './billing'
 export type ShopSettings = BillSettings & {
   shopName: string
   promptPayId: string
+  paymentQrUrl: string
   receiptHeader: string
   receiptFooter: string
   receiptWidth: number
@@ -15,6 +16,7 @@ export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
   vatRate: 7,
   serviceChargeRate: 0,
   promptPayId: '',
+  paymentQrUrl: '',
   receiptHeader: '',
   receiptFooter: '',
   receiptWidth: 58,
@@ -31,6 +33,7 @@ export async function loadShopSettings(prisma: PrismaClient): Promise<ShopSettin
     vatRate: row.vatRate ?? 7,
     serviceChargeRate: row.serviceChargeRate ?? 0,
     promptPayId: row.promptPayId ?? '',
+    paymentQrUrl: row.paymentQrUrl ?? '',
     receiptHeader: row.receiptHeader ?? '',
     receiptFooter: row.receiptFooter ?? '',
     receiptWidth: row.receiptWidth ?? 58,

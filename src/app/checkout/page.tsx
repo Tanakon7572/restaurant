@@ -75,9 +75,13 @@ export default function CheckoutPage() {
   const change = changeFor(totals.total, Number(received) || 0)
   const cashShort = method === 'cash' && (received === '' || change < 0)
 
+  // A generated PromptPay code carries the amount, so it always wins over an
+  // uploaded image: the customer can't mistype what they never type.
   const qrPayload = method === 'promptpay' && settings.promptPayId
     ? promptPayPayload(settings.promptPayId, totals.total)
     : null
+  const qrImage = method === 'promptpay' && !settings.promptPayId ? settings.paymentQrUrl : ''
+  const hasPaymentQr = !!settings.promptPayId || !!settings.paymentQrUrl
 
   function openGroup(key: string) {
     setActiveKey(key)
@@ -232,8 +236,8 @@ export default function CheckoutPage() {
                   key={m}
                   className={`btn btn-sm ${method === m ? 'btn-primary' : 'btn-ghost'}`}
                   onClick={() => setMethod(m)}
-                  disabled={m === 'promptpay' && !settings.promptPayId}
-                  title={m === 'promptpay' && !settings.promptPayId ? 'ยังไม่ได้ตั้งค่าพร้อมเพย์' : undefined}
+                  disabled={m === 'promptpay' && !hasPaymentQr}
+                  title={m === 'promptpay' && !hasPaymentQr ? 'ยังไม่ได้ตั้งค่าพร้อมเพย์ หรืออัปโหลด QR รับเงิน' : undefined}
                 >
                   {METHOD_LABELS[m]}
                 </button>
@@ -276,9 +280,27 @@ export default function CheckoutPage() {
                       ให้ลูกค้าสแกน — ยอด ฿{money(totals.total)} ถูกใส่ไว้ในคิวอาร์แล้ว
                     </p>
                   </>
-                ) : (
+                ) : qrImage ? (
+                  <>
+                    <div style={{ background: '#fff', padding: '12px', borderRadius: 'var(--radius-sm)', display: 'inline-block' }}>
+                      <img src={qrImage} alt="QR รับเงิน" style={{ width: 196, height: 'auto', display: 'block' }} />
+                    </div>
+                    {/* The amount isn't in the code, so staff have to check it
+                        against the customer's screen before accepting. */}
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-warning)', fontWeight: 600, marginTop: '8px' }}>
+                      ลูกค้าต้องกรอกยอดเอง ฿{money(totals.total)}
+                    </p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '2px' }}>
+                      กรุณาตรวจสลิปว่ายอดตรงก่อนกดเก็บเงิน
+                    </p>
+                  </>
+                ) : settings.promptPayId ? (
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-danger)' }}>
                     เบอร์พร้อมเพย์ในหน้าตั้งค่าไม่ถูกต้อง
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-danger)' }}>
+                    ยังไม่ได้ตั้งค่าพร้อมเพย์ หรืออัปโหลด QR รับเงินในหน้าตั้งค่า
                   </p>
                 )}
               </div>

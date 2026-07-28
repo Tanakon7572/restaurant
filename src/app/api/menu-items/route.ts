@@ -6,7 +6,13 @@ export async function GET() {
   try {
     const items = await prisma.menuItem.findMany({
       orderBy: { order: 'asc' },
-      include: { category: true },
+      include: {
+        category: true,
+        setComponents: {
+          orderBy: { order: 'asc' },
+          select: { itemId: true, quantity: true, item: { select: { name: true, price: true } } },
+        },
+      },
     })
     return NextResponse.json(items)
   } catch (err) {

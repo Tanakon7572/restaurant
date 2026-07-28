@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { deriveGroupsFromPools, expandPoolIds, withoutCrustStep, withoutHiddenPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { setDisplayName } from '@/lib/setMenu'
 
 export async function GET() {
   try {
@@ -17,6 +18,14 @@ export async function GET() {
           orderBy: { order: 'asc' },
           select: {
             id: true, name: true, price: true, imageUrl: true, available: true,
+            isSet: true,
+            setComponents: {
+              orderBy: { order: 'asc' },
+              select: {
+                quantity: true,
+                item: { select: { id: true, name: true, price: true, available: true } },
+              },
+            },
             optionGroups: {
               orderBy: { order: 'asc' },
               select: {
@@ -96,6 +105,22 @@ export async function GET() {
           diy: isDiy,
           diyGroups: isDiy ? diyGroups : [],
           items: tabItems.map(it => {
+            // A set is fixed: no steps, its own price, named after its parts.
+            // It's sold out when any part is, since it can't be made without.
+            if (it.isSet) {
+              const parts = it.setComponents.map(sc => ({
+                itemId: sc.item.id, name: sc.item.name, price: sc.item.price, quantity: sc.quantity,
+              }))
+              return {
+                id: it.id,
+                name: setDisplayName(parts, it.name),
+                price: it.price,
+                imageUrl: it.imageUrl,
+                available: it.available && it.setComponents.every(sc => sc.item.available),
+                optionGroups: [],
+                setParts: parts,
+              }
+            }
             let groups = it.optionGroups.length > 0
               ? it.optionGroups
               : (sigPools.length > 0 ? deriveGroupsFromPools(sigPools, 'signature') : [])

@@ -6,7 +6,18 @@ export async function GET() {
   try {
     const categories = await prisma.menuCategory.findMany({
       orderBy: { order: 'asc' },
-      include: { items: { orderBy: { order: 'asc' } } },
+      include: {
+        items: {
+          orderBy: { order: 'asc' },
+          // The manager shows and edits set contents inline.
+          include: {
+            setComponents: {
+              orderBy: { order: 'asc' },
+              select: { itemId: true, quantity: true, item: { select: { name: true, price: true } } },
+            },
+          },
+        },
+      },
     })
     return NextResponse.json(categories)
   } catch (err) {

@@ -20,6 +20,14 @@ export type OptionGroupDTO = {
   choices: OptionChoiceDTO[]
 }
 
+// One part of a fixed set, priced as it would be if bought on its own.
+export type SetPartDTO = {
+  itemId: number
+  name: string
+  price: number
+  quantity: number
+}
+
 export type MenuItemDTO = {
   id: number
   name: string
@@ -28,6 +36,9 @@ export type MenuItemDTO = {
   // false = sold out: shown struck-through with a "หมด" badge, not orderable
   available?: boolean
   optionGroups: OptionGroupDTO[]
+  // Non-empty = a fixed set. `price` is the set price; the parts are shown so
+  // the customer can see what they get and what it would cost separately.
+  setParts?: SetPartDTO[]
 }
 
 export type MenuCategoryDTO = {

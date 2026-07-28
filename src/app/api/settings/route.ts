@@ -15,6 +15,7 @@ export async function GET() {
       vatRate: settings?.vatRate ?? 7,
       serviceChargeRate: settings?.serviceChargeRate ?? 0,
       promptPayId: settings?.promptPayId ?? '',
+      paymentQrUrl: settings?.paymentQrUrl ?? '',
       receiptHeader: settings?.receiptHeader ?? '',
       receiptFooter: settings?.receiptFooter ?? '',
       receiptWidth: settings?.receiptWidth ?? 58,
@@ -63,6 +64,7 @@ export async function PATCH(request: Request) {
       data.serviceChargeRate = Math.min(100, Math.max(0, Number(body.serviceChargeRate) || 0))
     }
     if (body.promptPayId !== undefined) data.promptPayId = String(body.promptPayId).trim()
+    if (body.paymentQrUrl !== undefined) data.paymentQrUrl = String(body.paymentQrUrl).trim()
     if (body.receiptHeader !== undefined) data.receiptHeader = String(body.receiptHeader).trim()
     if (body.receiptFooter !== undefined) data.receiptFooter = String(body.receiptFooter).trim()
     if (body.receiptWidth !== undefined) data.receiptWidth = Number(body.receiptWidth) === 80 ? 80 : 58

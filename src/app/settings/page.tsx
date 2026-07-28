@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
+import ImageUploadField from '@/components/ImageUploadField'
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -41,7 +42,7 @@ export default function SettingsPage() {
   // the input; they're coerced on save and clamped again server-side.
   const [billing, setBilling] = useState({
     vatMode: 'none', vatRate: '7', serviceChargeRate: '0',
-    promptPayId: '', receiptHeader: '', receiptFooter: '', receiptWidth: '58',
+    promptPayId: '', paymentQrUrl: '', receiptHeader: '', receiptFooter: '', receiptWidth: '58',
   })
   const [billingSaving, setBillingSaving] = useState(false)
   const [billingMsg, setBillingMsg] = useState('')
@@ -63,6 +64,7 @@ export default function SettingsPage() {
           vatRate: String(data.vatRate ?? 7),
           serviceChargeRate: String(data.serviceChargeRate ?? 0),
           promptPayId: data.promptPayId ?? '',
+          paymentQrUrl: data.paymentQrUrl ?? '',
           receiptHeader: data.receiptHeader ?? '',
           receiptFooter: data.receiptFooter ?? '',
           receiptWidth: String(data.receiptWidth ?? 58),
@@ -83,6 +85,7 @@ export default function SettingsPage() {
           vatRate: Number(billing.vatRate) || 0,
           serviceChargeRate: Number(billing.serviceChargeRate) || 0,
           promptPayId: billing.promptPayId,
+          paymentQrUrl: billing.paymentQrUrl,
           receiptHeader: billing.receiptHeader,
           receiptFooter: billing.receiptFooter,
           receiptWidth: Number(billing.receiptWidth),
@@ -331,6 +334,18 @@ export default function SettingsPage() {
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '4px' }}>
               ใส่แล้วหน้าเก็บเงินจะสร้าง QR พร้อมยอดให้อัตโนมัติ เว้นว่าง = ปิดการใช้งาน
             </p>
+          </div>
+
+          <div>
+            <Label>QR รับเงิน (ใช้เมื่อไม่มีพร้อมเพย์)</Label>
+            <ImageUploadField
+              value={billing.paymentQrUrl}
+              onChange={url => setBilling(b => ({ ...b, paymentQrUrl: url }))}
+              label="อัปโหลด QR"
+              hint={billing.promptPayId.trim()
+                ? 'ตอนนี้ใช้พร้อมเพย์อยู่ รูปนี้จะถูกใช้ก็ต่อเมื่อลบเบอร์พร้อมเพย์ออก'
+                : 'บันทึกรูป QR จากแอปธนาคารของร้าน ลูกค้าต้องกรอกยอดเองเพราะรูปไม่มียอดฝังอยู่'}
+            />
           </div>
 
           <div>

@@ -43,10 +43,36 @@ model MenuItem {
   order      Int           @default(0)
   imageUrl   String?
   createdAt  DateTime      @default(now())
+  // A fixed set: `price` is what the customer pays, regardless of what the
+  // parts cost separately. The parts are listed in SetComponent.
   isSet          Boolean   @default(false)
   setCategoryIds Int[]     @default([])
   orderItems OrderItem[]
   optionGroups OptionGroup[]
+  // Both sides of the set relation: what this set is made of, and which sets
+  // this item appears in (the latter only so deleting an item cleans up).
+  setComponents SetComponent[] @relation("SetParts")
+  partOfSets    SetComponent[] @relation("PartOfSet")
+}
+
+/**
+ * One part of a fixed set — a real menu item and how many of it.
+ *
+ * Sets store their parts rather than a category link, so a set is exactly
+ * what staff ticked: adding a new topping to the menu doesn't silently
+ * change what "เซ็ตครีมสด" contains.
+ */
+model SetComponent {
+  id       Int      @id @default(autoincrement())
+  setId    Int
+  set      MenuItem @relation("SetParts", fields: [setId], references: [id], onDelete: Cascade)
+  itemId   Int
+  item     MenuItem @relation("PartOfSet", fields: [itemId], references: [id], onDelete: Cascade)
+  quantity Int      @default(1)
+  order    Int      @default(0)
+
+  @@index([setId])
+  @@index([itemId])
 }
 
 model Order {
@@ -151,6 +177,11 @@ model AppSettings {
   serviceChargeRate Float   @default(0)
   // Phone number or national/tax id. Empty = no PromptPay QR is offered.
   promptPayId       String?
+  // A payment QR photographed from the shop's own bank app, for shops with no
+  // PromptPay id. Only used when promptPayId is empty: a generated PromptPay
+  // code carries the amount, so the customer never types it — an uploaded
+  // image can't, and staff must check the amount by hand.
+  paymentQrUrl      String?
   // Free text printed above the items (address, tax id) and at the foot.
   receiptHeader     String?
   receiptFooter     String?

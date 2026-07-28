@@ -10,6 +10,7 @@ import ItemOptionSheet from '@/components/ItemOptionSheet'
 import { addLine, setQuantity, removeLine, replaceLine, cartTotal, lineKey } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
 import { resolveEditTarget, type EditTarget } from '@/lib/editLine'
+import { needsSheet } from '@/lib/needsSheet'
 import { printSlip } from '@/lib/print'
 import { kitchenTicketHtml } from '@/lib/receipt'
 import type { CartLine, MenuCategoryDTO, MenuItemDTO, OptionGroupDTO } from '@/lib/types'
@@ -178,7 +179,7 @@ export default function OrderDetailPage() {
 
   function openEditItem(item: MenuItemDTO) {
     if (item.available === false) return
-    if (item.optionGroups.length > 0) { setSheetItem(item); return }
+    if (needsSheet(item)) { setSheetItem(item); return }
     setEditLines(prev => addLine(prev, {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
       quantity: 1, note: null, optionChoiceIds: [], choices: [], unitPrice: item.price,
