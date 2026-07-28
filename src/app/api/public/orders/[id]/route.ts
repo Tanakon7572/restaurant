@@ -15,6 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         tableNumber: true,
         customerName: true,
         updatedAt: true,
+        billId: true,
         items: {
           select: {
             itemName: true,
@@ -28,7 +29,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     })
     if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json(order)
+    // The customer's device needs to know the bill is settled so it can stop
+    // showing the order — kitchen `status` doesn't say that. Which bill it was
+    // is the shop's business, so only the fact is public.
+    const { billId, ...rest } = order
+    return NextResponse.json({ ...rest, paid: billId !== null })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 })
   }

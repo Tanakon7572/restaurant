@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import type { MenuItemDTO, MenuCategoryDTO, CartLine } from '@/lib/types'
 import { addLine, setQuantity, removeLine, cartTotal, cartCount } from '@/lib/cart'
 import { translateDiyLine } from '@/lib/options'
+import { bangkokDayKey } from '@/lib/orderNumber'
+import { stillTracking } from '@/lib/orderTracking'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
 import MenuBrowser from '@/components/MenuBrowser'
@@ -25,7 +27,11 @@ interface OrderStatus {
   totalPrice: number
   tableNumber: string | null
   customerName?: string | null
+  createdAt: string
   updatedAt: string
+  // True once the order has been rung up. Separate from `status`: the kitchen
+  // can finish an order long before anyone pays for it.
+  paid?: boolean
   items: OrderStatusItem[]
 }
 
@@ -39,6 +45,10 @@ const STATUS_INFO: Record<string, { label: string; sub: string; color: string; d
 
 interface SessionData {
   orders: number[]
+  // The Bangkok day the session was last written on. Yesterday's session is
+  // dropped before it can be shown, so a device that sat overnight opens on
+  // the menu instead of flashing a stale receipt while it polls.
+  dayKey?: string
 }
 
 function sessionKey(token: string) {
@@ -53,14 +63,21 @@ function loadSession(table: string): SessionData {
     const stored = localStorage.getItem(sessionKey(table))
     if (stored) {
       const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed.orders)) return parsed
+      if (Array.isArray(parsed.orders)) {
+        if (parsed.dayKey && parsed.dayKey !== bangkokDayKey(new Date())) {
+          clearSession(table)
+          return { orders: [] }
+        }
+        return parsed
+      }
     }
   } catch { /* ignore */ }
   return { orders: [] }
 }
 
 function saveSession(table: string, data: SessionData) {
-  try { localStorage.setItem(sessionKey(table), JSON.stringify(data)) } catch { /* ignore */ }
+  const stamped = { ...data, dayKey: bangkokDayKey(new Date()) }
+  try { localStorage.setItem(sessionKey(table), JSON.stringify(stamped)) } catch { /* ignore */ }
 }
 
 function clearSession(table: string) {
@@ -167,25 +184,40 @@ function QROrderPage() {
       .finally(() => setMenuLoading(false))
   }, [])
 
+  // Stop following an order: it was paid for, it's from a previous day, or
+  // it no longer exists. With nothing left to follow the screen goes back to
+  // the menu, ready for whoever scans next.
+  const retire = useCallback((id: number) => {
+    setSessionOrderIds(prev => {
+      if (!prev.includes(id)) return prev
+      const next = prev.filter(x => x !== id)
+      if (next.length === 0) { clearSession(sessionToken); setPhase('ordering') }
+      else saveSession(sessionToken, { orders: next })
+      return next
+    })
+    setOrderStatuses(prev => {
+      if (!prev.has(id)) return prev
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
+  }, [sessionToken])
+
   // ── Polling all session orders ───────────────────────────────────
   const pollAll = useCallback((ids: number[]) => {
     ids.forEach(id => {
       fetch(`/api/public/orders/${id}`)
         .then(r => {
-          if (r.status === 404) {
-            setSessionOrderIds(prev => {
-              const next = prev.filter(x => x !== id)
-              if (next.length === 0) { clearSession(sessionToken); setPhase('ordering') }
-              else saveSession(sessionToken, { orders: next })
-              return next
-            })
-            return null
-          }
+          if (r.status === 404) { retire(id); return null }
           return r.json()
         })
-        .then(data => { if (data?.id) setOrderStatuses(prev => new Map(prev).set(data.id, data)) })
+        .then((data: OrderStatus | null) => {
+          if (!data?.id) return
+          if (!stillTracking(data)) { retire(data.id); return }
+          setOrderStatuses(prev => new Map(prev).set(data.id, data))
+        })
     })
-  }, [sessionToken])
+  }, [retire])
 
   // The link dies when the kitchen finishes — stop offering "order more".
   const checkLink = useCallback(async () => {
