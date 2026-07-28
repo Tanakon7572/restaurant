@@ -6,6 +6,7 @@ import Cropper from 'react-easy-crop'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
 import SetEditor, { type SetEditorItem } from '@/components/SetEditor'
+import SetConverter from '@/components/SetConverter'
 import { fetchWithCache, invalidateCache } from '@/lib/cache'
 import { isCrust, isCrustCategory } from '@/lib/options'
 import { setDisplayName } from '@/lib/setMenu'
@@ -291,6 +292,7 @@ export default function MenuPage() {
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemImageUrl, setNewItemImageUrl] = useState('')
   const [setEditing, setSetEditing] = useState<SetEditorItem | null>(null)
+  const [converting, setConverting] = useState<{ id: number; name: string } | null>(null)
 
   function openSetEditor(item: MenuItem) {
     setSetEditing({
@@ -874,15 +876,28 @@ export default function MenuPage() {
             {/* Own items */}
             {renderItemGrid(cat.items, !!cat.isSetCategory)}
             {cat.isSetCategory ? (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setSetEditing({
-                  categoryId: cat.id, name: '', imageUrl: '', price: '', discount: '0', parts: [],
-                })}
-                style={{ width: 'calc(100% - 32px)', margin: '10px 16px', border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
-              >
-                + สร้างเซ็ตใน “{cat.name}”
-              </button>
+              <div style={{ display: 'flex', gap: 8, margin: '10px 16px' }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setSetEditing({
+                    categoryId: cat.id, name: '', imageUrl: '', price: '', discount: '0', parts: [],
+                  })}
+                  style={{ flex: 1, border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
+                >
+                  + สร้างเซ็ตใน “{cat.name}”
+                </button>
+                {/* Menus often already spell their sets out ("a+b+c") as plain
+                    items; this reads those names and links up the real parts. */}
+                {cat.items.some(i => !i.isSet && i.name.includes('+')) && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setConverting({ id: cat.id, name: cat.name })}
+                    style={{ border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
+                  >
+                    แปลงเมนูเดิมเป็นเซ็ต
+                  </button>
+                )}
+              </div>
             ) : renderAddItemRow(cat.id, cat.name)}
 
             {/* Sub-categories */}
@@ -1024,6 +1039,15 @@ export default function MenuPage() {
           })).filter(c => c.items.length > 0)}
           onClose={() => setSetEditing(null)}
           onSaved={() => fetchCategories(true)}
+        />
+      )}
+
+      {converting && (
+        <SetConverter
+          categoryId={converting.id}
+          categoryName={converting.name}
+          onClose={() => setConverting(null)}
+          onDone={() => fetchCategories(true)}
         />
       )}
 
