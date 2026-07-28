@@ -58,6 +58,7 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
   const parts = item.setParts ?? []
   const separate = partsTotal(parts)
   const saving = setSaving(parts, item.price)
+  const discount = item.setDiscount ?? 0
 
   const toggle = (g: MenuItemDTO['optionGroups'][number], choiceId: number) => {
     setSelected(prev => {
@@ -115,7 +116,7 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, paddingTop: 8, marginTop: 4, borderTop: '1px solid var(--c-border)', fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>
                 <span>ซื้อแยกทั้งหมด</span>
-                <span style={{ textDecoration: saving > 0 ? 'line-through' : 'none' }}>
+                <span style={{ textDecoration: separate > item.price ? 'line-through' : 'none' }}>
                   ฿{separate.toLocaleString('th-TH')}
                 </span>
               </div>
@@ -123,7 +124,13 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
                 <span>ราคาเซ็ต</span>
                 <span className="price-tag">฿{item.price.toLocaleString('th-TH')}</span>
               </div>
-              {saving > 0 && (
+              {/* The shop's own discount is what it wants to advertise; the
+                  parts comparison is the fallback when there isn't one. */}
+              {discount > 0 ? (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-success)', fontWeight: 600, marginTop: 4, textAlign: 'right' }}>
+                  ลดแล้ว ฿{discount.toLocaleString('th-TH')} จาก ฿{(item.price + discount).toLocaleString('th-TH')}
+                </p>
+              ) : saving > 0 && (
                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-success)', fontWeight: 600, marginTop: 4, textAlign: 'right' }}>
                   ประหยัด ฿{saving.toLocaleString('th-TH')}
                 </p>

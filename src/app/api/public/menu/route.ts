@@ -18,7 +18,7 @@ export async function GET() {
           orderBy: { order: 'asc' },
           select: {
             id: true, name: true, price: true, imageUrl: true, available: true,
-            isSet: true,
+            isSet: true, setDiscount: true,
             setComponents: {
               orderBy: { order: 'asc' },
               select: {
@@ -119,6 +119,7 @@ export async function GET() {
                 available: it.available && it.setComponents.every(sc => sc.item.available),
                 optionGroups: [],
                 setParts: parts,
+                setDiscount: it.setDiscount,
               }
             }
             let groups = it.optionGroups.length > 0

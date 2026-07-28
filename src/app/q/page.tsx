@@ -109,6 +109,8 @@ function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
     imageUrl: (raw.imageUrl as string | null) ?? null,
     available: raw.available !== false,
     optionGroups: Array.isArray(raw.optionGroups) ? (raw.optionGroups as MenuItemDTO['optionGroups']) : [],
+    setParts: Array.isArray(raw.setParts) ? (raw.setParts as MenuItemDTO['setParts']) : [],
+    setDiscount: (raw.setDiscount as number | undefined) ?? 0,
   }
 }
 

@@ -48,6 +48,7 @@ interface MenuItem {
   imageUrl?: string | null
   // Non-empty = this item is a fixed set built from other menu items.
   isSet?: boolean
+  setDiscount?: number
   setComponents?: { itemId: number; quantity: number; item: { name: string; price: number } }[]
 }
 
@@ -60,6 +61,8 @@ interface Category {
   ingredientCategoryIds?: number[]
   showCrustStep?: boolean
   hiddenPoolCategoryIds?: number[]
+  // Set category: gets a "create set" button, and its cards edit as sets.
+  isSetCategory?: boolean
   items: MenuItem[]
 }
 
@@ -288,6 +291,20 @@ export default function MenuPage() {
   const [newItemPrice, setNewItemPrice] = useState('')
   const [newItemImageUrl, setNewItemImageUrl] = useState('')
   const [setEditing, setSetEditing] = useState<SetEditorItem | null>(null)
+
+  function openSetEditor(item: MenuItem) {
+    setSetEditing({
+      id: item.id,
+      categoryId: item.categoryId,
+      name: item.name,
+      imageUrl: item.imageUrl || '',
+      // `price` is stored already discounted, so the full price it was marked
+      // down from has to be added back for the form.
+      price: String(item.price + (item.setDiscount ?? 0)),
+      discount: String(item.setDiscount ?? 0),
+      parts: (item.setComponents ?? []).map(c => ({ itemId: c.itemId, quantity: c.quantity })),
+    })
+  }
   const [editingItem, setEditingItem] = useState<number | null>(null)
   const [editItemName, setEditItemName] = useState('')
   const [editItemPrice, setEditItemPrice] = useState('')
@@ -499,7 +516,7 @@ export default function MenuPage() {
     })
   }
 
-  function renderItemGrid(items: MenuItem[]) {
+  function renderItemGrid(items: MenuItem[], setCat = false) {
     if (items.length === 0) return null
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', padding: '12px' }}>
@@ -600,6 +617,11 @@ export default function MenuPage() {
                   </p>
                   <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px', textDecoration: item.available ? 'none' : 'line-through' }}>
                     ฿{item.price.toLocaleString('th-TH')}
+                    {!!item.setDiscount && item.setDiscount > 0 && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', textDecoration: 'line-through', marginLeft: 5, fontWeight: 400 }}>
+                        ฿{(item.price + item.setDiscount).toLocaleString('th-TH')}
+                      </span>
+                    )}
                   </p>
                   {/* Sets show what they contain — the customer-facing name is
                       generated from it, so staff can check it at a glance. */}
@@ -621,22 +643,17 @@ export default function MenuPage() {
                     >
                       {item.available ? 'มีของ' : 'หมด'}
                     </button>
+                    {/* In a set category the set editor IS the editor — it
+                        covers name, photo and price too, so offering both
+                        would be two ways to change the same fields. */}
                     <button
                       className="btn btn-ghost btn-sm"
-                      onClick={() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) }}
+                      onClick={() => (setCat || item.isSet)
+                        ? openSetEditor(item)
+                        : (() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) })()}
                       style={{ fontSize: '0.7rem', padding: '3px 8px' }}
                     >
                       แก้ไข
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => setSetEditing({
-                        id: item.id, name: item.name, price: item.price,
-                        parts: (item.setComponents ?? []).map(c => ({ itemId: c.itemId, quantity: c.quantity })),
-                      })}
-                      style={{ fontSize: '0.7rem', padding: '3px 8px', color: item.isSet ? 'var(--c-primary)' : undefined }}
-                    >
-                      {item.isSet ? 'แก้เซ็ต' : 'จัดเซ็ต'}
                     </button>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -818,6 +835,11 @@ export default function MenuPage() {
                   <input type="checkbox" checked={!!cat.hidden} onChange={e => updateCategoryField(cat.id, { hidden: e.target.checked })} />
                   ซ่อนจากลูกค้า (ใช้เป็นวัตถุดิบ)
                 </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
+                  <input type="checkbox" checked={!!cat.isSetCategory}
+                    onChange={e => updateCategoryField(cat.id, { isSetCategory: e.target.checked })} />
+                  หมวดนี้เป็นเมนูเซ็ต
+                </label>
                 {/* Only meaningful for Signature categories, i.e. ones that pull
                     their options from an ingredient pool. */}
                 {linksOf(cat).length > 0 && (
@@ -850,8 +872,18 @@ export default function MenuPage() {
             )}
 
             {/* Own items */}
-            {renderItemGrid(cat.items)}
-            {renderAddItemRow(cat.id, cat.name)}
+            {renderItemGrid(cat.items, !!cat.isSetCategory)}
+            {cat.isSetCategory ? (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSetEditing({
+                  categoryId: cat.id, name: '', imageUrl: '', price: '', discount: '0', parts: [],
+                })}
+                style={{ width: 'calc(100% - 32px)', margin: '10px 16px', border: '1px dashed var(--c-border)', color: 'var(--c-text-3)' }}
+              >
+                + สร้างเซ็ตใน “{cat.name}”
+              </button>
+            ) : renderAddItemRow(cat.id, cat.name)}
 
             {/* Sub-categories */}
             {subs.map(sub => (
@@ -989,7 +1021,7 @@ export default function MenuPage() {
             id: c.id,
             name: c.name,
             items: c.items.map(i => ({ id: i.id, name: i.name, price: i.price, isSet: i.isSet })),
-          }))}
+          })).filter(c => c.items.length > 0)}
           onClose={() => setSetEditing(null)}
           onSaved={() => fetchCategories(true)}
         />

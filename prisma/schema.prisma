@@ -30,6 +30,10 @@ model MenuCategory {
   // in this category. The ingredients stay linked (so existing orders and the
   // pool itself are untouched) — only the picker step disappears.
   hiddenPoolCategoryIds Int[] @default([])
+  // Marks this as a category of fixed sets: the manager offers a "create set"
+  // button here and nowhere else, so the option doesn't clutter every card in
+  // a shop that sells mostly single items.
+  isSetCategory Boolean @default(false)
   items      MenuItem[]
 }
 
@@ -47,6 +51,10 @@ model MenuItem {
   // parts cost separately. The parts are listed in SetComponent.
   isSet          Boolean   @default(false)
   setCategoryIds Int[]     @default([])
+  // How much the set is marked down. `price` is already the discounted figure
+  // customers pay — this is kept only so the menu can show what it was struck
+  // through from.
+  setDiscount    Float     @default(0)
   orderItems OrderItem[]
   optionGroups OptionGroup[]
   // Both sides of the set relation: what this set is made of, and which sets

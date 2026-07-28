@@ -39,6 +39,9 @@ export type MenuItemDTO = {
   // Non-empty = a fixed set. `price` is the set price; the parts are shown so
   // the customer can see what they get and what it would cost separately.
   setParts?: SetPartDTO[]
+  // What the set was marked down by. `price` is already net of it — this is
+  // only here so the menu can show the struck-through original.
+  setDiscount?: number
 }
 
 export type MenuCategoryDTO = {
