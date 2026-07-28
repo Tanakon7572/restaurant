@@ -1,9 +1,16 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { MenuItemDTO, CartLine } from '@/lib/types'
 import { lineKey } from '@/lib/cart'
 
-type Props = { item: MenuItemDTO | null; onClose: () => void; onAdd: (line: CartLine) => void }
+type Props = {
+  item: MenuItemDTO | null
+  onClose: () => void
+  onAdd: (line: CartLine) => void
+  // Present when reopening a line that is already in the cart or the order:
+  // the sheet starts from what was chosen and saves over it instead of adding.
+  initial?: { optionChoiceIds: number[]; quantity: number; note: string | null } | null
+}
 
 function ChoiceThumb({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
   const [imgError, setImgError] = useState(false)
@@ -13,12 +20,37 @@ function ChoiceThumb({ imageUrl, name }: { imageUrl?: string | null; name: strin
   return <div className="opt-tile-fallback">{name.charAt(0)}</div>
 }
 
-export default function ItemOptionSheet({ item, onClose, onAdd }: Props) {
-  const [selected, setSelected] = useState<Record<number, number[]>>({})
-  const [qty, setQty] = useState(1)
-  const [note, setNote] = useState('')
+/**
+ * Choices already on a line arrive as one flat list of ids; sort them back
+ * into their groups so the tiles come up ticked. A choice that no longer
+ * exists on the menu matches nothing and is dropped — which is what saving
+ * would do with it anyway.
+ */
+function seedSelection(item: MenuItemDTO | null, initial: Props['initial']): Record<number, number[]> {
+  const seed: Record<number, number[]> = {}
+  if (!item || !initial) return seed
+  for (const g of item.optionGroups) {
+    const picks = g.choices.filter(c => initial.optionChoiceIds.includes(c.id)).map(c => c.id)
+    if (picks.length > 0) seed[g.id] = picks
+  }
+  return seed
+}
 
-  useEffect(() => { setSelected({}); setQty(1); setNote('') }, [item?.id])
+export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props) {
+  const [selected, setSelected] = useState<Record<number, number[]>>(() => seedSelection(item, initial))
+  const [qty, setQty] = useState(initial?.quantity ?? 1)
+  const [note, setNote] = useState(initial?.note ?? '')
+
+  // Pointing the sheet at a different item starts it over. Adjusted during
+  // render rather than in an effect, so the pickers are never briefly showing
+  // the previous item's choices.
+  const [shownFor, setShownFor] = useState(item?.id ?? null)
+  if ((item?.id ?? null) !== shownFor) {
+    setShownFor(item?.id ?? null)
+    setSelected(seedSelection(item, initial))
+    setQty(initial?.quantity ?? 1)
+    setNote(initial?.note ?? '')
+  }
 
   if (!item) return null
 
@@ -119,7 +151,7 @@ export default function ItemOptionSheet({ item, onClose, onAdd }: Props) {
             <button className="btn-icon btn-ghost" onClick={() => setQty(q => q + 1)} aria-label="เพิ่ม">+</button>
           </div>
           <button className="btn btn-primary" style={{ flex: 1 }} disabled={!requiredOk} onClick={add}>
-            ใส่ตะกร้า ฿{unitPrice * qty}
+            {initial ? 'บันทึกรายการ' : 'ใส่ตะกร้า'} ฿{unitPrice * qty}
           </button>
         </div>
       </div>

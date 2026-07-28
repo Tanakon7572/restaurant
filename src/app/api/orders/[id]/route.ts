@@ -37,6 +37,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return {
         ...it,
         optionChoiceIds,
+        // The item's price on today's menu, not the one frozen into the line.
+        // Reopening a line to edit it re-prices from here, which is what the
+        // server will charge on save anyway.
+        menuPrice: priced?.price ?? null,
         // false = at least one option no longer exists on the menu
         optionsResolved: optionChoiceIds.length === it.options.length,
         optionGroups: groups.map((g: { id: number; name: string; required: boolean; minSelect: number; maxSelect: number; choices: { id: number; name: string; priceDelta: number; available: boolean }[] }, gi: number) => ({

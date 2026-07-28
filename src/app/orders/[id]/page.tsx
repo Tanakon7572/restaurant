@@ -7,11 +7,11 @@ import ConfirmModal from '@/components/ConfirmModal'
 import Cart from '@/components/Cart'
 import MenuBrowser from '@/components/MenuBrowser'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
-import { addLine, setQuantity, removeLine, cartTotal, lineKey } from '@/lib/cart'
-import { translateDiyLine } from '@/lib/options'
+import { addLine, setQuantity, removeLine, replaceLine, cartTotal, lineKey } from '@/lib/cart'
+import { translateDiyLine, withoutCrustStep } from '@/lib/options'
 import { printSlip } from '@/lib/print'
 import { kitchenTicketHtml } from '@/lib/receipt'
-import type { CartLine, MenuCategoryDTO, MenuItemDTO } from '@/lib/types'
+import type { CartLine, MenuCategoryDTO, MenuItemDTO, OptionGroupDTO } from '@/lib/types'
 
 interface OrderItemData {
   id: number
@@ -23,9 +23,20 @@ interface OrderItemData {
   note: string | null
   options?: { groupName: string; choiceName: string; priceDelta: number }[]
   // Added by GET /api/orders/[id]: the stored option snapshots mapped back to
-  // live choice ids so an edit can re-submit them.
+  // live choice ids so an edit can re-submit them, plus the live option groups
+  // and price needed to reopen the line in the option sheet.
   optionChoiceIds?: number[]
   optionsResolved?: boolean
+  optionGroups?: OptionGroupDTO[]
+  menuPrice?: number | null
+}
+
+// One line of the edit cart being reconfigured: which line is being replaced,
+// the menu item to reconfigure it against, and what was chosen before.
+interface EditTarget {
+  key: string
+  item: MenuItemDTO
+  initial: { optionChoiceIds: number[]; quantity: number; note: string | null }
 }
 
 interface Order {
@@ -64,6 +75,10 @@ export default function OrderDetailPage() {
   const [categories, setCategories] = useState<MenuCategoryDTO[]>([])
   const [editLines, setEditLines] = useState<CartLine[]>([])
   const [sheetItem, setSheetItem] = useState<MenuItemDTO | null>(null)
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null)
+  // Every menu item any edit line can be reconfigured against, keyed by id:
+  // seeded from the order itself, extended as items are added from the menu.
+  const [itemsById, setItemsById] = useState<Record<number, MenuItemDTO>>({})
   const [editTable, setEditTable] = useState('')
   const [editCustomer, setEditCustomer] = useState('')
   const [editNote, setEditNote] = useState('')
@@ -126,6 +141,23 @@ export default function OrderDetailPage() {
         })
       }, [])
 
+    // The order carries each item's live option groups, so a line can be
+    // reopened without waiting for (or finding it in) the menu fetch below —
+    // which matters for ingredient items that no category browses directly.
+    const known: Record<number, MenuItemDTO> = {}
+    for (const i of order.items) {
+      if (i.menuItemId == null || !i.optionGroups) continue
+      const delta = (i.options ?? []).reduce((s, o) => s + o.priceDelta, 0)
+      known[i.menuItemId] = {
+        id: i.menuItemId,
+        name: i.itemName || i.menuItem?.name || '',
+        price: i.menuPrice ?? i.price - delta,
+        imageUrl: null,
+        optionGroups: i.optionGroups,
+      }
+    }
+    setItemsById(known)
+
     const deleted = order.items.filter(i => i.menuItemId == null).length
     const unmatched = order.items.filter(i => i.optionsResolved === false).length
     setEditWarning([
@@ -134,6 +166,9 @@ export default function OrderDetailPage() {
     ].filter(Boolean).join(' · '))
 
     setEditLines(lines)
+    // A sheet left open from a previous edit must not reopen over the new one.
+    setSheetItem(null)
+    setEditTarget(null)
     setEditTable(order.tableNumber || '')
     setEditCustomer(order.customerName || '')
     setEditNote(order.note || '')
@@ -144,8 +179,14 @@ export default function OrderDetailPage() {
     setEditing(true)
   }
 
+  function remember(item: MenuItemDTO) {
+    setItemsById(prev => (prev[item.id] ? prev : { ...prev, [item.id]: item }))
+  }
+
   function openEditItem(item: MenuItemDTO) {
     if (item.available === false) return
+    // Synthetic DIY entries are only remembered once translated to a crust.
+    if (item.id > 0) remember(item)
     if (item.optionGroups.length > 0) { setSheetItem(item); return }
     setEditLines(prev => addLine(prev, {
       key: '', menuItemId: item.id, name: item.name, basePrice: item.price,
@@ -153,11 +194,48 @@ export default function OrderDetailPage() {
     }))
   }
 
-  function handleEditAdd(line: CartLine) {
+  // Reopen an existing line with what was chosen already ticked.
+  function openEditLine(line: CartLine) {
+    const item = itemsById[line.menuItemId]
+    if (!item) return
+    setEditTarget({
+      key: line.key,
+      item,
+      initial: {
+        optionChoiceIds: line.optionChoiceIds,
+        quantity: line.quantity,
+        note: line.note,
+      },
+    })
+  }
+
+  function closeSheet() {
+    setSheetItem(null)
+    setEditTarget(null)
+  }
+
+  function handleSheetSubmit(line: CartLine) {
+    // Reconfiguring replaces the line it came from; the key changes with the
+    // options, so it can't be an in-place update.
+    if (editTarget) {
+      setEditLines(prev => replaceLine(prev, editTarget.key, line))
+      closeSheet()
+      return
+    }
+
     // Synthetic DIY lines carry a negative id; remap to the chosen crust.
     if (line.menuItemId < 0 && sheetItem) {
       const translated = translateDiyLine(line, sheetItem)
       if (!translated) return
+      // The crust is now the base item, so remember it under its own id with
+      // only the extras steps — otherwise the line couldn't be reopened.
+      remember({
+        id: translated.menuItemId,
+        name: translated.name,
+        price: translated.basePrice,
+        imageUrl: null,
+        optionGroups: withoutCrustStep(sheetItem.optionGroups),
+      })
       line = translated
     }
     setEditLines(prev => addLine(prev, line))
@@ -285,6 +363,8 @@ export default function OrderDetailPage() {
             lines={editLines}
             onQty={(key, q) => setEditLines(prev => setQuantity(prev, key, q))}
             onRemove={key => setEditLines(prev => removeLine(prev, key))}
+            onEdit={openEditLine}
+            canEdit={l => !!itemsById[l.menuItemId]}
           />
         </div>
 
@@ -293,7 +373,16 @@ export default function OrderDetailPage() {
         </p>
         <MenuBrowser categories={categories} onSelect={openEditItem} emptyText="ยังไม่มีเมนู" />
 
-        <ItemOptionSheet item={sheetItem} onClose={() => setSheetItem(null)} onAdd={handleEditAdd} />
+        {/* One sheet, two jobs: adding a new line, or reconfiguring an
+            existing one. The key remounts it so the pickers reset between
+            targets instead of carrying the previous line's ticks over. */}
+        <ItemOptionSheet
+          key={editTarget ? `edit:${editTarget.key}` : `add:${sheetItem?.id ?? ''}`}
+          item={editTarget?.item ?? sheetItem}
+          initial={editTarget?.initial}
+          onClose={closeSheet}
+          onAdd={handleSheetSubmit}
+        />
 
         <div
           style={{

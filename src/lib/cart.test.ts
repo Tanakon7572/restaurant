@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest'
-import { lineKey, addLine, cartTotal, type CartState } from './cart'
+import { lineKey, addLine, replaceLine, cartTotal, type CartState } from './cart'
 import type { CartLine } from './types'
 
 const base = (over: Partial<CartLine> = {}): CartLine => ({
@@ -21,6 +21,27 @@ it('addLine merges identical lines by quantity', () => {
   s = addLine(s, base({ quantity: 2 }))
   expect(s).toHaveLength(1)
   expect(s[0].quantity).toBe(3)
+})
+
+it('replaceLine swaps a line in place, keeping its position', () => {
+  const a = { ...base({ key: 'a', name: 'A' }) }
+  const b = { ...base({ key: 'b', name: 'B', menuItemId: 2 }) }
+  const s = replaceLine([a, b], 'a', base({ key: 'a2', name: 'A edited' }))
+  expect(s.map(l => l.key)).toEqual(['a2', 'b'])
+})
+
+it('replaceLine folds into an existing line when the edit makes them identical', () => {
+  const a = base({ key: 'a', quantity: 2 })
+  const b = base({ key: 'b', quantity: 3 })
+  const s = replaceLine([a, b], 'a', base({ key: 'b', quantity: 2 }))
+  expect(s).toHaveLength(1)
+  expect(s[0].key).toBe('b')
+  expect(s[0].quantity).toBe(5)
+})
+
+it('replaceLine adds the line when the key is gone (edited a removed line)', () => {
+  const s = replaceLine([base({ key: 'a' })], 'ghost', base({ key: 'z' }))
+  expect(s.map(l => l.key)).toEqual(['a', 'z'])
 })
 
 it('cartTotal sums unitPrice * quantity', () => {

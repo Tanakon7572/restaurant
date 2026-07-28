@@ -6,9 +6,14 @@ type Props = {
   lines: CartLine[]
   onQty: (key: string, qty: number) => void
   onRemove: (key: string) => void
+  // Reopen one line's options / note. Omitted where the screen has no menu
+  // loaded to reconfigure against; `canEdit` hides the button for a line whose
+  // menu item the caller can't resolve (deleted from the menu since).
+  onEdit?: (line: CartLine) => void
+  canEdit?: (line: CartLine) => boolean
 }
 
-export default function Cart({ lines, onQty, onRemove }: Props) {
+export default function Cart({ lines, onQty, onRemove, onEdit, canEdit }: Props) {
   if (lines.length === 0)
     return <p style={{ color: 'var(--c-text-3)', textAlign: 'center', padding: '32px 0' }}>ยังไม่มีรายการในตะกร้า</p>
 
@@ -34,7 +39,12 @@ export default function Cart({ lines, onQty, onRemove }: Props) {
               <span className="qty-n">{l.quantity}</span>
               <button className="btn-icon btn-ghost" onClick={() => onQty(l.key, l.quantity + 1)} aria-label="เพิ่ม">+</button>
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => onRemove(l.key)}>ลบ</button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {onEdit && (!canEdit || canEdit(l)) && (
+                <button className="btn btn-ghost btn-sm" onClick={() => onEdit(l)}>แก้ไข</button>
+              )}
+              <button className="btn btn-ghost btn-sm" onClick={() => onRemove(l.key)}>ลบ</button>
+            </div>
           </div>
         </div>
       ))}
