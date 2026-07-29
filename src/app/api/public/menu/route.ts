@@ -119,10 +119,12 @@ export async function GET(request: Request) {
               }))
               // No steps of its own, but the category's pools stay on offer as
               // paid add-ons — a fixed set still allows an extra topping.
-              const extras = sigPools.length > 0
-                ? withoutHiddenPools(
-                    deriveExtraGroupsFromPools(sigPools), sigPools, c.hiddenPoolCategoryIds)
-                : []
+              //
+              // The category's hidden-step flags deliberately don't apply. They
+              // exist to stop a Signature item's recipe being re-picked, so a
+              // category of fixed combos has most of them switched off — and
+              // reading them here would leave a set with nothing to add at all.
+              const extras = deriveExtraGroupsFromPools(sigPools)
               // Swapping the crust is a till-side move, and only means
               // anything when the set actually comes with one.
               const setCrust = parts.find(p => isCrust(p.name))

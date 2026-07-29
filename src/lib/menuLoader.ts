@@ -116,13 +116,12 @@ export async function loadMenuForPricing(
       const parts = it.setComponents.map(c =>
         ({ name: c.item.name, price: c.item.price, quantity: c.quantity }))
       // Add-ons only: the set's own contents are fixed, but its category's
-      // pools are still on offer as extras. Mirror the customer menu's
-      // switched-off steps, or pricing rejects an order the UI allowed.
+      // pools are still on offer as extras. The category's hidden-step flags
+      // don't apply — they switch off the Signature recipe picker, not what
+      // may be added on top — and the menu must agree, or pricing would
+      // reject an order the sheet allowed.
       const setPools = poolsOf(linksByCat.get(it.categoryId) ?? [])
-      const extras = setPools.length > 0
-        ? withoutHiddenPools(
-            deriveDiyExtrasFromPools(setPools), setPools, hiddenPoolsByCat.get(it.categoryId) ?? [])
-        : []
+      const extras = deriveDiyExtrasFromPools(setPools)
       // Swapping the crust is a staff move, and only means anything when the
       // set actually comes with one.
       const setCrust = parts.find(p => isCrust(p.name))
