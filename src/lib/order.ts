@@ -1,12 +1,17 @@
 import type { OrderItemInput } from './types'
+import { SET_GROUP_NAME } from './setMenu'
 
 export type ChoiceForPricing = { id: number; name: string; priceDelta: number; available: boolean }
 export type GroupForPricing = {
   id: number; name: string; required: boolean; minSelect: number; maxSelect: number
   choices: ChoiceForPricing[]
 }
+export type SetPartForPricing = { name: string; quantity: number }
 export type MenuItemForPricing = {
   id: number; name: string; price: number; optionGroups: GroupForPricing[]
+  // What a fixed set contains. Recorded on the line so the receipt lists the
+  // parts instead of one run-on name.
+  setParts?: SetPartForPricing[]
 }
 
 export type PricedOption = { groupName: string; choiceName: string; priceDelta: number }
@@ -57,6 +62,17 @@ export function priceOrderItems(
         delta += c.priceDelta
         options.push({ groupName: g.name, choiceName: c.name, priceDelta: c.priceDelta })
       }
+    }
+
+    // A set's parts carry no price of their own — the set price already
+    // covers them — so they add nothing to `delta`. They are appended after
+    // the chosen options so a set that also had options still reads in order.
+    for (const p of item.setParts ?? []) {
+      options.push({
+        groupName: SET_GROUP_NAME,
+        choiceName: p.quantity > 1 ? `${p.name} ×${p.quantity}` : p.name,
+        priceDelta: 0,
+      })
     }
 
     const unit = item.price + delta

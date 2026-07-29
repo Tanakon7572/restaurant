@@ -5,6 +5,16 @@ export type SetPart = {
 }
 
 /**
+ * The group name a set's parts are recorded under on an order line.
+ *
+ * Parts are not chosen the way options are, but every screen and slip already
+ * knows how to list options — so they travel as options to get itemised on the
+ * receipt and the kitchen ticket. Code that tells the two apart matches on
+ * this name.
+ */
+export const SET_GROUP_NAME = 'ในเซ็ต'
+
+/**
  * What a set is called on the menu: every part, in the order staff arranged
  * them. A set's value is in what's inside it, so the parts are the name —
  * "แป้งวานิลลา + ฝอยทอง + มาร์ชเมลโล่" tells a customer more than "เซ็ต A" ever will.

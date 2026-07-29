@@ -103,17 +103,18 @@ export async function loadMenuForPricing(
     let groups = it.optionGroups
     let name = it.name
     // A set is bought whole at its own price: it takes no option steps, and
-    // must not pick up its category's Signature pools. Its name is the parts,
-    // so the kitchen ticket and receipt say what to make.
+    // must not pick up its category's Signature pools. The parts go on the
+    // line as well as into the name, so the kitchen ticket and the receipt
+    // itemise what to make instead of printing one run-on line.
     if (it.isSet) {
+      const parts = it.setComponents.map(c =>
+        ({ name: c.item.name, price: c.item.price, quantity: c.quantity }))
       map.set(it.id, {
         id: it.id,
-        name: setDisplayName(
-          it.setComponents.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity })),
-          it.name,
-        ),
+        name: setDisplayName(parts, it.name),
         price: it.price,
         optionGroups: [],
+        setParts: parts.map(p => ({ name: p.name, quantity: p.quantity })),
       })
       continue
     }

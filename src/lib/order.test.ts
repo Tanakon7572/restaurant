@@ -1,5 +1,6 @@
 import { it, expect } from 'vitest'
 import { priceOrderItems, type MenuItemForPricing } from './order'
+import { SET_GROUP_NAME } from './setMenu'
 
 const steak: MenuItemForPricing = {
   id: 1, name: 'ข้าวหน้าเนื้อ', price: 199,
@@ -54,4 +55,43 @@ it('rejects unknown menu item', () => {
 it('rejects unknown choice id', () => {
   const r = priceOrderItems([{ menuItemId: 1, quantity: 1, optionChoiceIds: [100, 555] }], menu)
   expect(r.ok).toBe(false)
+})
+
+// A fixed set is one line on the bill, but the receipt and the kitchen ticket
+// both have to say what is in it — so the parts ride along as options.
+const setItem: MenuItemForPricing = {
+  id: 2, name: 'แป้งวานิลลา + ฝอยทอง + มาร์ชเมลโลว์', price: 120,
+  optionGroups: [],
+  setParts: [
+    { name: 'แป้งวานิลลา', quantity: 1 },
+    { name: 'ฝอยทอง', quantity: 1 },
+    { name: 'มาร์ชเมลโลว์', quantity: 2 },
+  ],
+}
+const setMenu = new Map([[2, setItem]])
+
+it('itemises a set into its parts', () => {
+  const r = priceOrderItems([{ menuItemId: 2, quantity: 1 }], setMenu)
+  expect(r.ok).toBe(true)
+  if (!r.ok) return
+  expect(r.items[0].options).toEqual([
+    { groupName: SET_GROUP_NAME, choiceName: 'แป้งวานิลลา', priceDelta: 0 },
+    { groupName: SET_GROUP_NAME, choiceName: 'ฝอยทอง', priceDelta: 0 },
+    { groupName: SET_GROUP_NAME, choiceName: 'มาร์ชเมลโลว์ ×2', priceDelta: 0 },
+  ])
+})
+
+it('charges the set price, not the parts', () => {
+  const r = priceOrderItems([{ menuItemId: 2, quantity: 3 }], setMenu)
+  expect(r.ok).toBe(true)
+  if (!r.ok) return
+  expect(r.items[0].price).toBe(120)
+  expect(r.totalPrice).toBe(360)
+})
+
+it('leaves an ordinary item without set parts', () => {
+  const r = priceOrderItems([{ menuItemId: 1, quantity: 1, optionChoiceIds: [100] }], menu)
+  expect(r.ok).toBe(true)
+  if (!r.ok) return
+  expect(r.items[0].options.every(o => o.groupName !== SET_GROUP_NAME)).toBe(true)
 })

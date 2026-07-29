@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { priceOrderItems } from '@/lib/order'
 import { loadMenuForPricing } from '@/lib/menuLoader'
+import { SET_GROUP_NAME } from '@/lib/setMenu'
 import type { OrderItemInput } from '@/lib/types'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -27,8 +28,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const items = order.items.map(it => {
       const priced = it.menuItemId != null ? menu.get(it.menuItemId) : undefined
       const groups = priced?.optionGroups ?? []
+      // A set's parts are recorded as options so slips can list them, but they
+      // were never chosen and map to no choice id. Leaving them in would make
+      // every set line look like it had lost an option.
+      const chosen = it.options.filter(o => o.groupName !== SET_GROUP_NAME)
       const optionChoiceIds: number[] = []
-      for (const o of it.options) {
+      for (const o of chosen) {
         const choice = groups
           .find((g: { name: string }) => g.name === o.groupName)
           ?.choices.find((c: { name: string }) => c.name === o.choiceName)
@@ -42,7 +47,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         // server will charge on save anyway.
         menuPrice: priced?.price ?? null,
         // false = at least one option no longer exists on the menu
-        optionsResolved: optionChoiceIds.length === it.options.length,
+        optionsResolved: optionChoiceIds.length === chosen.length,
         optionGroups: groups.map((g: { id: number; name: string; required: boolean; minSelect: number; maxSelect: number; choices: { id: number; name: string; priceDelta: number; available: boolean }[] }, gi: number) => ({
           id: g.id, name: g.name, required: g.required,
           minSelect: g.minSelect, maxSelect: g.maxSelect, order: gi,
