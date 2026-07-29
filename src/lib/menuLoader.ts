@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client'
-import type { MenuItemForPricing } from './order'
+import type { MenuItemForPricing, GroupForPricing } from './order'
 import {
   deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, deriveSetCrustGroupForPricing,
   expandPoolIds, withoutCrustStep, withoutHiddenPools, isCrust, DIY_NAME_PREFIX,
@@ -17,14 +17,14 @@ type Prisma = PrismaClient
  *  - if its own category IS an ingredient pool (DIY), the item is a base
  *    crust ordered directly and the sibling pools' extras groups apply.
  * `onlyAvailable` filters ordered items to available ones (customer flow).
- * `staffCrustSwap` adds the set crust step, which only the till offers — the
- * QR menu never shows it, so it must not accept it either.
+ * `staff` adds the steps a set offers only at the till — swapping its crust
+ * and adding to it. The QR menu never shows them, so it must not accept them.
  */
 export async function loadMenuForPricing(
   prisma: Prisma,
   itemIds: number[],
   onlyAvailable: boolean,
-  { staffCrustSwap = false }: { staffCrustSwap?: boolean } = {},
+  { staff = false }: { staff?: boolean } = {},
 ): Promise<Map<number, MenuItemForPricing>> {
   const items = await prisma.menuItem.findMany({
     where: { id: { in: itemIds }, ...(onlyAvailable ? { available: true } : {}) },
@@ -115,24 +115,22 @@ export async function loadMenuForPricing(
     if (it.isSet) {
       const parts = it.setComponents.map(c =>
         ({ name: c.item.name, price: c.item.price, quantity: c.quantity }))
-      // Add-ons only: the set's own contents are fixed, but its category's
-      // pools are still on offer as extras. The category's hidden-step flags
-      // don't apply — they switch off the Signature recipe picker, not what
-      // may be added on top — and the menu must agree, or pricing would
-      // reject an order the sheet allowed.
+      // A set is sold as its card describes it, so a customer's order may
+      // carry no steps at all — the QR menu offers none, and this is what
+      // makes that stick. Staff may swap the crust and add to it, matching
+      // the till's copy of the menu exactly, or an order the sheet allowed
+      // would be rejected here.
       const setPools = poolsOf(linksByCat.get(it.categoryId) ?? [])
-      const extras = deriveDiyExtrasFromPools(setPools)
-      // Swapping the crust is a staff move, and only means anything when the
-      // set actually comes with one.
       const setCrust = parts.find(p => isCrust(p.name))
-      const swap = staffCrustSwap && setCrust && setPools.length > 0
-        ? deriveSetCrustGroupForPricing(setPools, setCrust.price)
-        : null
+      const steps: GroupForPricing[] = !staff || setPools.length === 0 ? [] : [
+        ...(setCrust ? [deriveSetCrustGroupForPricing(setPools, setCrust.price)] : []),
+        ...deriveDiyExtrasFromPools(setPools),
+      ].filter(g => g !== null)
       map.set(it.id, {
         id: it.id,
         name: setDisplayName(parts, it.name),
         price: it.price,
-        optionGroups: swap ? [swap, ...extras] : extras,
+        optionGroups: steps,
         setParts: parts.map(p =>
           ({ name: p.name, quantity: p.quantity, price: p.price, crust: isCrust(p.name) })),
       })

@@ -6,9 +6,9 @@ import { getSession } from '@/lib/session'
 
 export async function GET(request: Request) {
   try {
-    // Staff get one extra step sets don't otherwise have: swapping the crust.
-    // Asked for by the till with ?staff=1, but granted on the session — the
-    // customer's copy of this menu must never carry it.
+    // Staff get the steps a set doesn't offer customers: swapping its crust
+    // and adding to it. Asked for by the till with ?staff=1, but granted on
+    // the session — the customer's copy of this menu must never carry them.
     const wantsStaff = new URL(request.url).searchParams.get('staff') === '1'
     const staff = wantsStaff && !!(await getSession())
     const categories = await prisma.menuCategory.findMany({
@@ -117,27 +117,27 @@ export async function GET(request: Request) {
               const parts = it.setComponents.map(sc => ({
                 itemId: sc.item.id, name: sc.item.name, price: sc.item.price, quantity: sc.quantity,
               }))
-              // No steps of its own, but the category's pools stay on offer as
-              // paid add-ons — a fixed set still allows an extra topping.
+              // A set is sold exactly as its card describes it, so the QR menu
+              // offers no steps at all — not a crust swap, not an extra
+              // topping. Staff get both: at the till a customer is standing
+              // there asking, and someone has to be able to say yes.
               //
-              // The category's hidden-step flags deliberately don't apply. They
+              // The category's hidden-step flags don't apply to either. They
               // exist to stop a Signature item's recipe being re-picked, so a
               // category of fixed combos has most of them switched off — and
-              // reading them here would leave a set with nothing to add at all.
-              const extras = deriveExtraGroupsFromPools(sigPools)
-              // Swapping the crust is a till-side move, and only means
-              // anything when the set actually comes with one.
+              // reading them here would leave staff with nothing to add.
               const setCrust = parts.find(p => isCrust(p.name))
-              const swap = staff && setCrust && sigPools.length > 0
-                ? deriveSetCrustGroup(sigPools, setCrust.price)
-                : null
+              const steps = !staff || sigPools.length === 0 ? [] : [
+                ...(setCrust ? [deriveSetCrustGroup(sigPools, setCrust.price)] : []),
+                ...deriveExtraGroupsFromPools(sigPools),
+              ].filter(g => g !== null)
               return {
                 id: it.id,
                 name: setDisplayName(parts, it.name),
                 price: it.price,
                 imageUrl: it.imageUrl,
                 available: it.available && it.setComponents.every(sc => sc.item.available),
-                optionGroups: swap ? [swap, ...extras] : extras,
+                optionGroups: steps,
                 setParts: parts,
                 setDiscount: it.setDiscount,
               }
