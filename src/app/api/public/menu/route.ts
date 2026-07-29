@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { deriveGroupsFromPools, expandPoolIds, withoutCrustStep, withoutHiddenPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { deriveGroupsFromPools, deriveExtraGroupsFromPools, expandPoolIds, withoutCrustStep, withoutHiddenPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 import { setDisplayName } from '@/lib/setMenu'
 
 export async function GET() {
@@ -111,13 +111,19 @@ export async function GET() {
               const parts = it.setComponents.map(sc => ({
                 itemId: sc.item.id, name: sc.item.name, price: sc.item.price, quantity: sc.quantity,
               }))
+              // No steps of its own, but the category's pools stay on offer as
+              // paid add-ons — a fixed set still allows an extra topping.
+              const extras = sigPools.length > 0
+                ? withoutHiddenPools(
+                    deriveExtraGroupsFromPools(sigPools), sigPools, c.hiddenPoolCategoryIds)
+                : []
               return {
                 id: it.id,
                 name: setDisplayName(parts, it.name),
                 price: it.price,
                 imageUrl: it.imageUrl,
                 available: it.available && it.setComponents.every(sc => sc.item.available),
-                optionGroups: [],
+                optionGroups: extras,
                 setParts: parts,
                 setDiscount: it.setDiscount,
               }

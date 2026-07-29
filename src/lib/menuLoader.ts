@@ -73,7 +73,9 @@ export async function loadMenuForPricing(
   // Collect every pool category we need ingredients for.
   const neededPoolIds = new Set<number>()
   for (const it of items) {
-    if (it.optionGroups.length > 0) continue
+    // A set derives its add-on steps from its category's pools even though it
+    // may carry option groups of its own.
+    if (!it.isSet && it.optionGroups.length > 0) continue
     for (const id of linksByCat.get(it.categoryId) ?? []) neededPoolIds.add(id)
     const siblings = poolSetContaining(it.categoryId)
     if (siblings) for (const id of siblings) neededPoolIds.add(id)
@@ -109,11 +111,19 @@ export async function loadMenuForPricing(
     if (it.isSet) {
       const parts = it.setComponents.map(c =>
         ({ name: c.item.name, price: c.item.price, quantity: c.quantity }))
+      // Add-ons only: the set's own contents are fixed, but its category's
+      // pools are still on offer as extras. Mirror the customer menu's
+      // switched-off steps, or pricing rejects an order the UI allowed.
+      const setPools = poolsOf(linksByCat.get(it.categoryId) ?? [])
+      const extras = setPools.length > 0
+        ? withoutHiddenPools(
+            deriveDiyExtrasFromPools(setPools), setPools, hiddenPoolsByCat.get(it.categoryId) ?? [])
+        : []
       map.set(it.id, {
         id: it.id,
         name: setDisplayName(parts, it.name),
         price: it.price,
-        optionGroups: [],
+        optionGroups: extras,
         setParts: parts.map(p => ({ name: p.name, quantity: p.quantity })),
       })
       continue

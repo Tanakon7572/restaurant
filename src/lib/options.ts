@@ -252,3 +252,15 @@ export function deriveDiyExtrasForPricing(ingredients: Ingredient[]): GroupForPr
 export function deriveDiyExtrasFromPools(pools: IngredientPool[]): GroupForPricing[] {
   return deriveGroupsFromPoolsForPricing(pools, 'diy').filter(g => g.id !== CRUST_GROUP_ID)
 }
+
+/**
+ * The same extras steps for the customer menu, with photos.
+ *
+ * A fixed set uses these: what's inside it is settled, but a customer may
+ * still want an extra topping on top. The base (แป้ง) step is dropped — the
+ * set already has its crust — and everything left is optional and charged at
+ * full price, since it really is an addition.
+ */
+export function deriveExtraGroupsFromPools(pools: IngredientPool[]): OptionGroupDTO[] {
+  return deriveGroupsFromPools(pools, 'diy').filter(g => g.id !== CRUST_GROUP_ID)
+}

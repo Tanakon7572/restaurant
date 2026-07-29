@@ -448,6 +448,9 @@ select.input { color-scheme: light; }
   padding: 14px 16px; border-bottom: 1px solid var(--c-border);
 }
 .sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 16px 16px; }
+/* A sheet is already the height of the screen; letting a note box be dragged
+   taller only pushes the steps above it out of reach. */
+.sheet textarea { resize: none; }
 .sheet-foot {
   flex-shrink: 0;
   display: flex; align-items: center; gap: 12px;

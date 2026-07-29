@@ -2,7 +2,7 @@ import { it, expect } from 'vitest'
 import {
   deriveOptionGroups, isCrust, deriveGroupsForPricing,
   deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
-  deriveGroupsFromPools, deriveDiyExtrasFromPools, isCrustCategory, expandPoolIds,
+  deriveGroupsFromPools, deriveDiyExtrasFromPools, deriveExtraGroupsFromPools, isCrustCategory, expandPoolIds,
   withoutCrustStep, withoutHiddenPools,
   CRUST_GROUP_ID, DIY_NAME_PREFIX, type IngredientPool,
 } from './options'
@@ -296,4 +296,18 @@ it('multi-pool DIY builder translates the crust into the base item', () => {
   expect(line!.basePrice).toBe(20)
   expect(line!.optionChoiceIds).toEqual([60])
   expect(line!.choices.map(c => c.groupName)).toEqual(['แยม'])
+})
+
+// ── Add-ons for a fixed set ────────────────────────────────────────
+
+it('offers a set the pools as optional add-ons without a crust step', () => {
+  const groups = deriveExtraGroupsFromPools(pools)
+  expect(groups.some(g => g.id === CRUST_GROUP_ID)).toBe(false)
+  expect(groups.map(g => g.name)).toEqual(['แยม', 'ไส้หวาน', 'ไส้เค็ม'])
+  expect(groups.every(g => !g.required && g.minSelect === 0)).toBe(true)
+})
+
+it('charges a set add-on at its full price, not a swap difference', () => {
+  const jam = deriveExtraGroupsFromPools(pools).find(g => g.name === 'แยม')
+  expect(jam?.choices.find(c => c.id === 60)?.priceDelta).toBe(10)
 })

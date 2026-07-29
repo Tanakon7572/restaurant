@@ -137,6 +137,13 @@ export default function ItemOptionSheet({ item, onClose, onAdd, initial }: Props
               )}
             </div>
           )}
+          {/* The steps under a set are additions, not the set being assembled.
+              Saying so stops them reading as choices that must be made. */}
+          {parts.length > 0 && item.optionGroups.length > 0 && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', margin: '12px 0 -4px' }}>
+              อยากได้อะไรเพิ่ม เลือกด้านล่างได้ (คิดเงินเพิ่มจากราคาเซ็ต)
+            </p>
+          )}
           {item.optionGroups.map(g => {
             const picks = selected[g.id] ?? []
             return (
