@@ -241,4 +241,9 @@ model OrderItemOption {
   groupName   String
   choiceName  String
   priceDelta  Float     @default(0)
+  // What this line is worth on its own, for rows that are part of a fixed set.
+  // Those add nothing to the line (priceDelta 0) — the set price already
+  // covers them — but the receipt still has to print a figure beside each one.
+  // Null for a chosen option, whose price is priceDelta.
+  unitPrice   Float?
 }

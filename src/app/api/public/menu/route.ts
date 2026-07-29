@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { deriveGroupsFromPools, deriveExtraGroupsFromPools, expandPoolIds, withoutCrustStep, withoutHiddenPools, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
+import { deriveGroupsFromPools, deriveExtraGroupsFromPools, deriveSetCrustGroup, expandPoolIds, withoutCrustStep, withoutHiddenPools, isCrust, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 import { setDisplayName } from '@/lib/setMenu'
+import { getSession } from '@/lib/session'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Staff get one extra step sets don't otherwise have: swapping the crust.
+    // Asked for by the till with ?staff=1, but granted on the session — the
+    // customer's copy of this menu must never carry it.
+    const wantsStaff = new URL(request.url).searchParams.get('staff') === '1'
+    const staff = wantsStaff && !!(await getSession())
     const categories = await prisma.menuCategory.findMany({
       orderBy: { order: 'asc' },
       select: {
@@ -117,13 +123,19 @@ export async function GET() {
                 ? withoutHiddenPools(
                     deriveExtraGroupsFromPools(sigPools), sigPools, c.hiddenPoolCategoryIds)
                 : []
+              // Swapping the crust is a till-side move, and only means
+              // anything when the set actually comes with one.
+              const setCrust = parts.find(p => isCrust(p.name))
+              const swap = staff && setCrust && sigPools.length > 0
+                ? deriveSetCrustGroup(sigPools, setCrust.price)
+                : null
               return {
                 id: it.id,
                 name: setDisplayName(parts, it.name),
                 price: it.price,
                 imageUrl: it.imageUrl,
                 available: it.available && it.setComponents.every(sc => sc.item.available),
-                optionGroups: extras,
+                optionGroups: swap ? [swap, ...extras] : extras,
                 setParts: parts,
                 setDiscount: it.setDiscount,
               }

@@ -1,12 +1,17 @@
 import type { OrderItemInput } from './types'
 import { SET_GROUP_NAME } from './setMenu'
+import { CRUST_GROUP_ID } from './options'
 
 export type ChoiceForPricing = { id: number; name: string; priceDelta: number; available: boolean }
 export type GroupForPricing = {
   id: number; name: string; required: boolean; minSelect: number; maxSelect: number
   choices: ChoiceForPricing[]
 }
-export type SetPartForPricing = { name: string; quantity: number }
+export type SetPartForPricing = {
+  name: string; quantity: number; price: number
+  // The set's own แป้ง. A crust swap replaces it, so it must be identifiable.
+  crust?: boolean
+}
 export type MenuItemForPricing = {
   id: number; name: string; price: number; optionGroups: GroupForPricing[]
   // What a fixed set contains. Recorded on the line so the receipt lists the
@@ -14,7 +19,12 @@ export type MenuItemForPricing = {
   setParts?: SetPartForPricing[]
 }
 
-export type PricedOption = { groupName: string; choiceName: string; priceDelta: number }
+export type PricedOption = {
+  groupName: string; choiceName: string; priceDelta: number
+  // Set parts only: what the part is worth on its own, for the receipt.
+  // Null for a chosen option, whose price is priceDelta.
+  unitPrice: number | null
+}
 export type PricedItem = {
   menuItemId: number; itemName: string; quantity: number; price: number
   note: string | null; options: PricedOption[]
@@ -50,9 +60,13 @@ export function priceOrderItems(
       if (!found.choice.available) return { ok: false, error: `"${found.choice.name}" ไม่พร้อมจำหน่าย` }
     }
 
-    // per-group min/max enforcement
-    const options: PricedOption[] = []
+    // per-group min/max enforcement. A base (แป้ง) pick is held apart from the
+    // rest so a set reads crust first, then its contents, then anything added
+    // on top — the order a person would describe the plate in.
+    const base: PricedOption[] = []
+    const added: PricedOption[] = []
     let delta = 0
+    let crustSwapped = false
     for (const g of item.optionGroups) {
       const picks = g.choices.filter(c => chosenSet.has(c.id))
       const min = g.required ? Math.max(1, g.minSelect) : g.minSelect
@@ -60,20 +74,25 @@ export function priceOrderItems(
       if (picks.length > g.maxSelect) return { ok: false, error: `"${g.name}" เลือกได้สูงสุด ${g.maxSelect}` }
       for (const c of picks) {
         delta += c.priceDelta
-        options.push({ groupName: g.name, choiceName: c.name, priceDelta: c.priceDelta })
+        const opt = { groupName: g.name, choiceName: c.name, priceDelta: c.priceDelta, unitPrice: null }
+        if (g.id === CRUST_GROUP_ID) { crustSwapped = true; base.push(opt) }
+        else added.push(opt)
       }
     }
 
-    // A set's parts carry no price of their own — the set price already
-    // covers them — so they add nothing to `delta`. They are appended after
-    // the chosen options so a set that also had options still reads in order.
-    for (const p of item.setParts ?? []) {
-      options.push({
+    // A set's parts add nothing to `delta` — the set price already covers them
+    // — but each carries what it is worth so the receipt can print a figure
+    // beside it. A swapped crust stands in for the one the set came with.
+    const parts: PricedOption[] = (item.setParts ?? [])
+      .filter(p => !(crustSwapped && p.crust))
+      .map(p => ({
         groupName: SET_GROUP_NAME,
         choiceName: p.quantity > 1 ? `${p.name} ×${p.quantity}` : p.name,
         priceDelta: 0,
-      })
-    }
+        unitPrice: p.price * p.quantity,
+      }))
+
+    const options: PricedOption[] = [...base, ...parts, ...added]
 
     const unit = item.price + delta
     totalPrice += unit * qty

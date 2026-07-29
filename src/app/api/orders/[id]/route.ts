@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     // snapshots back to choice ids; anything unmatched (renamed or deleted
     // choice) is reported so the UI can warn instead of silently dropping it.
     const menuItemIds = [...new Set(order.items.map(i => i.menuItemId).filter((x): x is number => x != null))]
-    const menu = menuItemIds.length > 0 ? await loadMenuForPricing(prisma, menuItemIds, false) : new Map()
+    const menu = menuItemIds.length > 0 ? await loadMenuForPricing(prisma, menuItemIds, false, { staffCrustSwap: true }) : new Map()
 
     const items = order.items.map(it => {
       const priced = it.menuItemId != null ? menu.get(it.menuItemId) : undefined
@@ -79,7 +79,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
       // Price through the same path as order creation so chosen options and
       // per-item notes survive the edit and the total stays consistent.
-      const menu = await loadMenuForPricing(prisma, inputs.map(i => i.menuItemId), false)
+      const menu = await loadMenuForPricing(prisma, inputs.map(i => i.menuItemId), false, { staffCrustSwap: true })
       const result = priceOrderItems(inputs, menu)
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
 

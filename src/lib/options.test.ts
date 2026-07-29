@@ -3,7 +3,7 @@ import {
   deriveOptionGroups, isCrust, deriveGroupsForPricing,
   deriveDiyGroups, deriveDiyExtrasForPricing, buildDiyItem, translateDiyLine,
   deriveGroupsFromPools, deriveDiyExtrasFromPools, deriveExtraGroupsFromPools, isCrustCategory, expandPoolIds,
-  withoutCrustStep, withoutHiddenPools,
+  withoutCrustStep, withoutHiddenPools, deriveSetCrustGroup,
   CRUST_GROUP_ID, DIY_NAME_PREFIX, type IngredientPool,
 } from './options'
 import { priceOrderItems, type MenuItemForPricing } from './order'
@@ -310,4 +310,20 @@ it('offers a set the pools as optional add-ons without a crust step', () => {
 it('charges a set add-on at its full price, not a swap difference', () => {
   const jam = deriveExtraGroupsFromPools(pools).find(g => g.name === 'แยม')
   expect(jam?.choices.find(c => c.id === 60)?.priceDelta).toBe(10)
+})
+
+it('prices a set crust swap against the crust already inside the set', () => {
+  // The set comes with วานิลลา at ฿20; ชาร์โคล is ฿25.
+  const g = deriveSetCrustGroup(pools, 20)
+  expect(g?.name).toBe('เปลี่ยนแป้ง')
+  expect(g?.required).toBe(false)
+  expect(g?.choices.find(c => c.id === 31)?.priceDelta).toBe(0)
+  expect(g?.choices.find(c => c.id === 32)?.priceDelta).toBe(5)
+})
+
+it('offers no crust swap when the pools hold no crusts', () => {
+  const noCrust: IngredientPool[] = [
+    { id: 12, name: 'ไส้หวาน', items: [{ id: 70, name: 'ฝอยทอง', price: 15, available: true }] },
+  ]
+  expect(deriveSetCrustGroup(noCrust, 20)).toBeNull()
 })

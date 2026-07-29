@@ -264,3 +264,39 @@ export function deriveDiyExtrasFromPools(pools: IngredientPool[]): GroupForPrici
 export function deriveExtraGroupsFromPools(pools: IngredientPool[]): OptionGroupDTO[] {
   return deriveGroupsFromPools(pools, 'diy').filter(g => g.id !== CRUST_GROUP_ID)
 }
+
+/**
+ * The crust step offered on a fixed set: swap the แป้ง it comes with for
+ * another one.
+ *
+ * Optional, because leaving the set alone is the normal case, and priced
+ * against the crust already inside it — swapping up costs the difference,
+ * swapping down gives it back. Returns null when the pools have no crusts to
+ * offer.
+ *
+ * Staff only. A set is sold as the card describes it; letting the QR menu
+ * rebuild it would make that description wrong.
+ */
+export function deriveSetCrustGroup(
+  pools: IngredientPool[], setCrustPrice: number,
+): OptionGroupDTO | null {
+  const crust = deriveGroupsFromPools(pools, 'diy').find(g => g.id === CRUST_GROUP_ID)
+  if (!crust || crust.choices.length === 0) return null
+  return {
+    ...crust,
+    name: 'เปลี่ยนแป้ง',
+    required: false, minSelect: 0, maxSelect: 1,
+    choices: crust.choices.map(c => ({ ...c, priceDelta: c.priceDelta - setCrustPrice })),
+  }
+}
+
+export function deriveSetCrustGroupForPricing(
+  pools: IngredientPool[], setCrustPrice: number,
+): GroupForPricing | null {
+  const g = deriveSetCrustGroup(pools, setCrustPrice)
+  if (!g) return null
+  return {
+    id: g.id, name: g.name, required: g.required, minSelect: g.minSelect, maxSelect: g.maxSelect,
+    choices: g.choices.map(c => ({ id: c.id, name: c.name, priceDelta: c.priceDelta, available: c.available })),
+  }
+}

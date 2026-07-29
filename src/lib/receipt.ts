@@ -4,7 +4,12 @@ import type { ShopSettings } from './shopSettings'
 
 // Structural shapes only: these come off the API as JSON, where dates are
 // strings, so nothing here may assume a Date instance.
-export type SlipOption = { groupName: string; choiceName: string; priceDelta: number }
+export type SlipOption = {
+  groupName: string; choiceName: string; priceDelta: number
+  // Set parts only: what the part is worth on its own. Null for a chosen
+  // option, whose price is already inside the line total.
+  unitPrice?: number | null
+}
 export type SlipItem = {
   itemName: string; quantity: number; price: number
   note?: string | null; options?: SlipOption[]
@@ -29,18 +34,41 @@ function thaiDateTime(at: string | Date): string {
   })
 }
 
+/**
+ * One row per line, then one per option beneath it.
+ *
+ * Options sit in rows of their own rather than inside the name cell so a set's
+ * parts can carry a figure in the price column. A part's price is what it
+ * costs on its own — the set is sold for whatever the shop set, which is not
+ * always the sum — so when the two differ the set price is spelled out on a
+ * closing row instead of leaving the customer to add up and disagree.
+ */
 function itemRows(items: SlipItem[], withPrice: boolean): string {
+  const cell = (v: string) => (withPrice ? `<td class="p">${v}</td>` : '')
+  const sub = (label: string, price: string) =>
+    `<tr><td></td><td class="opt">${label}</td>${cell(price)}</tr>`
+
   return items.map(i => {
-    const opts = (i.options ?? [])
-      .map(o => `<div class="opt">• ${escapeHtml(o.choiceName)}</div>`)
+    const options = i.options ?? []
+    const rows = options
+      .map(o => sub(`• ${escapeHtml(o.choiceName)}`,
+        o.unitPrice != null ? baht(o.unitPrice * i.quantity) : ''))
       .join('')
-    const note = i.note ? `<div class="opt">** ${escapeHtml(i.note)}</div>` : ''
-    const price = withPrice ? `<td class="p">${baht(i.price * i.quantity)}</td>` : ''
+
+    // The set's own price, with any chosen option stripped back out of it.
+    const parts = options.filter(o => o.unitPrice != null)
+    const partsSum = parts.reduce((s, o) => s + (o.unitPrice ?? 0), 0)
+    const setPrice = i.price - options.reduce((s, o) => s + o.priceDelta, 0)
+    const reconcile = withPrice && parts.length > 0 && partsSum !== setPrice
+      ? sub('ราคาเซ็ต', baht(setPrice * i.quantity))
+      : ''
+
+    const note = i.note ? sub(`** ${escapeHtml(i.note)}`, '') : ''
     return `<tr>
       <td class="q">${i.quantity}×</td>
-      <td>${escapeHtml(i.itemName || '(ลบแล้ว)')}${opts}${note}</td>
-      ${price}
-    </tr>`
+      <td>${escapeHtml(i.itemName || '(ลบแล้ว)')}</td>
+      ${cell(baht(i.price * i.quantity))}
+    </tr>${rows}${reconcile}${note}`
   }).join('')
 }
 

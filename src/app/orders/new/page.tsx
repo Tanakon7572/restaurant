@@ -40,7 +40,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     // Auth check (redirect to login on 401); menu data with options comes from public menu
     fetch('/api/menu-categories').then(res => { if (res.status === 401) router.push('/') })
-    fetch('/api/public/menu')
+    fetch('/api/public/menu?staff=1')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

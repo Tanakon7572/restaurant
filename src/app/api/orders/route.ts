@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ต้องมีรายการอาหารอย่างน้อย 1 รายการ' }, { status: 400 })
     }
 
-    const menu = await loadMenuForPricing(prisma, items.map(i => i.menuItemId), false)
+    const menu = await loadMenuForPricing(prisma, items.map(i => i.menuItemId), false, { staffCrustSwap: true })
 
     const result = priceOrderItems(items, menu)
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })

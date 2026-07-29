@@ -23,7 +23,7 @@ interface OrderItemData {
   quantity: number
   price: number
   note: string | null
-  options?: { groupName: string; choiceName: string; priceDelta: number }[]
+  options?: { groupName: string; choiceName: string; priceDelta: number; unitPrice?: number | null }[]
   // Added by GET /api/orders/[id]: the stored option snapshots mapped back to
   // live choice ids so an edit can re-submit them, plus the live option groups
   // and price needed to reopen the line in the option sheet.
@@ -98,7 +98,7 @@ export default function OrderDetailPage() {
     // Loaded up front, not when editing starts: reopening a line resolves
     // against this, and staff shouldn't have to wait for a fetch to see the
     // option photos or the แป้ง step.
-    fetch('/api/public/menu')
+    fetch('/api/public/menu?staff=1')
       .then(r => (r.ok ? r.json() : null))
       .then(data => { if (Array.isArray(data)) setCategories(data as MenuCategoryDTO[]) })
       .catch(() => {})
@@ -511,7 +511,9 @@ export default function OrderDetailPage() {
               {item.options && item.options.length > 0 && (
                 <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: '0.78rem', color: 'var(--c-text-3)' }}>
                   {item.options.map((o, i) => (
-                    <li key={i}>• {o.choiceName}{o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}</li>
+                    <li key={i}>• {o.choiceName}{o.unitPrice != null
+                      ? ` ฿${o.unitPrice.toLocaleString('th-TH')}`
+                      : o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}</li>
                   ))}
                 </ul>
               )}

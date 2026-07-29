@@ -1,8 +1,9 @@
 import type { PrismaClient } from '@prisma/client'
 import type { MenuItemForPricing } from './order'
 import {
-  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, expandPoolIds, withoutCrustStep,
-  withoutHiddenPools, DIY_NAME_PREFIX, type Ingredient, type IngredientPool,
+  deriveGroupsFromPoolsForPricing, deriveDiyExtrasFromPools, deriveSetCrustGroupForPricing,
+  expandPoolIds, withoutCrustStep, withoutHiddenPools, isCrust, DIY_NAME_PREFIX,
+  type Ingredient, type IngredientPool,
 } from './options'
 import { setDisplayName } from './setMenu'
 
@@ -16,11 +17,14 @@ type Prisma = PrismaClient
  *  - if its own category IS an ingredient pool (DIY), the item is a base
  *    crust ordered directly and the sibling pools' extras groups apply.
  * `onlyAvailable` filters ordered items to available ones (customer flow).
+ * `staffCrustSwap` adds the set crust step, which only the till offers — the
+ * QR menu never shows it, so it must not accept it either.
  */
 export async function loadMenuForPricing(
   prisma: Prisma,
   itemIds: number[],
   onlyAvailable: boolean,
+  { staffCrustSwap = false }: { staffCrustSwap?: boolean } = {},
 ): Promise<Map<number, MenuItemForPricing>> {
   const items = await prisma.menuItem.findMany({
     where: { id: { in: itemIds }, ...(onlyAvailable ? { available: true } : {}) },
@@ -119,12 +123,19 @@ export async function loadMenuForPricing(
         ? withoutHiddenPools(
             deriveDiyExtrasFromPools(setPools), setPools, hiddenPoolsByCat.get(it.categoryId) ?? [])
         : []
+      // Swapping the crust is a staff move, and only means anything when the
+      // set actually comes with one.
+      const setCrust = parts.find(p => isCrust(p.name))
+      const swap = staffCrustSwap && setCrust && setPools.length > 0
+        ? deriveSetCrustGroupForPricing(setPools, setCrust.price)
+        : null
       map.set(it.id, {
         id: it.id,
         name: setDisplayName(parts, it.name),
         price: it.price,
-        optionGroups: extras,
-        setParts: parts.map(p => ({ name: p.name, quantity: p.quantity })),
+        optionGroups: swap ? [swap, ...extras] : extras,
+        setParts: parts.map(p =>
+          ({ name: p.name, quantity: p.quantity, price: p.price, crust: isCrust(p.name) })),
       })
       continue
     }
