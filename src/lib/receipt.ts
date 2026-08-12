@@ -1,31 +1,10 @@
 import { escapeHtml, baht } from './print'
+import { itemLines, type SlipItem, type SlipOrder, type SlipBill } from './slipLines'
 import { METHOD_LABELS, type PaymentMethod } from './billing'
 import type { ShopSettings } from './shopSettings'
 
-// Structural shapes only: these come off the API as JSON, where dates are
-// strings, so nothing here may assume a Date instance.
-export type SlipOption = {
-  groupName: string; choiceName: string; priceDelta: number
-  // Set parts only: what the part is worth on its own. Null for a chosen
-  // option, whose price is already inside the line total.
-  unitPrice?: number | null
-}
-export type SlipItem = {
-  itemName: string; quantity: number; price: number
-  note?: string | null; options?: SlipOption[]
-}
-export type SlipOrder = {
-  id: number; dailyNumber?: number; tableNumber?: string | null
-  customerName?: string | null; note?: string | null
-  createdAt: string | Date; items: SlipItem[]
-}
-export type SlipBill = {
-  id: number; tableNumber?: string | null
-  subtotal: number; discount: number; discountNote?: string | null
-  serviceCharge: number; vat: number; total: number
-  method: string; received?: number | null; changeDue?: number | null
-  createdAt: string | Date; orders: SlipOrder[]
-}
+// The slip data model lives in ./slipLines, where both renderers can reach it.
+export type { SlipOption, SlipItem, SlipOrder, SlipBill } from './slipLines'
 
 function thaiDateTime(at: string | Date): string {
   return new Date(at).toLocaleString('th-TH', {
@@ -34,42 +13,14 @@ function thaiDateTime(at: string | Date): string {
   })
 }
 
-/**
- * One row per line, then one per option beneath it.
- *
- * Options sit in rows of their own rather than inside the name cell so a set's
- * parts can carry a figure in the price column. A part's price is what it
- * costs on its own — the set is sold for whatever the shop set, which is not
- * always the sum — so when the two differ the set price is spelled out on a
- * closing row instead of leaving the customer to add up and disagree.
- */
 function itemRows(items: SlipItem[], withPrice: boolean): string {
-  const cell = (v: string) => (withPrice ? `<td class="p">${v}</td>` : '')
-  const sub = (label: string, price: string) =>
-    `<tr><td></td><td class="opt">${label}</td>${cell(price)}</tr>`
-
-  return items.map(i => {
-    const options = i.options ?? []
-    const rows = options
-      .map(o => sub(`• ${escapeHtml(o.choiceName)}`,
-        o.unitPrice != null ? baht(o.unitPrice * i.quantity) : ''))
-      .join('')
-
-    // The set's own price, with any chosen option stripped back out of it.
-    const parts = options.filter(o => o.unitPrice != null)
-    const partsSum = parts.reduce((s, o) => s + (o.unitPrice ?? 0), 0)
-    const setPrice = i.price - options.reduce((s, o) => s + o.priceDelta, 0)
-    const reconcile = withPrice && parts.length > 0 && partsSum !== setPrice
-      ? sub('ราคาเซ็ต', baht(setPrice * i.quantity))
-      : ''
-
-    const note = i.note ? sub(`** ${escapeHtml(i.note)}`, '') : ''
-    return `<tr>
-      <td class="q">${i.quantity}×</td>
-      <td>${escapeHtml(i.itemName || '(ลบแล้ว)')}</td>
-      ${cell(baht(i.price * i.quantity))}
-    </tr>${rows}${reconcile}${note}`
-  }).join('')
+  // The qty cell carries `q` only on item rows: an indented row's cell is a
+  // spacer, and the column's width is already set by the rows above it.
+  return itemLines(items, withPrice).map(l => `<tr>
+      <td${l.indent ? '' : ' class="q"'}>${escapeHtml(l.qty)}</td>
+      <td${l.indent ? ' class="opt"' : ''}>${escapeHtml(l.name)}</td>
+      ${withPrice ? `<td class="p">${escapeHtml(l.price)}</td>` : ''}
+    </tr>`).join('')
 }
 
 function moneyRow(label: string, value: number, cls = ''): string {

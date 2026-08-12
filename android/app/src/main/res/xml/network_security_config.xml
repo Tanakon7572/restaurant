@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The live POS is HTTPS, so cleartext stays off by default. The one
+     exception is the developer machine on the shop LAN, named explicitly:
+     a blanket allowance would let a hijacked DNS answer downgrade the real
+     server too. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.105</domain>
+    </domain-config>
+</network-security-config>

@@ -1,0 +1,17 @@
+# Signing material — never commit. Back the keystore up somewhere else:
+# lose it and you cannot ship an update over an installed copy.
+keystore/
+keystore.properties
+
+# Local machine paths
+local.properties
+
+# Build output
+.gradle/
+build/
+app/build/
+
+# The web build copied in by bundle-web.sh. Generated output, and it must
+# match the deployment it ships against — commit it and it goes stale in a
+# way nobody notices. Run ./bundle-web.sh before assembling.
+app/src/main/assets/web/

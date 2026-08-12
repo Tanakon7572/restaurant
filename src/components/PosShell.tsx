@@ -75,17 +75,35 @@ function IconSettings() {
   )
 }
 
+// `short` is what the 86px rail shows — a label that wraps to two lines in
+// that width reads as two separate items. `label` stays for the tooltip and
+// for assistive tech, which get the unabbreviated name.
+//
+// Only the four screens used during service sit on the rail. Nine equally
+// weighted buttons is nine decisions every time you look at it; the rest are
+// setup and back-office, reached through one "เพิ่มเติม" menu.
 const NAV = [
-  { href: '/dashboard',  label: 'หน้าหลัก',    Icon: IconGrid },
-  { href: '/orders/new', label: 'ขายหน้าร้าน', Icon: IconPos },
-  { href: '/checkout',   label: 'เก็บเงิน',    Icon: IconCash },
-  { href: '/reports',    label: 'ปิดรอบขาย',   Icon: IconReport },
-  { href: '/orders',     label: 'ออเดอร์',     Icon: IconReceipt, badge: true },
-  { href: '/menu',       label: 'จัดการเมนู',  Icon: IconMenu },
-  { href: '/kitchen',    label: 'จอครัว',      Icon: IconKitchen, newTab: true },
-  { href: '/qr',         label: 'QR โต๊ะ',     Icon: IconQr },
-  { href: '/settings',   label: 'ตั้งค่า',     Icon: IconSettings },
+  { href: '/orders/new', label: 'ขายหน้าร้าน', short: 'ขาย',      Icon: IconPos },
+  { href: '/checkout',   label: 'เก็บเงิน',    short: 'เก็บเงิน', Icon: IconCash },
+  { href: '/orders',     label: 'ออเดอร์',     short: 'ออเดอร์',  Icon: IconReceipt, badge: true },
+  { href: '/kitchen',    label: 'จอครัว',      short: 'ครัว',     Icon: IconKitchen, newTab: true },
 ]
+
+const MORE = [
+  { href: '/dashboard', label: 'หน้าหลัก',   Icon: IconGrid },
+  { href: '/menu',      label: 'จัดการเมนู', Icon: IconMenu },
+  { href: '/qr',        label: 'QR โต๊ะ',    Icon: IconQr },
+  { href: '/reports',   label: 'ปิดรอบขาย',  Icon: IconReport },
+  { href: '/settings',  label: 'ตั้งค่า',    Icon: IconSettings },
+]
+
+function IconMore() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 22 22" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="11" r="1.7"/><circle cx="11" cy="11" r="1.7"/><circle cx="17" cy="11" r="1.7"/>
+    </svg>
+  )
+}
 
 /**
  * POS app shell: sidebar navigation on desktop (≥1024px), the existing
@@ -95,6 +113,24 @@ export default function PosShell({ children, cart }: { children: React.ReactNode
   const pathname = usePathname()
   const router = useRouter()
   const [pendingCount, setPendingCount] = useState(0)
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  // The menu closes from its own item handler on navigation; Escape and an
+  // outside click cover the rest. Closing it from a pathname effect as well
+  // would set state synchronously during render for no added coverage.
+  useEffect(() => {
+    if (!moreOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMoreOpen(false) }
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.rail-more-wrap')) setMoreOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [moreOpen])
 
   useEffect(() => {
     function fetchPending() {
@@ -118,9 +154,9 @@ export default function PosShell({ children, cart }: { children: React.ReactNode
               <line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>
           </span>
-          Food Order POS
+          <span className="pos-brand-name">Food Order POS</span>
         </div>
-        {NAV.map(({ href, label, Icon, badge, newTab }) => {
+        {NAV.map(({ href, label, short, Icon, badge, newTab }) => {
           const isActive = href === '/orders' ? pathname === '/orders' : pathname.startsWith(href)
           return (
             <button
@@ -128,15 +164,46 @@ export default function PosShell({ children, cart }: { children: React.ReactNode
               className={`pos-nav-item${isActive ? ' active' : ''}`}
               onClick={() => (newTab ? window.open(href, '_blank') : router.push(href))}
               aria-current={isActive ? 'page' : undefined}
+              title={label}
+              aria-label={label}
             >
               <Icon />
-              {label}
+              <span aria-hidden="true">{short}</span>
               {badge && pendingCount > 0 && (
                 <span className="pos-nav-badge">{pendingCount > 9 ? '9+' : pendingCount}</span>
               )}
             </button>
           )
         })}
+
+        <div className="rail-more-wrap">
+          <button
+            type="button"
+            className={`pos-nav-item${MORE.some(m => pathname.startsWith(m.href)) ? ' active' : ''}`}
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen(o => !o)}
+          >
+            <IconMore />
+            <span aria-hidden="true">เพิ่มเติม</span>
+          </button>
+          {moreOpen && (
+            <div className="rail-more" role="menu">
+              {MORE.map(({ href, label, Icon }) => (
+                <button
+                  key={href}
+                  type="button"
+                  role="menuitem"
+                  className={`rail-more-item${pathname.startsWith(href) ? ' active' : ''}`}
+                  onClick={() => { setMoreOpen(false); router.push(href) }}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </aside>
 
       <div className="pos-main">{children}</div>

@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import { METHOD_LABELS, PAYMENT_METHODS, round2, type PaymentMethod } from '@/lib/billing'
-import { printSlip, escapeHtml, baht } from '@/lib/print'
+import { escapeHtml, baht } from '@/lib/print'
+import { printSlipJob } from '@/lib/printBridge'
+import type { PrintCmd, PrintJob } from '@/lib/printJob'
 import { DEFAULT_SHOP_SETTINGS, type ShopSettings } from '@/lib/shopSettings'
 
 type Report = {
@@ -62,6 +64,47 @@ function closeSlipHtml(r: Report, shopName: string, counted: number) {
     <div class="c">พิมพ์ ${escapeHtml(new Date().toLocaleString('th-TH'))}</div>
     <div style="height:8mm"></div>
   `
+}
+
+// The same Z-report as `closeSlipHtml`, as commands for the handheld's head.
+function closeSlipJob(r: Report, shopName: string, counted: number, widthMm: number): PrintJob {
+  const diff = round2(counted - r.expectedCash)
+  const row = (left: string, right: string): PrintCmd => ({ kind: 'row', left, right })
+  const cmds: PrintCmd[] = [
+    { kind: 'text', text: shopName, align: 'center', size: 'lg', bold: true },
+    { kind: 'text', text: 'สรุปปิดรอบขาย', align: 'center', bold: true },
+    { kind: 'text', text: r.date, align: 'center', size: 'sm' },
+    { kind: 'rule' },
+    row('จำนวนบิล', String(r.billCount)),
+    row('ยอดขายรวม', baht(r.totalSales)),
+    row('เฉลี่ยต่อบิล', baht(r.averageBill)),
+    { kind: 'rule' },
+    ...PAYMENT_METHODS.map(m =>
+      row(`${METHOD_LABELS[m]} (${r.byMethod[m].count})`, baht(r.byMethod[m].amount))),
+    { kind: 'rule' },
+  ]
+  if (r.discount > 0) cmds.push(row('ส่วนลดรวม', baht(r.discount)))
+  if (r.serviceCharge > 0) cmds.push(row('ค่าบริการรวม', baht(r.serviceCharge)))
+  if (r.vat > 0) cmds.push(row('VAT รวม', baht(r.vat)))
+  cmds.push(
+    row('บิลที่ยกเลิก', `${r.voided.count} (${baht(r.voided.amount)})`),
+    row('ออเดอร์ที่ยกเลิก', String(r.cancelledOrders)),
+    { kind: 'rule' },
+    row('เงินสดที่ควรมี', baht(r.expectedCash)),
+    row('เงินสดที่นับได้', baht(counted)),
+    {
+      kind: 'row', bold: true,
+      left: diff === 0 ? 'ตรงพอดี' : diff > 0 ? 'เกิน' : 'ขาด',
+      right: baht(Math.abs(diff)),
+    },
+    { kind: 'rule' },
+    {
+      kind: 'text', align: 'center', size: 'sm',
+      text: `พิมพ์ ${new Date().toLocaleString('th-TH')}`,
+    },
+    { kind: 'feed', lines: 4 },
+  )
+  return { widthMm, cmds }
 }
 
 export default function ReportsPage() {
@@ -239,7 +282,13 @@ export default function ReportsPage() {
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                 <button
                   className="btn btn-ghost" style={{ flex: 1 }}
-                  onClick={() => printSlip(closeSlipHtml(report, settings.shopName, Number(counted) || 0), settings.receiptWidth)}
+                  onClick={() => {
+                    const cash = Number(counted) || 0
+                    printSlipJob(
+                      closeSlipJob(report, settings.shopName, cash, settings.receiptWidth),
+                      () => closeSlipHtml(report, settings.shopName, cash),
+                    )
+                  }}
                 >
                   พิมพ์สรุป
                 </button>

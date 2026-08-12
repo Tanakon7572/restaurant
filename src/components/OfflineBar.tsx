@@ -14,9 +14,22 @@ export default function OfflineBar() {
   const [justSent, setJustSent] = useState(0)
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    if (!('serviceWorker' in navigator)) return
+
+    // The worker caches the app shell, which is exactly wrong while editing
+    // it: an edited stylesheet or component keeps being served from
+    // `pos-v1-shell` no matter what the dev server sends. Register it only
+    // in production, and clear any copy left behind from an earlier run.
+    if (process.env.NODE_ENV !== 'production') {
+      navigator.serviceWorker.getRegistrations()
+        .then(rs => Promise.all(rs.map(r => r.unregister())))
+        .then(() => caches?.keys())
+        .then(keys => Promise.all((keys ?? []).map(k => caches.delete(k))))
+        .catch(() => {})
+      return
     }
+
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
   }, [])
 
   useEffect(() => {

@@ -5,6 +5,12 @@ import { PrismaClient } from '@prisma/client'
 const prismaClientSingleton = () => {
   // ใช้ DIRECT_URL สำหรับ Prisma เพื่อหลีกเลี่ยง double pooling กับ pgbouncer
   const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL
+
+  // Supabase requires TLS; a Postgres running on this machine has none, and
+  // forcing it there fails the connection outright ("server does not support
+  // SSL connections"). Anything not on loopback still gets TLS.
+  const isLoopback = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(connectionString ?? '')
+
   const pool = new Pool({
     connectionString,
     // pgbouncer จัดการ pool อยู่แล้ว จึงเปิด connection น้อยๆ ก็พอ
@@ -13,7 +19,7 @@ const prismaClientSingleton = () => {
     connectionTimeoutMillis: 5000,
     // อย่าให้ pool หยุดเองเพราะจะทำให้ hot-reload สร้างใหม่ทุกครั้ง
     allowExitOnIdle: false,
-    ssl: { rejectUnauthorized: false },
+    ssl: isLoopback ? undefined : { rejectUnauthorized: false },
   })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({

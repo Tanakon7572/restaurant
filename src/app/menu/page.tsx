@@ -791,10 +791,13 @@ export default function MenuPage() {
               ) : (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{cat.name}</h3>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', fontWeight: 500 }}>
-                      {totalItems} รายการ{subs.length > 0 ? ` · ${subs.length} หมวดย่อย` : ''}
-                    </span>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-md)', fontWeight: 700 }}>{cat.name}</h3>
+                    <span className="count-chip">{totalItems}</span>
+                    {subs.length > 0 && (
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)' }}>
+                        {subs.length} หมวดย่อย
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
@@ -920,8 +923,8 @@ export default function MenuPage() {
                   ) : (
                     <>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--c-text-2)' }}>▸ {sub.name}</span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)' }}>{sub.items.length} รายการ</span>
+                        <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--c-text-2)' }}>▸ {sub.name}</span>
+                        <span className="count-chip">{sub.items.length}</span>
                       </div>
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button

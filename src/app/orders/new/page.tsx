@@ -11,6 +11,7 @@ import { submitOrder as submitOrderOrQueue } from '@/lib/offlineQueue'
 import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
 import MenuBrowser from '@/components/MenuBrowser'
+import ShopHeader from '@/components/ShopHeader'
 
 function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
   return {
@@ -142,9 +143,9 @@ export default function NewOrderPage() {
         <div className="pos-cart-row">
           <span>{totalItems} รายการ</span>
         </div>
-        <div className="pos-cart-total">
-          <span>รวม</span>
-          <span className="price-tag-lg">฿{totalPrice.toLocaleString('th-TH')}</span>
+        <div className="ticket-net">
+          <span className="ticket-net-label">รวม</span>
+          <span className="ticket-net-value">฿{totalPrice.toLocaleString('th-TH')}</span>
         </div>
         {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem' }}>{error}</p>}
         {queuedNotice && (
@@ -221,9 +222,7 @@ export default function NewOrderPage() {
   return (
     <PosShell cart={cartPanel}>
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 className="page-title">สั่งอาหาร</h1>
-      </div>
+      <ShopHeader title="สั่งอาหาร" />
 
       <MenuBrowser categories={categories} onSelect={openItem} emptyText="ยังไม่มีเมนู กรุณาเพิ่มเมนูก่อน" />
 

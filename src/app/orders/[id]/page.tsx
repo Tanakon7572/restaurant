@@ -11,7 +11,8 @@ import { addLine, setQuantity, removeLine, replaceLine, cartTotal, lineKey } fro
 import { translateDiyLine } from '@/lib/options'
 import { resolveEditTarget, type EditTarget } from '@/lib/editLine'
 import { needsSheet } from '@/lib/needsSheet'
-import { printSlip } from '@/lib/print'
+import { printSlipJob } from '@/lib/printBridge'
+import { kitchenTicketJob } from '@/lib/printJob'
 import { kitchenTicketHtml } from '@/lib/receipt'
 import type { CartLine, MenuCategoryDTO, MenuItemDTO, OptionGroupDTO } from '@/lib/types'
 
@@ -405,26 +406,24 @@ export default function OrderDetailPage() {
   // no prices.
   function printKitchenTicket() {
     if (!order) return
-    printSlip(
-      kitchenTicketHtml(
-        {
-          id: order.id,
-          dailyNumber: order.dailyNumber,
-          tableNumber: order.tableNumber,
-          customerName: order.customerName,
-          note: order.note,
-          createdAt: order.createdAt,
-          items: order.items.map(i => ({
-            itemName: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
-            quantity: i.quantity,
-            price: i.price,
-            note: i.note,
-            options: i.options,
-          })),
-        },
-        shopName,
-      ),
-      receiptWidth,
+    const slip = {
+      id: order.id,
+      dailyNumber: order.dailyNumber,
+      tableNumber: order.tableNumber,
+      customerName: order.customerName,
+      note: order.note,
+      createdAt: order.createdAt,
+      items: order.items.map(i => ({
+        itemName: i.itemName || i.menuItem?.name || '(ลบแล้ว)',
+        quantity: i.quantity,
+        price: i.price,
+        note: i.note,
+        options: i.options,
+      })),
+    }
+    printSlipJob(
+      kitchenTicketJob(slip, shopName, receiptWidth),
+      () => kitchenTicketHtml(slip, shopName),
     )
   }
 

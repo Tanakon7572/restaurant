@@ -60,6 +60,11 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
           {categories.map(cat => (
             <button key={cat.id} className={`seg-item${activeCat?.id === cat.id ? ' active' : ''}`} onClick={() => setPickedCategory(cat.id)}>
               {cat.name}
+              {/* A DIY category is a builder, not a list — a count there would
+                  be counting ingredients, which is not what the tab means. */}
+              {!cat.diy && cat.items.length > 0 && (
+                <span className="seg-count">{cat.items.length}</span>
+              )}
             </button>
           ))}
         </div>
@@ -85,15 +90,15 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
             const soldOut = item.available === false
             return (
               <div key={item.id} className={`menu-card${soldOut ? ' is-sold' : ''}`} onClick={() => onSelect(item)}>
-                {soldOut && <span className="menu-card-sold">หมด</span>}
                 <div className="menu-card-media">
                   <ItemThumb imageUrl={item.imageUrl} name={item.name} />
+                  {soldOut && <span className="sold-veil">หมดแล้ว</span>}
                 </div>
                 <div className="menu-card-body">
                   <p className="menu-card-name">{item.name}</p>
                   <div className="menu-card-foot">
                     <p className="price-tag">฿{item.price.toLocaleString('th-TH')}</p>
-                    {!soldOut && <span className="btn btn-primary menu-card-add" aria-hidden>+</span>}
+                    {!soldOut && <span className="menu-card-add" aria-hidden>ตัวเลือก</span>}
                   </div>
                 </div>
               </div>

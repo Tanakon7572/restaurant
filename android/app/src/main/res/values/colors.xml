@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The POS's own primary token, oklch(0.705 0.190 42), as sRGB. -->
+    <color name="brand_primary">#FD6E2D</color>
+</resources>

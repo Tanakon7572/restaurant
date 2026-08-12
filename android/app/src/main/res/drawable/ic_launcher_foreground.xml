@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A receipt curling off the print head: what this app is for, in one glyph.
+     Drawn on the 108dp adaptive-icon canvas, art kept inside the 72dp safe
+     zone so the launcher's mask cannot clip it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Slip body with a torn lower edge -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,30 L72,30 L72,70 L67,75 L62,70 L57,75 L52,70 L47,75 L42,70 L36,75 Z" />
+
+    <!-- Printed lines -->
+    <path
+        android:fillColor="#FD6E2D"
+        android:pathData="M42,39 L66,39 L66,43 L42,43 Z" />
+    <path
+        android:fillColor="#FD6E2D"
+        android:pathData="M42,48 L60,48 L60,52 L42,52 Z" />
+    <!-- The total: heavier, right-aligned, the way it prints -->
+    <path
+        android:fillColor="#FD6E2D"
+        android:pathData="M52,57 L66,57 L66,62 L52,62 Z" />
+</vector>

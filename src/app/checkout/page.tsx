@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import PosShell from '@/components/PosShell'
-import { computeBill, changeFor, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
+import { computeBill, changeFor, round2, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
 import { promptPayPayload } from '@/lib/promptpay'
 import { DEFAULT_SHOP_SETTINGS, type ShopSettings } from '@/lib/shopSettings'
-import { printSlip } from '@/lib/print'
+import { printSlipJob } from '@/lib/printBridge'
+import { receiptJob } from '@/lib/printJob'
 import { receiptHtml, type SlipBill, type SlipOrder } from '@/lib/receipt'
 
 const QRCode = dynamic(() => import('react-qr-code'), { ssr: false })
@@ -23,6 +24,16 @@ type OpenGroup = {
 
 // Notes that get filled in with one tap instead of typing on a phone.
 const QUICK_CASH = [100, 200, 500, 1000]
+const DISCOUNT_PCTS = [5, 10, 20]
+
+// A glyph per method so the tile is aimed at, not read. Decorative only —
+// the label underneath is what a screen reader announces.
+const METHOD_ICONS: Record<PaymentMethod, string> = {
+  cash: '฿',
+  promptpay: '⧉',
+  transfer: '⇄',
+  card: '▭',
+}
 
 function money(n: number) {
   return n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -72,6 +83,15 @@ export default function CheckoutPage() {
     { subtotal: active?.subtotal ?? 0, discount: Number(discount) || 0 },
     settings,
   )
+  // Which preset the current baht figure corresponds to, if any. Derived
+  // rather than stored, so typing an amount by hand clears the chip instead
+  // of leaving a wrong one lit.
+  const discountValue = Number(discount) || 0
+  const subtotalNow = active?.subtotal ?? 0
+  const pctOff = discountValue === 0
+    ? 0
+    : DISCOUNT_PCTS.find(p => round2(subtotalNow * p / 100) === round2(discountValue)) ?? -1
+
   const change = changeFor(totals.total, Number(received) || 0)
   const cashShort = method === 'cash' && (received === '' || change < 0)
 
@@ -90,12 +110,26 @@ export default function CheckoutPage() {
   }
 
   function printReceipt(bill: SlipBill) {
-    // Lift the on-screen QR rather than re-rendering it, so the slip carries
-    // the exact code the customer was shown.
-    const qrSvg = bill.method === 'promptpay'
-      ? document.querySelector('#promptpay-qr svg')?.outerHTML ?? null
+    // The handheld draws the QR from the payload itself; the browser dialog
+    // lifts the on-screen SVG instead, so the slip carries the exact code the
+    // customer was shown.
+    //
+    // Built from the bill, not from `qrPayload`: confirming a payment drops the
+    // group out of `groups`, so the form's running total is already back to
+    // zero by the time this runs, and a zero-amount payload is a QR the
+    // customer can type any figure into.
+    const payload = bill.method === 'promptpay' && settings.promptPayId
+      ? promptPayPayload(settings.promptPayId, bill.total)
       : null
-    printSlip(receiptHtml(bill, settings, qrSvg), settings.receiptWidth)
+    printSlipJob(
+      receiptJob(bill, settings, payload),
+      () => {
+        const qrSvg = bill.method === 'promptpay'
+          ? document.querySelector('#promptpay-qr svg')?.outerHTML ?? null
+          : null
+        return receiptHtml(bill, settings, qrSvg)
+      },
+    )
   }
 
   async function confirm() {
@@ -195,6 +229,33 @@ export default function CheckoutPage() {
           {/* Discount */}
           <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '12px' }}>
             <span className="section-label">ส่วนลด</span>
+            {/* Percentages are the discounts a floor actually gives. They
+                write into the same baht field the cashier can still type in,
+                so nothing new is stored and the bill maths is untouched. */}
+            <div className="discount-chips" style={{ marginBottom: '8px' }}>
+              <button
+                type="button"
+                className="discount-chip"
+                aria-pressed={pctOff === 0}
+                onClick={() => { setDiscount(''); setDiscountNote('') }}
+              >
+                ไม่ลด
+              </button>
+              {DISCOUNT_PCTS.map(pct => (
+                <button
+                  key={pct}
+                  type="button"
+                  className="discount-chip"
+                  aria-pressed={pctOff === pct}
+                  onClick={() => {
+                    setDiscount(String(round2((active?.subtotal ?? 0) * pct / 100)))
+                    setDiscountNote(`ลด ${pct}%`)
+                  }}
+                >
+                  ลด {pct}%
+                </button>
+              ))}
+            </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <input
                 className="input" type="number" inputMode="decimal" min="0"
@@ -220,52 +281,67 @@ export default function CheckoutPage() {
                 value={totals.vat}
               />
             )}
-            <div style={{ borderTop: '1px solid var(--c-border)', margin: '8px 0 6px' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span style={{ fontWeight: 700 }}>รวมทั้งสิ้น</span>
-              <span style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--c-primary)' }}>฿{money(totals.total)}</span>
-            </div>
           </div>
 
-          {/* Method */}
-          <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '12px' }}>
-            <span className="section-label">วิธีชำระเงิน</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              {PAYMENT_METHODS.map(m => (
-                <button
-                  key={m}
-                  className={`btn btn-sm ${method === m ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setMethod(m)}
-                  disabled={m === 'promptpay' && !hasPaymentQr}
-                  title={m === 'promptpay' && !hasPaymentQr ? 'ยังไม่ได้ตั้งค่าพร้อมเพย์ หรืออัปโหลด QR รับเงิน' : undefined}
-                >
-                  {METHOD_LABELS[m]}
-                </button>
-              ))}
+          {/* Method. The amount owed leads the panel — it is the one figure
+              the cashier reads aloud, so it is the loudest thing here. */}
+          <div className="glass-panel-flush" style={{ marginBottom: '12px' }}>
+            <div className="amount-hero">
+              <span className="amount-hero-label">ยอดที่ต้องชำระ</span>
+              <span className="amount-hero-value">฿{money(totals.total)}</span>
             </div>
 
+            <div style={{ padding: '14px 16px' }}>
+              <span className="section-label">วิธีชำระเงิน</span>
+              <div className="pay-tiles">
+                {PAYMENT_METHODS.map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    className="pay-tile"
+                    aria-pressed={method === m}
+                    onClick={() => setMethod(m)}
+                    disabled={m === 'promptpay' && !hasPaymentQr}
+                    title={m === 'promptpay' && !hasPaymentQr ? 'ยังไม่ได้ตั้งค่าพร้อมเพย์ หรืออัปโหลด QR รับเงิน' : undefined}
+                  >
+                    <span className="pay-tile-icon" aria-hidden="true">{METHOD_ICONS[m]}</span>
+                    {METHOD_LABELS[m]}
+                  </button>
+                ))}
+              </div>
+
             {method === 'cash' && (
-              <div style={{ marginTop: '12px' }}>
-                <span className="section-label">รับเงินมา</span>
-                <input
-                  className="input" type="number" inputMode="decimal" min="0"
-                  placeholder="0" value={received} onChange={e => setReceived(e.target.value)}
-                  style={{ fontSize: '1.2rem', fontWeight: 600 }}
-                />
-                <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setReceived(String(totals.total))}>พอดี</button>
-                  {QUICK_CASH.map(n => (
-                    <button key={n} className="btn btn-ghost btn-sm" onClick={() => setReceived(String(n))}>{n}</button>
-                  ))}
+              <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="cash-bar">
+                  <span className="cash-bar-label">รับเงินมา</span>
+                  <span className="cash-bar-value">฿{money(Number(received) || 0)}</span>
                 </div>
-                {received !== '' && (
-                  <p style={{
-                    marginTop: '10px', fontSize: '1.05rem', fontWeight: 700,
-                    color: change < 0 ? 'var(--c-danger)' : 'var(--c-success)',
-                  }}>
-                    {change < 0 ? `ขาดอีก ฿${money(-change)}` : `เงินทอน ฿${money(change)}`}
-                  </p>
-                )}
+                {/* Counted on keys, not typed into a field: a cashier holding
+                    the handheld one-handed is not going to aim at a caret. */}
+                <div className="keypad">
+                  <button type="button" className="key key-note key-wide"
+                    onClick={() => setReceived(String(totals.total))}>พอดี</button>
+                  {QUICK_CASH.map(n => (
+                    <button key={n} type="button" className="key key-note"
+                      onClick={() => setReceived(String(n))}>{n}</button>
+                  ))}
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                    <button key={n} type="button" className="key"
+                      onClick={() => setReceived(r => (r === '0' ? '' : r) + n)}>{n}</button>
+                  ))}
+                  <button type="button" className="key"
+                    onClick={() => setReceived(r => (r === '0' ? '' : r) + '0')}>0</button>
+                  <button type="button" className="key" aria-label="ลบตัวเลขท้ายสุด"
+                    onClick={() => setReceived(r => r.slice(0, -1))}>⌫</button>
+                  <button type="button" className="key" aria-label="ล้างจำนวนเงิน"
+                    onClick={() => setReceived('')}>C</button>
+                  {received !== '' && (
+                    <div className={`change-block${change < 0 ? ' is-short' : ''}`}>
+                      {change < 0 ? 'ขาดอีก' : 'เงินทอน'}
+                      <span className="change-block-value">฿{money(Math.abs(change))}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -305,6 +381,7 @@ export default function CheckoutPage() {
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {error && (

@@ -78,7 +78,10 @@ export default function ConfirmModal({
             {cancelText}
           </button>
           <button
-            className={`btn ${isDanger ? 'btn-danger' : 'btn-primary'}`}
+            /* Solid berry, not the outline `btn-danger`: in here the
+               destructive action is the one committed action, so it should
+               carry the weight of a primary. */
+            className={`btn ${isDanger ? 'btn-danger-solid' : 'btn-primary'}`}
             onClick={() => { onConfirm(); onCancel() }}
             style={{ flex: 1 }}
           >

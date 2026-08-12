@@ -1,14 +1,27 @@
 import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Sans_Thai } from 'next/font/google'
+import { Prompt, JetBrains_Mono } from 'next/font/google'
 import OfflineBar from '@/components/OfflineBar'
 import './globals.css'
 
-const ibmPlexSansThai = IBM_Plex_Sans_Thai({
+// Body and display are both Prompt — the shop picked it, and one voice across
+// headings and text reads more settled than a serif fighting a sans on a till
+// screen. Weight and size carry the hierarchy instead.
+const prompt = Prompt({
   subsets: ['thai', 'latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
   preload: true,
-  variable: '--font-ibm',
+  variable: '--font-prompt',
+})
+
+// Figures stay monospaced. Prices, totals and quantities sit in columns, and
+// a proportional face makes those columns jitter row to row no matter what
+// `tabular-nums` claims.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['500', '700'],
+  display: 'swap',
+  variable: '--font-jetbrains',
 })
 
 export const metadata: Metadata = {
@@ -23,11 +36,23 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // Match the POS canvas so the mobile status bar blends in
   themeColor: '#f5f6f8',
+  width: 'device-width',
+  initialScale: 1,
+  // A pinch-zoom on a handheld till is always an accident — it leaves staff
+  // on a half-scrolled screen mid-order. The trade against WCAG 1.4.4 is
+  // deliberate: this is a pinned single-purpose device, and the type scale is
+  // set for arm's length already.
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" className={ibmPlexSansThai.variable}>
+    <html
+      lang="th"
+      className={`${prompt.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <OfflineBar />
         {children}
