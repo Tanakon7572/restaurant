@@ -244,7 +244,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (url: string
             }}
           >
             {/* Crop area — fixed reasonable height */}
-            <div style={{ position: 'relative', width: '100%', height: 'min(48vh, 320px)', background: 'oklch(0.15 0.01 165)', flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: '100%', height: 'min(48vh, 320px)', background: 'var(--c-text)', flexShrink: 0 }}>
               <Cropper
                 image={cropSrc}
                 crop={crop}

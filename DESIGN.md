@@ -1,4 +1,4 @@
-# Design System — Sand Counter
+# Design System — Ember, in daylight
 
 The look for a crepe & dessert café that runs its own floor. One token set, two
 faces: a dense face for staff on a 6" handheld, and an airier, photo-led face
@@ -15,39 +15,57 @@ line is **overridden** — the shop chose a light system in review on
 
 ---
 
-## What came from the reference, and what did not
+## Where this came from
 
-| Axis | Reference | Decision |
+Two reference decks, both from the shop, both Figma Make exports.
+
+The **first** (`POS System UI Design`) was a desktop till: sand ground, chilli
+red, gold highlights. Its palette shipped and is now superseded.
+
+The **second** (`POS System UI_UX Design`) is the one this system follows. It
+is mobile-first, which matches the Sunmi handheld the shop actually uses, and
+it is built on a dark warm ground with ember actions, amber figures, cards
+tinted by status, and every number set in mono. The shop asked for it as a
+light theme.
+
+**Turning it over into daylight** meant inverting the ramp and moving each
+accent down until it clears AA on a light ground. The hues are the deck's.
+
+| Deck (dark) | Here (light) | Note |
 |---|---|---|
-| Sand ground `#ece8e1` | ✔ | **Adopted.** The signature move: white cards separate against sand with no shadow |
-| Ink `#201a16` | ✔ | **Adopted** unchanged |
-| Chilli red `#c33d24` | ✔ | **Adopted, darkened** to `#BB3921` — the original was 4.28:1 on sand, under AA |
-| Gold `#e0982a` | ✔ | **Adopted as fill only.** White on it is 2.42:1; it takes ink, never white |
-| A distinct display face + mono figures | ✔ | **Adopted in principle, changed in practice.** The deck's Anuphan + Noto Serif Thai pairing was tried and then replaced with Prompt at the shop's request; mono figures stayed |
-| ~8px radius, near-zero shadow | ✔ | **Adopted** |
-| `--border: #e2d9cc` | ✘ | **Rejected** — 1.14:1 on sand, invisible. Promoted to the deck's own `border-strong` |
-| `muted #857a6d` as body text | ✘ | **Rejected** at 3.44:1. Demoted to decoration; `#6E6356` carries text |
-| No distinct danger colour | ✘ | **Rejected.** See "Two reds" below |
-| `text-xs` ×27, `text-[11px]` ×8, `text-[8px]` | ✘ | **Rejected.** The deck targets a desktop till; this ships to a 6" handheld |
+| ground `#0E0C0A` | `#FAF7F2` | inverted |
+| surface `#1A1714` | `#1A1714` as **ink** | the deck's surface makes a good warm black |
+| ember `#E8541E` | `#C13F0C` | 3.44:1 on light → **4.93:1** |
+| amber `#F2A830` | `#8F6006` | 1.89:1 → **5.11:1**, which is what finally lets amber set type |
+| green `#4CAF82` | `#297A52` | 2.53:1 → **4.91:1** |
+| red `#E84040` | `#C62828` | 3.75:1 → **5.26:1** |
 
-The reference was not built to WCAG AA. Four of its colours fail. Everything
-below was re-measured.
+Rejected from the deck:
+
+- **Fraunces as the display face.** It has no Thai glyphs. The deck's Thai
+  headings are a system serif fallback, not a design decision, so there was
+  nothing there to adopt. Prompt carries display and body, per the shop.
+- **Its type sizes.** Same reason as the first deck: they are set for a large
+  screen and this ships to a 6" handheld.
 
 ---
 
-## Two reds — the one thing the reference gets wrong
+## Two warm roles, not one
 
-The deck uses a single red for both the primary action and destructive intent.
-Measured, its action red and any conventional danger red sit **24° apart** in
-hue. On `orders/[id]` the "ปฏิเสธ" button sits directly beside a primary
-action; two near-identical reds there is a mis-tap that voids a real order.
+The previous palette used a single chilli red for both actions and prices, so
+every price on the screen looked like a button. The deck separates them and
+this keeps that separation:
 
-**The rule: destructive intent is separated by form, not only by hue.**
+- **Ember `#C13F0C`** — what you can press. Buttons, active tabs, the add
+  control on a menu row.
+- **Amber `#8F6006`** — what things cost. Prices, totals, money in reports.
 
-- `.btn-primary` — solid chilli red, 48px. The thing you meant to press.
-- `.btn-danger` — **outline** berry. Safe to place next to a primary.
-- `.btn-danger-solid` — solid berry, 48px. Only where the destructive action
-  is the sole committed action, i.e. inside `ConfirmModal`.
+Destructive intent stays separated by **form**, not only hue, because ember
+and any danger red sit close together:
+
+- `.btn-primary` — solid ember, 48px.
+- `.btn-danger` — **outline**. Safe beside a primary.
+- `.btn-danger-solid` — solid, only where it is the sole committed action.
 
 ---
 
@@ -55,39 +73,55 @@ action; two near-identical reds there is a mis-tap that voids a real order.
 
 | Token | Value | Job |
 |---|---|---|
-| `--c-bg` | `#ECE8E1` sand | The canvas |
-| `--c-surface` | `#FFFFFF` | Cards |
-| `--c-surface-2` | `#F6F3EE` | Recessed rows |
-| `--c-surface-3` | `#E2DCD1` | Pressed states |
-| `--c-border` | `#D0C4B2` | Structure |
-| `--c-border-2` | `#B9AB93` | Control edges |
-| `--c-text` | `#201A16` | Ink |
-| `--c-text-2` | `#4A4139` | Secondary |
-| `--c-text-3` | `#6E6356` | Labels, meta — lowest value that still passes AA |
-| `--c-text-4` | `#857A6D` | Decoration and disabled only — **never body text** |
-| `--c-primary` | `#BB3921` chilli | Actions and prices |
-| `--c-accent` | `#E0982A` gold | Highlight fills — "แนะนำ", popular. **Ink on top, never white** |
-| `--c-success` | `#2A7147` | Available, completed |
-| `--c-warning` | `#8A5A08` | Pending |
-| `--c-danger` | `#9B2140` berry | Destructive, sold out, voided |
+| `--c-bg` | `#FAF7F2` | The canvas |
+| `--c-surface` | `#FFFFFF` | Cards, rows |
+| `--c-surface-2` | `#F3EFE8` | Recessed, thumbnails |
+| `--c-surface-3` | `#E8E2D8` | Pressed, empty seat dots |
+| `--c-border` | `#DDD5C8` | Structure |
+| `--c-border-2` | `#C3B9A8` | Control edges |
+| `--c-text` | `#1A1714` | Ink |
+| `--c-text-2` | `#4A423A` | Secondary |
+| `--c-text-3` | `#6B6055` | Labels, meta |
+| `--c-text-4` | `#95897B` | Decoration and disabled only — **never body text** |
+| `--c-primary` | `#C13F0C` ember | Actions |
+| `--c-accent` | `#8F6006` amber | Money |
+| `--c-success` | `#297A52` | Free, completed |
+| `--c-danger` | `#C62828` | Destructive, late, voided |
 | `--c-info` | `#3D6288` | Preparing |
 
-### Contrast — measured, on both grounds
+### Contrast — measured
 
-Every colour that carries text clears **4.5:1** on `--c-bg` and `--c-surface`:
+Every text-carrying colour clears **4.5:1** on `--c-bg` and on `--c-surface`:
 
 ```
-text 14.09 · text-2 8.16 · text-3 4.80 · primary 4.62
-success 4.84 · warning 4.85 · danger 6.40 · info 5.21
-white on primary 5.64 · white on danger 7.82 · ink on gold 7.12
+text 16.70 · text-2 9.22 · text-3 5.73
+ember 4.93 · amber 5.11 · green 4.91 · danger 5.26
+white on ember 5.27 · on amber 5.46 · on green 5.25 · on danger 5.62
+badge on its own tint: ember 4.51 · amber 4.82 · green 4.51 · danger 4.70
 ```
 
-Two deliberate exceptions, both non-text:
+`--c-text-4` at 3.20:1 is the one exception and is not for reading.
 
-- `--c-text-4` at 3.44:1 — decoration and disabled affordances only.
-  Placeholders use `--c-text-3`.
-- `--c-accent` gold at 1.98:1 as text — which is why it is a **fill token**.
-  Gold never sets type; ink sits on it at 7.12:1.
+---
+
+## Patterns taken from the deck
+
+**Menu rows, not a photo grid.** Thumbnail, name, amber price, one 52px add
+target. A row gives a Thai dish name its full width; the two-column grid was
+truncating half this shop's names, which run long because they list their
+fillings. The row and the button do the same thing — the button is the surer
+aim, the row is the faster one.
+
+**Status-tinted cards.** `.status-card` takes its border and badge colour
+from a `--status` custom property, set by one of the `.s-*` classes. A floor
+of tables reads at a glance without parsing labels. Nothing hard-codes a
+state, so a new status is one class.
+
+**Seat dots.** Filled and empty dots beside a count, so occupancy reads
+without arithmetic.
+
+**Figures in mono.** Prices, totals, elapsed times. A proportional face makes
+a column of prices jitter row to row whatever `tabular-nums` claims.
 
 ---
 
@@ -165,9 +199,10 @@ wholesale and showed a customer the back-office tool.
 
 1. **Nothing under 13px.** If a label will not fit at 13px, the layout is
    wrong, not the type size.
-2. **One action colour.** Chilli red marks what you can act on and what things
-   cost. Gold highlights. Semantic colours are state. None of them are decoration.
-3. **Gold never sets type.**
+2. **Ember acts, amber costs.** Ember marks what you can press; amber marks
+   money. Semantic colours are state. None of them are decoration.
+3. **Status colour comes from `--status`**, set by an `.s-*` class. Never
+   hard-code a state colour on a component.
 4. **Destructive is outline unless it is the only committed action.**
 5. **Never hard-code a colour or size** in a component. Missing token? Add it
    here first.

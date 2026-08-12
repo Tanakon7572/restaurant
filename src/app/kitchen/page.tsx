@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import EmptyState from '@/components/EmptyState'
 
 interface KitchenOrderItem {
   id: number
@@ -53,7 +54,7 @@ function ElapsedTimer({ createdAt, warn }: { createdAt: string; warn: number }) 
         color: isWarn ? 'var(--c-danger)' : 'var(--c-text-3)',
         background: isWarn ? 'var(--c-danger-bg)' : 'var(--c-surface-2)',
         padding: '2px 8px', borderRadius: '99px',
-        border: isWarn ? '1px solid oklch(0.66 0.20 27 / 0.45)' : '1px solid var(--c-border)',
+        border: isWarn ? '1px solid var(--c-danger)' : '1px solid var(--c-border)',
       }}
     >
       {isWarn && (
@@ -77,24 +78,23 @@ function OrderCard({
 }) {
   const isPending = order.status !== 'preparing'
   const isAwaiting = order.status === 'awaiting'
-  const accent = isPending ? 'var(--c-warning)' : 'var(--c-info)'
+  // The tint comes from the status class, not from a colour written here.
+  // The previous version hard-coded oklch values that were left behind by a
+  // palette change and no longer matched anything.
+  const tint = isAwaiting ? 's-billing' : isPending ? 's-seated' : 's-preparing'
 
   return (
     <div
+      className={`status-card ${tint}`}
       style={{
-        background: 'var(--c-surface)',
-        borderRadius: '12px',
-        border: `1.5px solid ${isPending ? 'oklch(0.64 0.15 70 / 0.35)' : 'oklch(0.54 0.16 255 / 0.30)'}`,
-        boxShadow: 'var(--shadow-md)',
+        padding: 0,
         overflow: 'hidden',
         opacity: updating ? 0.55 : 1,
         transition: 'opacity 0.18s, transform 0.18s',
         transform: updating ? 'scale(0.98)' : 'scale(1)',
-        fontFamily: 'var(--font)',
       }}
     >
-      {/* Accent bar */}
-      <div style={{ height: '4px', background: accent }} />
+      <div style={{ height: '4px', background: 'var(--status)' }} />
 
       {/* Header */}
       <div style={{
@@ -133,10 +133,7 @@ function OrderCard({
         </div>
 
         {/* Item count badge */}
-        <span style={{
-          background: isPending ? 'var(--c-warning-bg)' : 'var(--c-info-bg)',
-          color: accent,
-          border: `1px solid ${isPending ? 'oklch(0.64 0.15 70 / 0.28)' : 'oklch(0.54 0.16 255 / 0.25)'}`,
+        <span className="status-badge" style={{
           borderRadius: '99px', padding: '3px 10px',
           fontSize: '0.75rem', fontWeight: 700,
         }}>
@@ -167,8 +164,9 @@ function OrderCard({
               {item.note && <p style={{ fontSize: '0.92rem', color: 'var(--c-warning)', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
             </div>
             <span style={{
-              fontSize: '1.25rem', fontWeight: 800,
-              color: accent,
+              fontSize: 'var(--text-lg)', fontWeight: 800,
+              color: 'var(--status)',
+              fontFamily: 'var(--font-num)',
               fontVariantNumeric: 'tabular-nums',
               marginLeft: '12px', flexShrink: 0,
             }}>
@@ -182,7 +180,7 @@ function OrderCard({
             margin: '8px 0 4px',
             padding: '8px 10px',
             background: 'var(--c-warning-bg)',
-            border: '1px solid oklch(0.80 0.14 80 / 0.35)',
+            border: '1px solid var(--c-accent)',
             borderRadius: '8px',
             fontSize: '0.82rem', color: 'var(--c-warning)', fontStyle: 'italic',
           }}>
@@ -349,7 +347,7 @@ export default function KitchenPage() {
           {orders.length > 0 && (
             <span style={{
               background: 'var(--c-warning-bg)', color: 'var(--c-warning)',
-              border: '1px solid oklch(0.80 0.14 80 / 0.35)',
+              border: '1px solid var(--c-accent)',
               borderRadius: '99px', padding: '4px 14px',
               fontSize: '0.82rem', fontWeight: 700,
             }}>
@@ -394,20 +392,18 @@ export default function KitchenPage() {
             <Column
               title="รอรับ"
               count={pending.length}
-              color="var(--c-warning)"
-              accentBg="oklch(0.975 0.030 85)"
+              color="var(--c-primary)"
+              accentBg="var(--c-primary-light)"
               icon={
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
               }
               empty={
-                <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
-                    <circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>
-                  </svg>
-                  <p style={{ color: 'var(--c-text-4)', fontSize: '0.9rem', fontWeight: 500 }}>ไม่มีออเดอร์ใหม่</p>
-                </div>
+                <EmptyState
+                  title="ครัวโล่ง"
+                  hint="ออเดอร์ที่รับเข้ามาจะเด้งขึ้นตรงนี้เอง ไม่ต้องรีเฟรช"
+                />
               }
             >
               {pending.map(order => (
@@ -422,7 +418,7 @@ export default function KitchenPage() {
               title="กำลังทำ"
               count={preparing.length}
               color="var(--c-info)"
-              accentBg="oklch(0.970 0.020 240)"
+              accentBg="var(--c-info-bg)"
               icon={
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/>
@@ -430,13 +426,10 @@ export default function KitchenPage() {
                 </svg>
               }
               empty={
-                <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 10px' }}>
-                    <path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/>
-                    <path d="M6 10v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8"/>
-                  </svg>
-                  <p style={{ color: 'var(--c-text-4)', fontSize: '0.9rem', fontWeight: 500 }}>ยังไม่มีออเดอร์กำลังทำ</p>
-                </div>
+                <EmptyState
+                  title="ยังไม่มีจานที่กำลังทำ"
+                  hint="กด “เริ่มทำ” บนตั๋วทางซ้ายเพื่อย้ายมาที่นี่"
+                />
               }
             >
               {preparing.map(order => (

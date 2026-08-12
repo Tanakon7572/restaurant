@@ -154,7 +154,7 @@ export default function BottomNav() {
         justifyContent: 'stretch',
         padding: '6px 0 env(safe-area-inset-bottom, 10px)',
         zIndex: 1000,
-        boxShadow: '0 -1px 12px oklch(0.17 0.012 50 / 0.06)',
+        boxShadow: '0 -1px 12px rgb(26 23 20 / 0.06)',
       }}
       aria-label="การนำทาง"
     >

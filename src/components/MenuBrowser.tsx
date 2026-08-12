@@ -98,22 +98,35 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
           )}
         </div>
       ) : (
-        <div className="menu-grid">
+        <div className="menu-rows">
           {displayItems.map(item => {
             const soldOut = item.available === false
             return (
-              <div key={item.id} className={`menu-card${soldOut ? ' is-sold' : ''}`} onClick={() => onSelect(item)}>
-                <div className="menu-card-media">
+              <div
+                key={item.id}
+                className={`menu-row${soldOut ? ' is-sold' : ''}`}
+                onClick={() => !soldOut && onSelect(item)}
+              >
+                <div className="menu-row-thumb">
                   <ItemThumb imageUrl={item.imageUrl} name={item.name} />
-                  {soldOut && <span className="sold-veil">หมดแล้ว</span>}
+                  {soldOut && <span className="sold-veil">หมด</span>}
                 </div>
-                <div className="menu-card-body">
-                  <p className="menu-card-name">{item.name}</p>
-                  <div className="menu-card-foot">
-                    <p className="price-tag">฿{item.price.toLocaleString('th-TH')}</p>
-                    {!soldOut && <span className="menu-card-add" aria-hidden>ตัวเลือก</span>}
-                  </div>
+                <div className="menu-row-body">
+                  <p className="menu-row-name">{item.name}</p>
+                  <p className="menu-row-price">฿{item.price.toLocaleString('th-TH')}</p>
                 </div>
+                {/* The row and the button do the same thing. Both are here
+                    because a thumb aiming at a 52px square is surer than one
+                    aiming at a row, and a row is easier to hit in a hurry. */}
+                <button
+                  type="button"
+                  className="menu-row-add"
+                  disabled={soldOut}
+                  aria-label={`เพิ่ม ${item.name}`}
+                  onClick={e => { e.stopPropagation(); if (!soldOut) onSelect(item) }}
+                >
+                  +
+                </button>
               </div>
             )
           })}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
+import EmptyState from '@/components/EmptyState'
 
 interface OrderItem {
   id: number
@@ -33,6 +34,23 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUSES = ['all', 'awaiting', 'pending', 'preparing', 'completed', 'cancelled'] as const
+
+// Which tint a card wears. Kept beside the labels so a status can never pick
+// up a colour here that means something else on the kitchen screen.
+const STATUS_TINT: Record<string, string> = {
+  awaiting:  's-billing',    // a customer is waiting on a yes
+  pending:   's-seated',     // accepted, not started
+  preparing: 's-preparing',
+  completed: 's-free',
+  cancelled: '',             // no tint: it is over, it should recede
+}
+
+// Past this, an order that is not finished has been sitting too long.
+const LATE_AFTER_MIN = 20
+
+function minutesSince(iso: string) {
+  return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+}
 
 type Period = 'today' | '7d' | '30d' | 'custom'
 
@@ -191,7 +209,7 @@ export default function OrdersPage() {
         <button
           className="btn btn-full"
           onClick={() => setStatus('awaiting')}
-          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'var(--c-warning)', border: '1px solid oklch(0.64 0.15 70 / 0.30)' }}
+          style={{ marginBottom: '12px', justifyContent: 'space-between', background: 'var(--c-warning-bg)', color: 'var(--c-warning)', border: '1px solid color-mix(in srgb, var(--c-warning) 35%, transparent)' }}
         >
           <span>🔔 มีคำขอจากลูกค้ารอยืนยัน {orders.filter(o => o.status === 'awaiting').length} รายการ</span>
           <span style={{ fontWeight: 700 }}>ดู →</span>
@@ -239,51 +257,59 @@ export default function OrdersPage() {
       {loading
         ? Array.from({ length: 5 }).map((_, i) => <OrderSkeleton key={i} />)
         : orders.map(order => (
-          <div
-            key={order.id}
-            className="glass-panel"
-            onClick={() => router.push(`/orders/${order.id}`)}
-            style={{ padding: '13px 16px', marginBottom: '8px', cursor: 'pointer', transition: 'box-shadow var(--t-fast)' }}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '7px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: 700, fontSize: 'var(--text-md)' }}>#{order.dailyNumber ?? order.id}</span>
-                {order.tableNumber && (
-                  <span style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)', background: 'var(--c-surface-2)', padding: '2px 8px', borderRadius: 'var(--radius-full)', border: '1px solid var(--c-border)' }}>
-                    โต๊ะ {order.tableNumber}
+          (() => {
+            const open = order.status !== 'completed' && order.status !== 'cancelled'
+            const mins = minutesSince(order.createdAt)
+            const late = open && mins >= LATE_AFTER_MIN
+            return (
+              <div
+                key={order.id}
+                className={`status-card ${late ? 's-late is-urgent' : STATUS_TINT[order.status] ?? ''}`}
+                onClick={() => router.push(`/orders/${order.id}`)}
+                style={{ marginBottom: '8px', cursor: 'pointer' }}
+              >
+                <div className="status-card-head">
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+                    <span className="status-card-title">#{order.dailyNumber ?? order.id}</span>
+                    {order.tableNumber && (
+                      <span style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)' }}>
+                        โต๊ะ {order.tableNumber}
+                      </span>
+                    )}
+                    {order.customerName && (
+                      <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>{order.customerName}</span>
+                    )}
+                  </div>
+                  <span className="status-badge">{STATUS_LABELS[order.status]}</span>
+                </div>
+
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {order.items.map(i => `${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}`).join('  ·  ')}
+                </p>
+
+                <div className="status-card-foot">
+                  {/* Open orders show how long they have been waiting, which
+                      is what staff are scanning for. Finished ones show when
+                      they happened, which is what a lookup wants. */}
+                  <span className={`status-elapsed${late ? ' is-late' : ''}`}>
+                    {open
+                      ? `${mins} นาที`
+                      : new Date(order.createdAt).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </span>
-                )}
-                {order.customerName && (
-                  <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>{order.customerName}</span>
-                )}
+                  <span className="price-tag">฿{order.totalPrice.toLocaleString('th-TH')}</span>
+                </div>
               </div>
-              <span className={`badge badge-${order.status}`}>{STATUS_LABELS[order.status]}</span>
-            </div>
-
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', marginBottom: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {order.items.map(i => `${i.itemName || i.menuItem?.name || '(ลบแล้ว)'} ×${i.quantity}`).join('  ·  ')}
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)' }}>
-                {new Date(order.createdAt).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-              </span>
-              <span className="price-tag">฿{order.totalPrice.toLocaleString('th-TH')}</span>
-            </div>
-          </div>
+            )
+          })()
         ))
       }
 
       {!loading && orders.length === 0 && (
-        <div className="glass-panel" style={{ padding: '56px 24px', textAlign: 'center' }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <path d="M9 12h6M9 16h4"/>
-          </svg>
-          <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-base)' }}>ไม่พบออเดอร์ในช่วงนี้</p>
+        <div className="glass-panel">
+          <EmptyState
+            title="ไม่พบออเดอร์ในช่วงนี้"
+            hint="ลองเปลี่ยนช่วงวันหรือสถานะด้านบน ออเดอร์ใหม่จะขึ้นที่นี่เองเมื่อมีการสั่ง"
+          />
         </div>
       )}
 

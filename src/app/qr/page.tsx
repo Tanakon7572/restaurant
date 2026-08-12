@@ -67,6 +67,9 @@ export default function QRPage() {
       <div className="glass-panel" style={{ padding: '24px 20px', marginBottom: '12px', textAlign: 'center' }}>
         <div ref={printRef}>
           <div style={{ display: 'inline-block', background: 'white', padding: '16px', borderRadius: '12px', marginBottom: '12px' }}>
+            {/* Pure black on pure white, not theme tokens: a scanner needs
+                the contrast, and a tinted code is a code that fails on a
+                cheap phone camera in a dim room. */}
             {baseUrl && <QRCode value={orderUrl} size={220} bgColor="#ffffff" fgColor="#111111" />}
           </div>
           <p style={{ color: 'var(--c-text-2)', fontSize: '0.9rem' }}>สแกนเพื่อสั่งอาหาร</p>
