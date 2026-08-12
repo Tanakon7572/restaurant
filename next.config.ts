@@ -6,7 +6,14 @@ import type { NextConfig } from "next";
 //                      Sunmi APK so the till opens without the network
 const isAppBuild = process.env.BUILD_TARGET === 'app'
 
+// Computed once per build. The service worker is registered with it, so a
+// deploy always supersedes the previous worker and its cached pages.
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12)
+  ?? String(Date.now())
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_BUILD_ID: buildId },
+  generateBuildId: () => buildId,
   ...(isAppBuild
     ? {
         output: 'export' as const,

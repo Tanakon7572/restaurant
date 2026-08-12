@@ -6,10 +6,15 @@
  * needs live data (orders, kitchen, checkout) still says so.
  */
 
-// Bump on every deploy that changes the shell. The activate handler deletes
-// every cache whose name does not start with the current version, which is
-// what stops a stale page referencing chunks the server no longer has.
-const VERSION = 'pos-v2'
+// The build this worker belongs to, taken from the ?v= it was registered
+// with. Every deploy therefore registers a different worker URL, which forces
+// install + activate, and activate deletes every cache from another build.
+//
+// Without this a cached page outlives the deployment it was built for: it
+// still references chunk filenames the server no longer has, so the shell
+// loads and every asset 404s — staff get a page with no styling at all.
+const BUILD = new URL(self.location.href).searchParams.get('v') || 'dev'
+const VERSION = `pos-${BUILD}`
 const SHELL = `${VERSION}-shell`
 const DATA = `${VERSION}-data`
 

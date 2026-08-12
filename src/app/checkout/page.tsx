@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import PosShell from '@/components/PosShell'
+import EmptyState from '@/components/EmptyState'
 import { computeBill, changeFor, round2, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
 import { promptPayPayload } from '@/lib/promptpay'
 import { DEFAULT_SHOP_SETTINGS, type ShopSettings } from '@/lib/shopSettings'
@@ -410,11 +411,23 @@ export default function CheckoutPage() {
           <button className="btn btn-ghost btn-sm" onClick={() => router.push('/reports')}>ปิดรอบขาย →</button>
         </div>
 
-        {loading && <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--c-text-3)' }}>กำลังโหลด…</div>}
+        {loading && (
+          <div className="glass-panel-flush" aria-busy="true" aria-label="กำลังโหลดบิล">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="skeleton-row">
+                <div className="skeleton skeleton-line" style={{ width: '46%' }} />
+                <div className="skeleton skeleton-line-lg" style={{ width: '22%' }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && groups.length === 0 && (
-          <div className="glass-panel" style={{ padding: '56px 24px', textAlign: 'center' }}>
-            <p style={{ color: 'var(--c-text-3)' }}>ไม่มีบิลค้างชำระ</p>
+          <div className="glass-panel">
+            <EmptyState
+              title="ไม่มีโต๊ะรอเก็บเงิน"
+              hint="บิลจะขึ้นที่นี่เองเมื่อมีออเดอร์ที่ยังไม่ได้ชำระ เริ่มออเดอร์ใหม่ได้จากหน้าสั่งอาหาร"
+            />
           </div>
         )}
 

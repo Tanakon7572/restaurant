@@ -12,6 +12,7 @@ import ItemOptionSheet from '@/components/ItemOptionSheet'
 import Cart from '@/components/Cart'
 import MenuBrowser from '@/components/MenuBrowser'
 import ShopHeader from '@/components/ShopHeader'
+import EmptyState from '@/components/EmptyState'
 
 function toMenuItem(raw: Record<string, unknown>): MenuItemDTO {
   return {
@@ -130,7 +131,11 @@ export default function NewOrderPage() {
         </div>
         <input className="input" placeholder="หมายเหตุรวม" value={note} onChange={e => setNote(e.target.value)} style={{ marginBottom: '12px', padding: '9px 10px' }} />
         {cart.length === 0 ? (
-          <p style={{ color: 'var(--c-text-4)', textAlign: 'center', padding: '40px 0', fontSize: '0.88rem' }}>ยังไม่มีรายการ</p>
+          <EmptyState
+            compact
+            title="ยังไม่ได้เลือกอะไร"
+            hint="แตะเมนูทางซ้ายเพื่อเพิ่มลงออเดอร์นี้"
+          />
         ) : (
           <Cart
             lines={cart}

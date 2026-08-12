@@ -1,6 +1,7 @@
 'use client'
 import type { CartLine } from '@/lib/types'
 import { cartTotal } from '@/lib/cart'
+import EmptyState from './EmptyState'
 
 type Props = {
   lines: CartLine[]
@@ -15,7 +16,13 @@ type Props = {
 
 export default function Cart({ lines, onQty, onRemove, onEdit, canEdit }: Props) {
   if (lines.length === 0)
-    return <p style={{ color: 'var(--c-text-3)', textAlign: 'center', padding: '32px 0' }}>ยังไม่มีรายการในตะกร้า</p>
+    return (
+      <EmptyState
+        compact
+        title="ตะกร้าว่าง"
+        hint="แตะรูปเมนูเพื่อเพิ่มลงออเดอร์ กดที่ “ตัวเลือก” ถ้าต้องเลือกไส้หรือระดับความหวาน"
+      />
+    )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -174,7 +174,16 @@ export default function ReportsPage() {
           />
         </div>
 
-        {loading && <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--c-text-3)' }}>กำลังโหลด…</div>}
+        {loading && (
+          <div className="glass-panel-flush" aria-busy="true" aria-label="กำลังโหลดรายงาน">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="skeleton-row">
+                <div className="skeleton skeleton-line" style={{ width: '40%' }} />
+                <div className="skeleton skeleton-line" style={{ width: '18%' }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && report && (
           <>

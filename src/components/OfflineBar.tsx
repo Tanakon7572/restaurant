@@ -29,7 +29,10 @@ export default function OfflineBar() {
       return
     }
 
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
+    // The build id in the query is what makes a deploy replace the worker
+    // and drop the previous build's cached pages.
+    const buildId = process.env.NEXT_PUBLIC_BUILD_ID || 'dev'
+    navigator.serviceWorker.register(`/sw.js?v=${buildId}`).catch(() => {})
   }, [])
 
   useEffect(() => {

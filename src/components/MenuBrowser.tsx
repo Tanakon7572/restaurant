@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { MenuCategoryDTO, MenuItemDTO } from '@/lib/types'
 import { buildDiyItem } from '@/lib/options'
 import DiyEntryCard from './DiyEntryCard'
+import EmptyState from './EmptyState'
 
 function ItemThumb({ imageUrl, name }: { imageUrl?: string | null; name: string }) {
   const [imgError, setImgError] = useState(false)
@@ -70,9 +71,11 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
         </div>
       )}
 
-      {isSearching && (
-        <p style={{ fontSize: '0.82rem', color: 'var(--c-text-3)', marginBottom: '10px' }}>
-          {searchResults.length > 0 ? `พบ ${searchResults.length} รายการ` : 'ไม่พบเมนูที่ค้นหา'}
+      {/* Only the hit count. The empty case is the panel below saying so
+          properly; two "not found" lines stacked was just noise. */}
+      {isSearching && searchResults.length > 0 && (
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '10px' }}>
+          พบ {searchResults.length} รายการ
         </p>
       )}
 
@@ -80,9 +83,19 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
         <DiyEntryCard category={activeCat} onStart={() => onSelect(buildDiyItem(activeCat))} />
       ) : displayItems.length === 0 ? (
         <div className="glass-panel" style={{ marginBottom: '14px' }}>
-          <p style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
-            {isSearching ? 'ไม่พบเมนูที่ค้นหา' : categories.length === 0 ? emptyText : 'ไม่มีเมนูในหมวดนี้'}
-          </p>
+          {isSearching ? (
+            <EmptyState
+              title={`ไม่พบเมนูที่ตรงกับ “${search.trim()}”`}
+              hint="ลองพิมพ์สั้นลง หรือแตะหมวดด้านบนเพื่อไล่ดูทั้งหมด"
+            />
+          ) : categories.length === 0 ? (
+            <EmptyState title={emptyText} hint="เพิ่มหมวดหมู่และเมนูได้ที่หน้าจัดการเมนู" />
+          ) : (
+            <EmptyState
+              title={`ยังไม่มีเมนูในหมวด “${activeCat?.name ?? ''}”`}
+              hint="เลือกหมวดอื่นด้านบน หรือเพิ่มเมนูเข้าหมวดนี้ที่หน้าจัดการเมนู"
+            />
+          )}
         </div>
       ) : (
         <div className="menu-grid">

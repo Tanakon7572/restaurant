@@ -1227,3 +1227,85 @@ select.input { color-scheme: light; }
 @media (min-width: 1024px) {
   .more-sheet, .more-sheet-veil, .bottom-nav-more { display: none; }
 }
+
+/* ─── Empty and loading states ──────────────────────────────
+   Both are real screens, not gaps between screens. An empty one says what
+   this surface is for; a loading one keeps the shape of what is coming so
+   the layout does not jump when it lands. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 44px 24px;
+  text-align: center;
+}
+.empty-compact { padding: 26px 20px; }
+.empty-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text-2);
+}
+.empty-hint {
+  font-size: var(--text-sm);
+  color: var(--c-text-3);
+  max-width: 34ch;
+  line-height: 1.5;
+}
+.empty-action { margin-top: 10px; }
+
+/* Skeletons take the shape of the row they stand in for. A spinner in the
+   middle of a panel says "wait"; this says "a list is coming, this long". */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-surface-2);
+  border-radius: var(--radius-xs);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.55),
+    transparent
+  );
+  animation: skeleton-sweep 1.3s ease-in-out infinite;
+}
+@keyframes skeleton-sweep { to { transform: translateX(100%); } }
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+.skeleton-row:last-child { border-bottom: 0; }
+.skeleton-line { height: 15px; }
+.skeleton-line-lg { height: 19px; }
+
+/* A held button should look held. Without this a tap on a handheld gives no
+   sign it registered until the next screen paints. */
+.btn:active:not(:disabled),
+.pay-tile:active:not(:disabled),
+.key:active:not(:disabled),
+.seg-item:active,
+.menu-card:active,
+.discount-chip:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+  .btn:active:not(:disabled),
+  .pay-tile:active:not(:disabled),
+  .key:active:not(:disabled),
+  .seg-item:active,
+  .menu-card:active,
+  .discount-chip:active { transform: none; }
+}
