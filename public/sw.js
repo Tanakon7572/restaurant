@@ -6,15 +6,15 @@
  * needs live data (orders, kitchen, checkout) still says so.
  */
 
-// The build this worker belongs to, taken from the ?v= it was registered
-// with. Every deploy therefore registers a different worker URL, which forces
-// install + activate, and activate deletes every cache from another build.
+// Bump this on any deploy that changes the shell. Activate deletes every
+// cache from another version, which is what stops a page cached before the
+// deploy from outliving it and referencing chunks the server no longer has.
 //
-// Without this a cached page outlives the deployment it was built for: it
-// still references chunk filenames the server no longer has, so the shell
-// loads and every asset 404s — staff get a page with no styling at all.
-const BUILD = new URL(self.location.href).searchParams.get('v') || 'dev'
-const VERSION = `pos-${BUILD}`
+// This was briefly wired to a build id injected through next.config's `env`
+// key. That key makes Next inline process.env at build time, which stopped
+// DATABASE_URL resolving at runtime and took the whole API down. A constant
+// bumped by hand is worth far more than an automatic one that can do that.
+const VERSION = 'pos-v3'
 const SHELL = `${VERSION}-shell`
 const DATA = `${VERSION}-data`
 

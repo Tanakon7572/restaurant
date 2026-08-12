@@ -54,13 +54,27 @@ class PrinterBridge(private val context: Context) {
         service = null
     }
 
-    /** Called from the page. `job` is a serialised PrintJob from printJob.ts. */
+    /**
+     * Called from the page. `job` is a serialised PrintJob from printJob.ts.
+     *
+     * Returns a status the page can act on. Fire-and-forget was wrong here: a
+     * receipt that never printed looked identical to one that did, and the
+     * cashier only found out when the customer asked for it.
+     */
     @JavascriptInterface
-    fun print(job: String) {
-        val s = service
+    fun print(job: String): String {
+        // Binding is asynchronous and the first sale of a shift can land
+        // before it finishes. Wait briefly rather than dropping the slip.
+        var s = service
+        var waited = 0
+        while (s == null && waited < BIND_WAIT_MS) {
+            Thread.sleep(BIND_STEP_MS.toLong())
+            waited += BIND_STEP_MS
+            s = service
+        }
         if (s == null) {
             toast("เครื่องพิมพ์ยังไม่พร้อม")
-            return
+            return "no-printer"
         }
         try {
             val parsed = JSONObject(job)
@@ -92,11 +106,13 @@ class PrinterBridge(private val context: Context) {
                 }
             }
             s.exitPrinterBuffer(true)
+            return "ok"
         } catch (e: Exception) {
             Log.e(TAG, "print failed", e)
             // Leave no half-open buffer behind for the next slip to inherit.
             runCatching { s.exitPrinterBuffer(false) }
             toast("พิมพ์ไม่สำเร็จ")
+            return "error"
         }
     }
 
@@ -114,5 +130,9 @@ class PrinterBridge(private val context: Context) {
         // still scans from a phone held at arm's length.
         const val QR_MODULE_SIZE = 6
         const val QR_ERROR_LEVEL = 2
+        // Long enough to cover a cold start, short enough that a genuinely
+        // absent printer does not hold up the screen.
+        const val BIND_WAIT_MS = 2000
+        const val BIND_STEP_MS = 100
     }
 }

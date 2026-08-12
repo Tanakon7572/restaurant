@@ -13,7 +13,10 @@
 import { printSlip } from './print'
 import type { PrintJob } from './printJob'
 
-type NativePrinter = { print(job: string): void }
+// The wrapper answers 'ok' | 'no-printer' | 'error'. Older builds of the APK
+// return undefined, which is treated as success — they had no way to report a
+// failure, so assuming one would cry wolf on every sale.
+type NativePrinter = { print(job: string): string | void }
 
 declare global {
   interface Window {
@@ -25,11 +28,19 @@ export function hasNativePrinter(): boolean {
   return typeof window !== 'undefined' && typeof window.SunmiPrinter?.print === 'function'
 }
 
-export function printSlipJob(job: PrintJob, html: () => string): void {
+export type PrintOutcome = 'native' | 'dialog'
+
+/**
+ * Returns how the slip was actually printed, so a caller can tell the cashier
+ * when it did not go to the head. A receipt that silently failed looks exactly
+ * like one that worked, and the shop finds out when the customer asks.
+ */
+export function printSlipJob(job: PrintJob, html: () => string): PrintOutcome {
   if (hasNativePrinter()) {
     try {
-      window.SunmiPrinter!.print(JSON.stringify(job))
-      return
+      const result = window.SunmiPrinter!.print(JSON.stringify(job))
+      if (result === undefined || result === 'ok') return 'native'
+      console.warn('native printer refused the slip:', result)
     } catch (err) {
       // A dead printer service must not cost the cashier the slip: fall through
       // to the dialog rather than swallowing the print.
@@ -37,4 +48,5 @@ export function printSlipJob(job: PrintJob, html: () => string): void {
     }
   }
   printSlip(html(), job.widthMm)
+  return 'dialog'
 }

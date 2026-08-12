@@ -9,7 +9,7 @@ import EmptyState from '@/components/EmptyState'
 import { computeBill, changeFor, round2, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
 import { promptPayPayload } from '@/lib/promptpay'
 import { DEFAULT_SHOP_SETTINGS, type ShopSettings } from '@/lib/shopSettings'
-import { printSlipJob } from '@/lib/printBridge'
+import { printSlipJob, hasNativePrinter, type PrintOutcome } from '@/lib/printBridge'
 import { receiptJob } from '@/lib/printJob'
 import { receiptHtml, type SlipBill, type SlipOrder } from '@/lib/receipt'
 
@@ -61,6 +61,9 @@ export default function CheckoutPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [paidBill, setPaidBill] = useState<SlipBill | null>(null)
+  // Null until a slip has been attempted for this bill. 'dialog' on the
+  // handheld means the head refused it and the browser dialog stood in.
+  const [printedVia, setPrintedVia] = useState<PrintOutcome | null>(null)
 
   const load = useCallback(() => {
     fetch('/api/bills/open')
@@ -108,10 +111,11 @@ export default function CheckoutPage() {
   function openGroup(key: string) {
     setActiveKey(key)
     setDiscount(''); setDiscountNote(''); setMethod('cash'); setReceived('')
-    setError(''); setPaidBill(null)
+    setError(''); setPaidBill(null); setPrintedVia(null)
   }
 
   function printReceipt(bill: SlipBill) {
+    setPrintedVia(null)
     // The handheld draws the QR from the payload itself; the browser dialog
     // lifts the on-screen SVG instead, so the slip carries the exact code the
     // customer was shown.
@@ -123,7 +127,7 @@ export default function CheckoutPage() {
     const payload = bill.method === 'promptpay' && settings.promptPayId
       ? promptPayPayload(settings.promptPayId, bill.total)
       : null
-    printSlipJob(
+    setPrintedVia(printSlipJob(
       receiptJob(bill, settings, payload),
       () => {
         const qrSvg = bill.method === 'promptpay'
@@ -131,7 +135,7 @@ export default function CheckoutPage() {
           : null
         return receiptHtml(bill, settings, qrSvg)
       },
-    )
+    ))
   }
 
   async function confirm() {
@@ -171,7 +175,15 @@ export default function CheckoutPage() {
           <div className="glass-panel" style={{ padding: '28px 20px', textAlign: 'center', marginBottom: '12px' }}>
             <div style={{ fontSize: 'var(--text-3xl)', lineHeight: 1, marginBottom: '10px' }}>✅</div>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>ใบเสร็จ #{paidBill.id}</p>
-            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--c-primary)', margin: '4px 0' }}>
+            <p style={{
+              fontFamily: 'var(--font-num)',
+              fontSize: 'var(--text-2xl)',
+              fontWeight: 700,
+              color: 'var(--c-accent)',
+              letterSpacing: '-0.02em',
+              margin: '4px 0',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
               ฿{money(paidBill.total)}
             </p>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
@@ -179,6 +191,21 @@ export default function CheckoutPage() {
               {paidBill.changeDue != null && paidBill.changeDue > 0 && ` · ทอน ฿${money(paidBill.changeDue)}`}
             </p>
           </div>
+          {/* Only on the handheld: in a browser the dialog IS the expected
+              path, so saying it failed would be wrong. */}
+          {hasNativePrinter() && printedVia === 'dialog' && (
+            <p style={{
+              marginBottom: '10px',
+              padding: '10px 12px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--c-danger-bg)',
+              color: 'var(--c-danger)',
+              fontSize: 'var(--text-sm)',
+              fontWeight: 600,
+            }}>
+              สลิปไม่ได้ออกจากเครื่องพิมพ์ — ตรวจกระดาษและฝาปิด แล้วกดพิมพ์อีกครั้ง
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => printReceipt(paidBill)}>
               พิมพ์ใบเสร็จอีกครั้ง
