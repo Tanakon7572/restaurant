@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import ConfirmModal from '@/components/ConfirmModal'
 import ImageUploadField from '@/components/ImageUploadField'
 
@@ -187,7 +188,7 @@ export default function SettingsPage() {
       <PosShell>
         <div className="page-container">
           <div className="page-header">
-            <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+            <div className="skeleton" style={{ height: '28px', width: '130px' }} />
           </div>
         </div>
       </PosShell>
@@ -197,9 +198,7 @@ export default function SettingsPage() {
   return (
     <PosShell>
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 className="page-title">ตั้งค่า</h1>
-      </div>
+      <ShopHeader title="ตั้งค่า" />
 
       {/* Shop name */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>

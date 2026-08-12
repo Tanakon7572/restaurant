@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import EmptyState from '@/components/EmptyState'
 
 interface OrderItem {
@@ -157,9 +158,8 @@ export default function OrdersPage() {
   return (
     <PosShell>
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 className="page-title">ออเดอร์</h1>
-        <button
+      <ShopHeader title="ออเดอร์">
+          <button
           className="btn btn-ghost btn-sm"
           onClick={() => exportCSV(orders)}
           disabled={orders.length === 0}
@@ -171,7 +171,7 @@ export default function OrdersPage() {
           </svg>
           CSV
         </button>
-      </div>
+        </ShopHeader>
 
       {/* Period tabs */}
       <div className="scroll-x" style={{ marginBottom: '10px' }}>

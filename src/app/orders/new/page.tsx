@@ -175,7 +175,7 @@ export default function NewOrderPage() {
       <PosShell>
         <div className="page-container">
           <div className="page-header">
-            <div style={{ height: '28px', width: '100px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+            <div className="skeleton" style={{ height: '28px', width: '130px' }} />
           </div>
         </div>
       </PosShell>

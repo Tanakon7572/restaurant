@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import { PERMANENT_SESSION_TOKEN } from '@/lib/tableSession'
 
 const QRCode = dynamic(() => import('react-qr-code'), { ssr: false })
@@ -56,9 +57,7 @@ export default function QRPage() {
   return (
     <PosShell>
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 className="page-title">QR สั่งอาหาร</h1>
-      </div>
+      <ShopHeader title="QR สั่งอาหาร" />
 
       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', margin: '-6px 0 14px' }}>
         QR เดียวใช้ได้ทุกโต๊ะตลอดเวลา — พิมพ์แล้ววางไว้ที่ร้านได้เลย ลูกค้าสแกนแล้วกรอกชื่อเพื่อสั่งอาหาร

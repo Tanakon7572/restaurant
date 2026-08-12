@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import { METHOD_LABELS, PAYMENT_METHODS, round2, type PaymentMethod } from '@/lib/billing'
 import { escapeHtml, baht } from '@/lib/print'
 import { printSlipJob } from '@/lib/printBridge'
@@ -165,14 +166,17 @@ export default function ReportsPage() {
   return (
     <PosShell>
       <div className="page-container fade-in">
-        <div className="page-header">
-          <h1 className="page-title">ปิดรอบขาย</h1>
-          <input
-            className="input" type="date" value={date} max={todayKey()}
-            onChange={e => setDate(e.target.value)}
-            style={{ width: 'auto', padding: '6px 10px' }}
-          />
-        </div>
+        <ShopHeader
+          title="ปิดรอบขาย"
+          action={
+            <input
+              className="input" type="date" value={date} max={todayKey()}
+              onChange={e => setDate(e.target.value)}
+              aria-label="วันที่ของรอบ"
+              style={{ width: 'auto', padding: '8px 12px' }}
+            />
+          }
+        />
 
         {loading && (
           <div className="glass-panel-flush" aria-busy="true" aria-label="กำลังโหลดรายงาน">
@@ -198,7 +202,15 @@ export default function ReportsPage() {
             {/* Headline */}
             <div className="glass-panel" style={{ padding: '20px', marginBottom: '12px', textAlign: 'center' }}>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>ยอดขายรวม</p>
-              <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--c-primary)', lineHeight: 1.2 }}>
+              <p style={{
+                fontFamily: 'var(--font-num)',
+                fontSize: 'var(--text-3xl)',
+                fontWeight: 700,
+                color: 'var(--c-accent)',
+                letterSpacing: '-0.03em',
+                lineHeight: 1.1,
+                fontVariantNumeric: 'tabular-nums',
+              }}>
                 ฿{money(report.totalSales)}
               </p>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
@@ -212,7 +224,9 @@ export default function ReportsPage() {
               {PAYMENT_METHODS.map(m => (
                 <div key={m} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 'var(--text-sm)' }}>
                   <span style={{ color: 'var(--c-text-2)' }}>{METHOD_LABELS[m]} <span style={{ color: 'var(--c-text-4)' }}>({report.byMethod[m].count})</span></span>
-                  <span>฿{money(report.byMethod[m].amount)}</span>
+                  <span style={{ fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
+                    ฿{money(report.byMethod[m].amount)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -258,7 +272,9 @@ export default function ReportsPage() {
                     <span style={{ color: 'var(--c-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {idx + 1}. {i.name}
                     </span>
-                    <span style={{ whiteSpace: 'nowrap' }}>{i.quantity} · ฿{money(i.amount)}</span>
+                    <span style={{ whiteSpace: 'nowrap', fontFamily: 'var(--font-num)', fontVariantNumeric: 'tabular-nums' }}>
+                      {i.quantity} · ฿{money(i.amount)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -315,9 +331,15 @@ export default function ReportsPage() {
 
 function Line({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 'var(--text-sm)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', padding: '4px 0', fontSize: 'var(--text-sm)' }}>
       <span style={{ color: 'var(--c-text-2)' }}>{label}</span>
-      <span>{value}</span>
+      <span style={{
+        fontFamily: 'var(--font-num)',
+        fontVariantNumeric: 'tabular-nums',
+        whiteSpace: 'nowrap',
+      }}>
+        {value}
+      </span>
     </div>
   )
 }

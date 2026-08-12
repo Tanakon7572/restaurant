@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import { fetchWithCache } from '@/lib/cache'
 
 interface OrderItem {
@@ -163,12 +164,8 @@ export default function DashboardPage() {
     <PosShell>
     <div className="page-container fade-in">
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">สรุป</h1>
-          <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)', marginTop: '2px' }}>{dateLabel}</p>
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <ShopHeader title={`สรุป · ${dateLabel}`}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
           {/* Period switcher */}
           <div style={{ display: 'flex', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '3px', gap: '2px' }}>
             {PERIODS.map(p => (
@@ -196,7 +193,7 @@ export default function DashboardPage() {
           </div>
           <button className="btn btn-ghost btn-sm" onClick={handleLogout}>ออก</button>
         </div>
-      </div>
+      </ShopHeader>
 
       {/* Revenue hero card */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '10px', background: 'var(--c-primary)', border: 'none', boxShadow: 'var(--shadow-md)' }}>

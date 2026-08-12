@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import EmptyState from '@/components/EmptyState'
 import { computeBill, changeFor, round2, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
 import { promptPayPayload } from '@/lib/promptpay'
@@ -406,10 +407,9 @@ export default function CheckoutPage() {
   return (
     <PosShell>
       <div className="page-container fade-in">
-        <div className="page-header">
-          <h1 className="page-title">เก็บเงิน</h1>
+        <ShopHeader title="เก็บเงิน">
           <button className="btn btn-ghost btn-sm" onClick={() => router.push('/reports')}>ปิดรอบขาย →</button>
-        </div>
+        </ShopHeader>
 
         {loading && (
           <div className="glass-panel-flush" aria-busy="true" aria-label="กำลังโหลดบิล">

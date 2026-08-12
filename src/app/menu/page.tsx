@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import PosShell from '@/components/PosShell'
+import ShopHeader from '@/components/ShopHeader'
 import ConfirmModal from '@/components/ConfirmModal'
 import SetEditor, { type SetEditorItem } from '@/components/SetEditor'
 import SetConverter from '@/components/SetConverter'
@@ -720,7 +721,7 @@ export default function MenuPage() {
       <PosShell>
         <div className="page-container">
           <div className="page-header">
-            <div style={{ height: '28px', width: '120px', background: 'var(--c-surface-2)', borderRadius: '6px' }} />
+            <div className="skeleton" style={{ height: '28px', width: '130px' }} />
           </div>
         </div>
       </PosShell>
@@ -730,15 +731,14 @@ export default function MenuPage() {
   return (
     <PosShell>
     <div className="page-container fade-in">
-      <div className="page-header">
-        <h1 className="page-title">จัดการเมนู</h1>
-        <button
+      <ShopHeader title="จัดการเมนู">
+          <button
           className={`btn btn-sm ${selecting ? 'btn-primary' : 'btn-ghost'}`}
           onClick={() => (selecting ? exitSelecting() : setSelecting(true))}
         >
           {selecting ? 'เสร็จสิ้น' : 'เลือกหลายรายการ'}
         </button>
-      </div>
+        </ShopHeader>
 
       {selecting && (
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', margin: '-8px 0 12px' }}>
