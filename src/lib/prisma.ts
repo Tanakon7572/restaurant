@@ -28,6 +28,34 @@ const prismaClientSingleton = () => {
   })
 }
 
+/**
+ * Which connection the server actually resolved, with the password removed.
+ *
+ * Environment variables on Vercel can be marked Sensitive, which makes them
+ * unreadable after they are set. When one of them is wrong there is no way to
+ * look — so the server reports the host and user it ended up with, and a
+ * connection failure stops being a guessing game. Never include the password.
+ */
+export function connectionSummary(): {
+  source: 'DATABASE_URL' | 'DIRECT_URL' | 'none'
+  user: string
+  host: string
+} {
+  const fromDatabaseUrl = !!process.env.DATABASE_URL
+  const raw = process.env.DATABASE_URL || process.env.DIRECT_URL
+  if (!raw) return { source: 'none', user: '-', host: '-' }
+  try {
+    const u = new URL(raw)
+    return {
+      source: fromDatabaseUrl ? 'DATABASE_URL' : 'DIRECT_URL',
+      user: decodeURIComponent(u.username) || '(ไม่ระบุ)',
+      host: `${u.hostname}:${u.port || '5432'}`,
+    }
+  } catch {
+    return { source: fromDatabaseUrl ? 'DATABASE_URL' : 'DIRECT_URL', user: '(อ่านไม่ออก)', host: '(อ่านไม่ออก)' }
+  }
+}
+
 declare global {
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
 }

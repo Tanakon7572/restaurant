@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, connectionSummary } from '@/lib/prisma'
 import { deriveGroupsFromPools, deriveExtraGroupsFromPools, deriveSetCrustGroup, expandPoolIds, withoutCrustStep, withoutHiddenPools, isCrust, CRUST_GROUP_ID, type Ingredient, type IngredientPool } from '@/lib/options'
 import { setDisplayName } from '@/lib/setMenu'
 import { getSession } from '@/lib/session'
@@ -161,6 +161,12 @@ export async function GET(request: Request) {
       headers: { 'Cache-Control': 's-maxage=5, stale-while-revalidate=20' },
     })
   } catch (err) {
-    return NextResponse.json({ error: 'Failed to fetch menu', detail: String(err) }, { status: 500 })
+    // `connection` names the host and user the server resolved, never the
+    // password. Sensitive variables cannot be read back once set, so without
+    // this a wrong one is invisible from every side.
+    return NextResponse.json(
+      { error: 'Failed to fetch menu', detail: String(err), connection: connectionSummary() },
+      { status: 500 },
+    )
   }
 }
