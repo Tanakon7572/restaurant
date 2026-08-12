@@ -50,7 +50,7 @@ function ElapsedTimer({ createdAt, warn }: { createdAt: string; warn: number }) 
     <span
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
-        fontSize: '0.78rem', fontWeight: isWarn ? 700 : 500,
+        fontSize: 'var(--text-xs)', fontWeight: isWarn ? 700 : 500,
         color: isWarn ? 'var(--c-danger)' : 'var(--c-text-3)',
         background: isWarn ? 'var(--c-danger-bg)' : 'var(--c-surface-2)',
         padding: '2px 8px', borderRadius: '99px',
@@ -104,7 +104,7 @@ function OrderCard({
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ fontSize: 'var(--text-lg)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--c-text)', fontVariantNumeric: 'tabular-nums' }}>
               #{order.dailyNumber ?? order.id}
             </span>
             {isAwaiting && <span className="badge badge-awaiting">คำขอใหม่จากลูกค้า</span>}
@@ -113,7 +113,7 @@ function OrderCard({
                 background: 'var(--c-surface-2)', color: 'var(--c-text-2)',
                 border: '1px solid var(--c-border)',
                 padding: '2px 10px', borderRadius: '99px',
-                fontSize: '0.82rem', fontWeight: 600,
+                fontSize: 'var(--text-xs)', fontWeight: 600,
               }}>
                 โต๊ะ {order.tableNumber}
               </span>
@@ -123,7 +123,7 @@ function OrderCard({
                 background: 'var(--c-surface-2)', color: 'var(--c-text-2)',
                 border: '1px solid var(--c-border)',
                 padding: '2px 10px', borderRadius: '99px',
-                fontSize: '0.82rem', fontWeight: 600,
+                fontSize: 'var(--text-xs)', fontWeight: 600,
               }}>
                 {order.customerName}
               </span>
@@ -135,7 +135,7 @@ function OrderCard({
         {/* Item count badge */}
         <span className="status-badge" style={{
           borderRadius: '99px', padding: '3px 10px',
-          fontSize: '0.75rem', fontWeight: 700,
+          fontSize: 'var(--text-xs)', fontWeight: 700,
         }}>
           {order.items.reduce((s, i) => s + i.quantity, 0)} รายการ
         </span>
@@ -153,15 +153,15 @@ function OrderCard({
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--c-text)', lineHeight: 1.3 }}>
+              <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--c-text)', lineHeight: 1.3 }}>
                 {item.itemName || item.menuItem?.name || '(ลบแล้ว)'}
               </span>
               {item.options && item.options.length > 0 && (
-                <ul style={{ listStyle: 'none', margin: '2px 0 0', paddingLeft: 2, fontSize: '0.92rem', color: 'var(--c-text-2)', lineHeight: 1.4 }}>
+                <ul style={{ listStyle: 'none', margin: '2px 0 0', paddingLeft: 2, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', lineHeight: 1.4 }}>
                   {item.options.map((o, i) => <li key={i}>• {o.choiceName}</li>)}
                 </ul>
               )}
-              {item.note && <p style={{ fontSize: '0.92rem', color: 'var(--c-warning)', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
+              {item.note && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-warning)', marginTop: 2, fontWeight: 600 }}>📝 {item.note}</p>}
             </div>
             <span style={{
               fontSize: 'var(--text-lg)', fontWeight: 800,
@@ -182,7 +182,7 @@ function OrderCard({
             background: 'var(--c-warning-bg)',
             border: '1px solid var(--c-accent)',
             borderRadius: '8px',
-            fontSize: '0.82rem', color: 'var(--c-warning)', fontStyle: 'italic',
+            fontSize: 'var(--text-xs)', color: 'var(--c-warning)', fontStyle: 'italic',
           }}>
             ⚠ {order.note}
           </div>
@@ -199,7 +199,7 @@ function OrderCard({
             borderRadius: '10px', border: 'none',
             background: isPending ? 'var(--c-primary)' : 'var(--c-success-solid)',
             color: isPending ? 'var(--c-on-primary)' : '#fff',
-            fontFamily: 'var(--font)', fontSize: '1.05rem', fontWeight: 800,
+            fontFamily: 'var(--font)', fontSize: 'var(--text-base)', fontWeight: 800,
             cursor: updating ? 'wait' : 'pointer',
             letterSpacing: '-0.01em',
             boxShadow: 'var(--shadow)',
@@ -231,12 +231,12 @@ function Column({
         position: 'sticky', top: '65px', zIndex: 10,
       }}>
         <span style={{ color }}>{icon}</span>
-        <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--c-text)' }}>{title}</span>
+        <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--c-text)' }}>{title}</span>
         <span style={{
           background: count > 0 ? color : 'var(--c-surface-3)',
           color: count > 0 ? 'var(--c-on-primary)' : 'var(--c-text-3)',
           borderRadius: '99px', padding: '1px 10px',
-          fontSize: '0.8rem', fontWeight: 800, marginLeft: 'auto',
+          fontSize: 'var(--text-xs)', fontWeight: 800, marginLeft: 'auto',
           fontVariantNumeric: 'tabular-nums',
         }}>
           {count}
@@ -328,8 +328,8 @@ export default function KitchenPage() {
             </svg>
           </div>
           <div>
-            <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--c-text)', lineHeight: 1 }}>Kitchen Display</p>
-            <p style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', marginTop: '2px', lineHeight: 1 }}>
+            <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--c-text)', lineHeight: 1 }}>Kitchen Display</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '2px', lineHeight: 1 }}>
               {lastRefresh
                 ? `อัปเดต ${lastRefresh.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
                 : 'กำลังโหลด…'}
@@ -349,7 +349,7 @@ export default function KitchenPage() {
               background: 'var(--c-warning-bg)', color: 'var(--c-warning)',
               border: '1px solid var(--c-accent)',
               borderRadius: '99px', padding: '4px 14px',
-              fontSize: '0.82rem', fontWeight: 700,
+              fontSize: 'var(--text-xs)', fontWeight: 700,
             }}>
               {orders.length} รายการรอ
             </span>
@@ -360,7 +360,7 @@ export default function KitchenPage() {
               display: 'flex', alignItems: 'center', gap: '6px',
               background: 'var(--c-surface-2)', border: '1px solid var(--c-border)',
               color: 'var(--c-text-2)', borderRadius: '8px', padding: '7px 14px',
-              fontFamily: 'var(--font)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'var(--font)', fontSize: 'var(--text-xs)', fontWeight: 500, cursor: 'pointer',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -376,7 +376,7 @@ export default function KitchenPage() {
       {loading ? (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
           <div style={{ width: '36px', height: '36px', border: '3px solid var(--c-border)', borderTopColor: 'var(--c-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>กำลังโหลดออเดอร์…</p>
+          <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>กำลังโหลดออเดอร์…</p>
         </div>
       ) : (
         <div style={{

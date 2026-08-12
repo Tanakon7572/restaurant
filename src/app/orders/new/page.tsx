@@ -152,9 +152,9 @@ export default function NewOrderPage() {
           <span className="ticket-net-label">รวม</span>
           <span className="ticket-net-value">฿{totalPrice.toLocaleString('th-TH')}</span>
         </div>
-        {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem' }}>{error}</p>}
+        {error && <p style={{ color: 'var(--c-danger)', fontSize: 'var(--text-xs)' }}>{error}</p>}
         {queuedNotice && (
-          <p style={{ color: 'var(--c-warning)', fontSize: '0.82rem' }}>
+          <p style={{ color: 'var(--c-warning)', fontSize: 'var(--text-xs)' }}>
             บันทึกออเดอร์ไว้แล้ว — จะส่งเข้าระบบให้เองเมื่อเน็ตกลับมา
           </p>
         )}
@@ -162,7 +162,7 @@ export default function NewOrderPage() {
           className="btn btn-primary btn-full"
           onClick={submitOrder}
           disabled={submitting || cart.length === 0}
-          style={{ padding: '14px', fontSize: '1rem' }}
+          style={{ padding: '14px', fontSize: 'var(--text-sm)' }}
         >
           {submitting ? 'กำลังบันทึก…' : 'บันทึกออเดอร์'}
         </button>
@@ -205,16 +205,16 @@ export default function NewOrderPage() {
         />
         {cart.length > 0 && (
           <div className="hide-desktop" style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
-            {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>{error}</p>}
+            {error && <p style={{ color: 'var(--c-danger)', fontSize: 'var(--text-xs)', marginBottom: '8px', textAlign: 'center' }}>{error}</p>}
             {queuedNotice && (
-              <p style={{ color: 'var(--c-warning)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--c-warning)', fontSize: 'var(--text-xs)', marginBottom: '8px', textAlign: 'center' }}>
                 บันทึกออเดอร์ไว้แล้ว — จะส่งเข้าระบบให้เองเมื่อเน็ตกลับมา
               </p>
             )}
             <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting}
-              style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
+              style={{ padding: '14px 20px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
               <span>{submitting ? 'กำลังบันทึก…' : 'บันทึกออเดอร์'}</span>
-              {!submitting && <span style={{ fontWeight: 700, fontSize: '1rem' }}>฿{totalPrice.toLocaleString('th-TH')}</span>}
+              {!submitting && <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>฿{totalPrice.toLocaleString('th-TH')}</span>}
             </button>
           </div>
         )}
@@ -236,9 +236,9 @@ export default function NewOrderPage() {
       {cart.length > 0 && (
         <div className="hide-desktop" style={{ position: 'fixed', bottom: '64px', left: '50%', transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: '568px', zIndex: 100 }}>
           <button className="btn btn-primary btn-full" onClick={() => setPhase('cart')}
-            style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
+            style={{ padding: '14px 20px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
             <span>ดูตะกร้า · {totalItems} รายการ</span>
-            <span style={{ fontWeight: 700, fontSize: '1rem' }}>฿{totalPrice.toLocaleString('th-TH')}</span>
+            <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>฿{totalPrice.toLocaleString('th-TH')}</span>
           </button>
         </div>
       )}

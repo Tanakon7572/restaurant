@@ -220,7 +220,7 @@ export default function BottomNav() {
                     background: 'var(--c-danger)',
                     color: '#fff',
                     borderRadius: '99px',
-                    fontSize: '0.65rem',
+                    fontSize: 'var(--text-xs)',
                     fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
@@ -239,7 +239,7 @@ export default function BottomNav() {
             {/* Label */}
             <span
               style={{
-                fontSize: '0.64rem',
+                fontSize: 'var(--text-xs)',
                 fontFamily: 'var(--font)',
                 fontWeight: isActive ? 600 : 400,
                 color: isActive ? 'var(--c-primary)' : 'var(--c-text-3)',

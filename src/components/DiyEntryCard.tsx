@@ -34,7 +34,7 @@ export default function DiyEntryCard({ category, onStart }: Props) {
         padding: '20px', marginBottom: '14px',
         border: '1.5px dashed var(--c-primary)',
         background: 'var(--c-primary-glow, var(--c-primary-light))',
-        display: 'flex', alignItems: 'center', gap: '14px',
+        display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
         fontFamily: 'inherit',
       }}
     >
@@ -44,28 +44,30 @@ export default function DiyEntryCard({ category, onStart }: Props) {
           width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
           background: 'var(--c-primary)', color: 'var(--c-on-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.5rem',
+          fontSize: 'var(--text-xl)',
         }}
       >
         ✚
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em', color: 'var(--c-text)' }}>
+      {/* 15rem before it gives up and puts the action on its own line: below
+          that the middle column is narrow enough that every line wraps. */}
+      <div style={{ flex: '1 1 15rem', minWidth: 0 }}>
+        <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', letterSpacing: '-0.01em', color: 'var(--c-text)' }}>
           จัดเองตามใจ ({category.name})
         </p>
-        <p style={{ fontSize: '0.82rem', color: 'var(--c-text-2)', marginTop: 2 }}>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)', marginTop: 3 }}>
           เลือกแป้ง {crustCount} แบบ · ท็อปปิ้ง {extraCount} อย่าง
           {minCrust > 0 && ` · เริ่ม ฿${minCrust.toLocaleString('th-TH')}`}
         </p>
         {stepNames && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--c-text-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {stepNames}
           </p>
         )}
       </div>
       <span
         className="btn btn-primary btn-sm"
-        style={{ flexShrink: 0, pointerEvents: 'none' }}
+        style={{ flexShrink: 0, pointerEvents: 'none', marginLeft: 'auto' }}
         aria-hidden
       >
         เริ่มเลือก →

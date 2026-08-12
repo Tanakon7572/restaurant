@@ -198,7 +198,7 @@ export default function ReportsPage() {
             {/* Headline */}
             <div className="glass-panel" style={{ padding: '20px', marginBottom: '12px', textAlign: 'center' }}>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>ยอดขายรวม</p>
-              <p style={{ fontSize: '2.2rem', fontWeight: 700, color: 'var(--c-primary)', lineHeight: 1.2 }}>
+              <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--c-primary)', lineHeight: 1.2 }}>
                 ฿{money(report.totalSales)}
               </p>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
@@ -272,7 +272,7 @@ export default function ReportsPage() {
                 className="input" type="number" inputMode="decimal" min="0"
                 placeholder="เงินสดที่นับได้จริง" value={counted}
                 onChange={e => setCounted(e.target.value)}
-                style={{ marginTop: '8px', fontSize: '1.1rem', fontWeight: 600 }}
+                style={{ marginTop: '8px', fontSize: 'var(--text-base)', fontWeight: 600 }}
               />
               {counted !== '' && (
                 <p style={{

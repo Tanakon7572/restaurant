@@ -72,11 +72,11 @@ export default function QRPage() {
                 cheap phone camera in a dim room. */}
             {baseUrl && <QRCode value={orderUrl} size={220} bgColor="#ffffff" fgColor="#111111" />}
           </div>
-          <p style={{ color: 'var(--c-text-2)', fontSize: '0.9rem' }}>สแกนเพื่อสั่งอาหาร</p>
+          <p style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)' }}>สแกนเพื่อสั่งอาหาร</p>
         </div>
 
         <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <p style={{ flex: 1, fontSize: '0.7rem', color: 'var(--c-text-3)', wordBreak: 'break-all', textAlign: 'left', background: 'var(--c-surface-2)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)' }}>
+          <p style={{ flex: 1, fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', wordBreak: 'break-all', textAlign: 'left', background: 'var(--c-surface-2)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--c-border)' }}>
             {orderUrl}
           </p>
           <button className="btn btn-ghost btn-sm" onClick={copyUrl} style={{ flexShrink: 0 }}>

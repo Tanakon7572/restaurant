@@ -326,11 +326,11 @@ function QROrderPage() {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="glass-panel" style={{ maxWidth: '360px', width: '100%', padding: '36px 24px', textAlign: 'center' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--c-danger-bg)', color: 'var(--c-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.6rem' }} aria-hidden>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--c-danger-bg)', color: 'var(--c-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 'var(--text-xl)' }} aria-hidden>
             ✕
           </div>
-          <h1 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '8px' }}>ลิงก์นี้ใช้ไม่ได้แล้ว</h1>
-          <p style={{ color: 'var(--c-text-2)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: 'var(--text-md)', fontWeight: 700, marginBottom: '8px' }}>ลิงก์นี้ใช้ไม่ได้แล้ว</h1>
+          <p style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)', lineHeight: 1.6 }}>
             ลิงก์สั่งอาหารหมดอายุหรือถูกปิดแล้ว<br />กรุณาติดต่อพนักงานเพื่อขอ QR ใหม่
           </p>
         </div>
@@ -341,7 +341,7 @@ function QROrderPage() {
   if (linkState === 'checking') {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>กำลังตรวจสอบลิงก์…</p>
+        <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>กำลังตรวจสอบลิงก์…</p>
       </div>
     )
   }
@@ -355,7 +355,7 @@ function QROrderPage() {
     if (!latestOrder) {
       return (
         <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>กำลังโหลดสถานะ…</p>
+          <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>กำลังโหลดสถานะ…</p>
         </div>
       )
     }
@@ -365,27 +365,27 @@ function QROrderPage() {
     return (
       <div style={{ minHeight: '100dvh', maxWidth: '480px', margin: '0 auto', padding: '24px 16px 40px', display: 'flex', flexDirection: 'column' }} className="fade-in">
         <div style={{ textAlign: 'center', padding: '32px 0 24px' }}>
-          <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--c-text-3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
+          <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--c-text-3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
             หมายเลขคิว
           </p>
-          <p style={{ fontSize: '5rem', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--c-text)' }}>
+          <p style={{ fontSize: 'var(--text-3xl)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--c-text)' }}>
             {latestOrder.dailyNumber ?? latestOrder.id}
           </p>
           {latestOrder.customerName && (
-            <p style={{ color: 'var(--c-text-3)', fontSize: '0.85rem', marginTop: '6px' }}>
+            <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginTop: '6px' }}>
               {latestOrder.customerName}
             </p>
           )}
           {!linkActive && (
-            <p style={{ color: 'var(--c-text-3)', fontSize: '0.8rem', marginTop: '6px' }}>
+            <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginTop: '6px' }}>
               ลิงก์นี้ปิดการสั่งแล้ว หากต้องการสั่งเพิ่มกรุณาติดต่อพนักงาน
             </p>
           )}
         </div>
 
         <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px', borderColor: `${info.color}40`, textAlign: 'center' }}>
-          <p style={{ fontSize: '1.3rem', fontWeight: 700, color: info.color, marginBottom: '4px', letterSpacing: '-0.02em' }}>{info.label}</p>
-          <p style={{ color: 'var(--c-text-2)', fontSize: '0.88rem' }}>{info.sub}</p>
+          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: info.color, marginBottom: '4px', letterSpacing: '-0.02em' }}>{info.label}</p>
+          <p style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)' }}>{info.sub}</p>
           {!info.done && (
             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '6px' }}>
               {[0, 1, 2].map(i => (
@@ -400,19 +400,19 @@ function QROrderPage() {
             <div key={idx} style={{ padding: '11px 16px', borderBottom: idx < latestOrder.items.length - 1 ? '1px solid var(--c-border)' : 'none' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</span>
-                  <span style={{ color: 'var(--c-text-3)', marginLeft: '8px', fontSize: '0.82rem' }}>×{item.quantity}</span>
+                  <span style={{ fontWeight: 500, fontSize: 'var(--text-sm)' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</span>
+                  <span style={{ color: 'var(--c-text-3)', marginLeft: '8px', fontSize: 'var(--text-xs)' }}>×{item.quantity}</span>
                 </div>
                 <span className="price-tag">฿{(item.price * item.quantity).toLocaleString('th-TH')}</span>
               </div>
               {item.options && item.options.length > 0 && (
-                <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: '0.78rem', color: 'var(--c-text-3)' }}>
+                <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: 'var(--text-xs)', color: 'var(--c-text-3)' }}>
                   {item.options.map((o, i) => (
                     <li key={i}>• {o.choiceName}{o.priceDelta > 0 ? ` (+฿${o.priceDelta})` : ''}</li>
                   ))}
                 </ul>
               )}
-              {item.note && <p style={{ fontSize: '0.78rem', color: 'var(--c-text-3)', marginTop: 2 }}>📝 {item.note}</p>}
+              {item.note && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: 2 }}>📝 {item.note}</p>}
             </div>
           ))}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 16px', background: 'var(--c-surface-2)', borderTop: '1px solid var(--c-border)' }}>
@@ -424,7 +424,7 @@ function QROrderPage() {
         {previousIds.length > 0 && (
           <div className="glass-panel" style={{ overflow: 'hidden', marginBottom: '16px' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--c-border)' }}>
-              <p style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--c-text-2)' }}>ออเดอร์ก่อนหน้า</p>
+              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--c-text-2)' }}>ออเดอร์ก่อนหน้า</p>
             </div>
             {previousIds.map(id => {
               const order = orderStatuses.get(id)
@@ -432,10 +432,10 @@ function QROrderPage() {
               return (
                 <div key={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--c-border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--c-text-2)' }}>#{order?.dailyNumber ?? id}</span>
-                    {prevInfo && <span style={{ fontSize: '0.75rem', fontWeight: 600, color: prevInfo.color }}>{prevInfo.label}</span>}
+                    <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>#{order?.dailyNumber ?? id}</span>
+                    {prevInfo && <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: prevInfo.color }}>{prevInfo.label}</span>}
                   </div>
-                  {order && <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--c-text-2)' }}>฿{order.totalPrice.toLocaleString('th-TH')}</span>}
+                  {order && <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--c-text-2)' }}>฿{order.totalPrice.toLocaleString('th-TH')}</span>}
                 </div>
               )
             })}
@@ -444,9 +444,9 @@ function QROrderPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {linkActive && (
-            <button className="btn btn-primary btn-full" onClick={orderMore} style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)' }}>สั่งเพิ่ม</button>
+            <button className="btn btn-primary btn-full" onClick={orderMore} style={{ padding: '14px 20px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius)' }}>สั่งเพิ่ม</button>
           )}
-          {!info.done && <p style={{ textAlign: 'center', color: 'var(--c-text-3)', fontSize: '0.75rem' }}>อัปเดตอัตโนมัติทุก 5 วินาที</p>}
+          {!info.done && <p style={{ textAlign: 'center', color: 'var(--c-text-3)', fontSize: 'var(--text-xs)' }}>อัปเดตอัตโนมัติทุก 5 วินาที</p>}
         </div>
 
         <style>{`@keyframes pulse { 0%, 80%, 100% { transform: scale(0.8); opacity: 0.4; } 40% { transform: scale(1.2); opacity: 1; } }`}</style>
@@ -460,7 +460,7 @@ function QROrderPage() {
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '0 16px 120px', minHeight: '100dvh' }} className="fade-in">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 0 12px' }}>
           <button className="btn-icon btn-ghost" onClick={() => setPhase('ordering')} aria-label="กลับ">←</button>
-          <h1 style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em' }}>ตะกร้า</h1>
+          <h1 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.02em' }}>ตะกร้า</h1>
         </div>
         {cart.length > 0 && (
           <div className="glass-panel" style={{ padding: 12, marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -478,9 +478,9 @@ function QROrderPage() {
         {cart.length > 0 && (
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)', padding: '12px 16px env(safe-area-inset-bottom, 12px)', zIndex: 100, boxShadow: '0 -2px 12px oklch(0 0 0 / 0.08)' }}>
             <div style={{ maxWidth: '480px', margin: '0 auto' }}>
-              {error && <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px' }}>{error}</p>}
+              {error && <p style={{ color: 'var(--c-danger)', fontSize: 'var(--text-xs)', marginBottom: '8px' }}>{error}</p>}
               <button className="btn btn-primary btn-full" onClick={submitOrder} disabled={submitting || !customerName.trim()}
-                style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
+                style={{ padding: '14px 20px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
                 <span>{submitting ? 'กำลังส่งออเดอร์…' : 'ยืนยันสั่ง'}</span>
                 {!submitting && <span style={{ fontWeight: 700 }}>฿{totalPrice.toLocaleString('th-TH')}</span>}
               </button>
@@ -495,7 +495,7 @@ function QROrderPage() {
   if (menuLoading) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>กำลังโหลดเมนู…</p>
+        <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>กำลังโหลดเมนู…</p>
       </div>
     )
   }
@@ -505,7 +505,7 @@ function QROrderPage() {
       <div style={{ padding: '20px 0 12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.02em' }}>สั่งอาหาร</h1>
+            <h1 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.02em' }}>สั่งอาหาร</h1>
           </div>
           {sessionOrderIds.length > 0 && (
             <button className="btn btn-ghost btn-sm" onClick={() => setPhase('tracking')} style={{ marginTop: '4px' }}>
@@ -532,7 +532,7 @@ function QROrderPage() {
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)', padding: '12px 16px env(safe-area-inset-bottom, 12px)', zIndex: 100, boxShadow: '0 -2px 12px oklch(0 0 0 / 0.08)' }}>
           <div style={{ maxWidth: '480px', margin: '0 auto' }}>
             <button className="btn btn-primary btn-full" onClick={() => setPhase('cart')}
-              style={{ padding: '14px 20px', fontSize: '0.95rem', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
+              style={{ padding: '14px 20px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius)', justifyContent: 'space-between' }}>
               <span>ดูตะกร้า · {totalItems} รายการ</span>
               <span style={{ fontWeight: 700 }}>฿{totalPrice.toLocaleString('th-TH')}</span>
             </button>
@@ -547,7 +547,7 @@ export default function Page() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>กำลังโหลด…</p>
+        <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>กำลังโหลด…</p>
       </div>
     }>
       <QROrderPage />

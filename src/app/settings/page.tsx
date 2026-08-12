@@ -8,7 +8,7 @@ import ImageUploadField from '@/components/ImageUploadField'
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+    <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
       {children}
     </label>
   )
@@ -203,8 +203,8 @@ export default function SettingsPage() {
 
       {/* Shop name */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>ข้อมูลร้าน</h2>
-        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '16px' }}>ข้อมูลร้าน</h2>
+        <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
           ชื่อร้าน
         </label>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -225,17 +225,17 @@ export default function SettingsPage() {
           </button>
         </div>
         {shopNameMsg && (
-          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-success)' }}>{shopNameMsg}</p>
+          <p style={{ marginTop: '8px', fontSize: 'var(--text-xs)', color: 'var(--c-success)' }}>{shopNameMsg}</p>
         )}
       </div>
 
       {/* Change password */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>เปลี่ยนรหัสผ่าน</h2>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '16px' }}>เปลี่ยนรหัสผ่าน</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
               รหัสผ่านปัจจุบัน
             </label>
             <input
@@ -247,7 +247,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
               รหัสผ่านใหม่
             </label>
             <input
@@ -259,7 +259,7 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
               ยืนยันรหัสผ่านใหม่
             </label>
             <input
@@ -273,10 +273,10 @@ export default function SettingsPage() {
           </div>
 
           {passwordError && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--c-danger)' }}>{passwordError}</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-danger)' }}>{passwordError}</p>
           )}
           {passwordMsg && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--c-success)' }}>{passwordMsg}</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-success)' }}>{passwordMsg}</p>
           )}
 
           <button
@@ -291,7 +291,7 @@ export default function SettingsPage() {
 
       {/* Receipt & tax */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>ใบเสร็จ ภาษี และการชำระเงิน</h2>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>ใบเสร็จ ภาษี และการชำระเงิน</h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
           ใช้ตอนเก็บเงินและพิมพ์ใบเสร็จ ร้านที่ไม่ได้จด VAT ให้เลือก &quot;ไม่คิด VAT&quot;
         </p>
@@ -372,7 +372,7 @@ export default function SettingsPage() {
           </div>
 
           {billingMsg && (
-            <p style={{ fontSize: '0.82rem', color: billingMsg.startsWith('บันทึก') ? 'var(--c-success)' : 'var(--c-danger)' }}>
+            <p style={{ fontSize: 'var(--text-xs)', color: billingMsg.startsWith('บันทึก') ? 'var(--c-success)' : 'var(--c-danger)' }}>
               {billingMsg}
             </p>
           )}
@@ -384,7 +384,7 @@ export default function SettingsPage() {
 
       {/* QR Ordering */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>QR สั่งอาหาร</h2>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>QR สั่งอาหาร</h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
           สร้าง QR code สำหรับแต่ละโต๊ะ ให้ลูกค้าสแกนสั่งอาหารเอง
         </p>
@@ -404,12 +404,12 @@ export default function SettingsPage() {
 
       {/* Order data management */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>จัดการข้อมูลออเดอร์</h2>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>จัดการข้อมูลออเดอร์</h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
           ระบบเก็บข้อมูลออเดอร์ย้อนหลัง 7 วัน และลบข้อมูลที่เก่ากว่านั้นให้อัตโนมัติ
           หากต้องการเก็บถาวร ให้ Export CSV จากหน้าออเดอร์ก่อน
         </p>
-        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
+        <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 500, color: 'var(--c-text-2)', marginBottom: '6px' }}>
           ล้างออเดอร์ของวันที่
         </label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -431,16 +431,16 @@ export default function SettingsPage() {
           </button>
         </div>
         {clearMsg && (
-          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-success)' }}>{clearMsg}</p>
+          <p style={{ marginTop: '8px', fontSize: 'var(--text-xs)', color: 'var(--c-success)' }}>{clearMsg}</p>
         )}
         {clearError && (
-          <p style={{ marginTop: '8px', fontSize: '0.82rem', color: 'var(--c-danger)' }}>{clearError}</p>
+          <p style={{ marginTop: '8px', fontSize: 'var(--text-xs)', color: 'var(--c-danger)' }}>{clearError}</p>
         )}
       </div>
 
       {/* Kitchen Display */}
       <div className="glass-panel" style={{ padding: '20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '4px' }}>Kitchen Display</h2>
+        <h2 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: '4px' }}>Kitchen Display</h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)', marginBottom: '16px' }}>
           หน้าจอสำหรับครัว แสดงออเดอร์ที่กำลังรอและกำลังทำ
         </p>

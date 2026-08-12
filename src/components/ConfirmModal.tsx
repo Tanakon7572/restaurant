@@ -54,7 +54,7 @@ export default function ConfirmModal({
       >
         <h3
           style={{
-            fontSize: '1.15rem',
+            fontSize: 'var(--text-md)',
             fontWeight: 700,
             marginBottom: '8px',
             color: isDanger ? 'var(--c-danger)' : 'var(--c-text)',
@@ -66,7 +66,7 @@ export default function ConfirmModal({
         <p
           style={{
             color: 'var(--c-text-2)',
-            fontSize: '0.9rem',
+            fontSize: 'var(--text-sm)',
             lineHeight: 1.55,
             marginBottom: '24px',
           }}

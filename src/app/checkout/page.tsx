@@ -168,9 +168,9 @@ export default function CheckoutPage() {
         <div className="page-container fade-in">
           <div className="page-header"><h1 className="page-title">เก็บเงินแล้ว</h1></div>
           <div className="glass-panel" style={{ padding: '28px 20px', textAlign: 'center', marginBottom: '12px' }}>
-            <div style={{ fontSize: '2.4rem', lineHeight: 1, marginBottom: '10px' }}>✅</div>
+            <div style={{ fontSize: 'var(--text-3xl)', lineHeight: 1, marginBottom: '10px' }}>✅</div>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-3)' }}>ใบเสร็จ #{paidBill.id}</p>
-            <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--c-primary)', margin: '4px 0' }}>
+            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--c-primary)', margin: '4px 0' }}>
               ฿{money(paidBill.total)}
             </p>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-2)' }}>
@@ -198,7 +198,7 @@ export default function CheckoutPage() {
         <div className="page-container fade-in">
           <div className="page-header">
             <button className="btn btn-ghost btn-sm" onClick={() => setActiveKey(null)}>← กลับ</button>
-            <h1 className="page-title" style={{ fontSize: '1.1rem' }}>
+            <h1 className="page-title" style={{ fontSize: 'var(--text-base)' }}>
               {active.tableNumber ? `โต๊ะ ${active.tableNumber}` : `ออเดอร์ #${active.orders[0].dailyNumber ?? active.orders[0].id}`}
             </h1>
           </div>
@@ -391,7 +391,7 @@ export default function CheckoutPage() {
 
           <button
             className="btn btn-primary btn-full"
-            style={{ padding: '14px', fontSize: '1.05rem' }}
+            style={{ padding: '14px', fontSize: 'var(--text-base)' }}
             disabled={saving || cashShort || totals.total < 0}
             onClick={confirm}
           >

@@ -55,6 +55,22 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'ยกเลิก',
 }
 
+// Same tints as the order list and the kitchen. A status that looks blue on
+// one screen and amber on another is a status nobody trusts.
+const STATUS_TINT: Record<string, string> = {
+  awaiting:  's-billing',
+  pending:   's-seated',
+  preparing: 's-preparing',
+  completed: 's-free',
+  cancelled: '',
+}
+
+const LATE_AFTER_MIN = 20
+
+function minutesSince(iso: string) {
+  return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
+}
+
 const STATUS_FLOW: Record<string, string[]> = {
   awaiting:  [],
   pending:   ['preparing', 'cancelled'],
@@ -333,7 +349,7 @@ export default function OrderDetailPage() {
           style={{ width: '100%', padding: '10px 12px', marginBottom: '16px' }}
         />
 
-        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
+        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
           รายการปัจจุบัน
         </p>
         <div style={{ marginBottom: '16px' }}>
@@ -346,7 +362,7 @@ export default function OrderDetailPage() {
           />
         </div>
 
-        <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
+        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--c-text-2)', marginBottom: '8px' }}>
           เพิ่มรายการ
         </p>
         <MenuBrowser categories={categories} onSelect={openEditItem} emptyText="ยังไม่มีเมนู" />
@@ -374,7 +390,7 @@ export default function OrderDetailPage() {
           }}
         >
           {saveError && (
-            <p style={{ color: 'var(--c-danger)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>{saveError}</p>
+            <p style={{ color: 'var(--c-danger)', fontSize: 'var(--text-xs)', marginBottom: '8px', textAlign: 'center' }}>{saveError}</p>
           )}
           <button
             className="btn btn-primary btn-full"
@@ -382,7 +398,7 @@ export default function OrderDetailPage() {
             disabled={saving || editLines.length === 0}
             style={{
               padding: '14px 20px',
-              fontSize: '0.95rem',
+              fontSize: 'var(--text-sm)',
               borderRadius: 'var(--radius)',
               justifyContent: 'space-between',
             }}
@@ -435,15 +451,38 @@ export default function OrderDetailPage() {
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => router.push('/orders')}
-            style={{ width: '34px', height: '34px', padding: 0, fontSize: '1.1rem' }}
+            style={{ width: '34px', height: '34px', padding: 0, fontSize: 'var(--text-base)' }}
             aria-label="กลับ"
           >
             ←
           </button>
           <h1 className="page-title">ออเดอร์ #{order.dailyNumber ?? order.id}</h1>
         </div>
-        <span className={`badge badge-${order.status}`}>{STATUS_LABELS[order.status]}</span>
       </div>
+
+      {/* Where this order stands, and how long it has stood there. On the
+          list these two are what staff scan for; opening one should not make
+          them hunt for the same two facts. */}
+      {(() => {
+        const open = order.status !== 'completed' && order.status !== 'cancelled'
+        const mins = minutesSince(order.createdAt)
+        const late = open && mins >= LATE_AFTER_MIN
+        return (
+          <div
+            className={`status-card ${late ? 's-late is-urgent' : STATUS_TINT[order.status] ?? ''}`}
+            style={{ marginBottom: '10px' }}
+          >
+            <div className="status-card-head">
+              <span className="status-card-title">{STATUS_LABELS[order.status]}</span>
+              {open && (
+                <span className={`status-elapsed${late ? ' is-late' : ''}`}>
+                  {mins} นาที
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Order meta */}
       <div className="glass-panel" style={{ padding: '16px', marginBottom: '10px' }}>
@@ -455,16 +494,16 @@ export default function OrderDetailPage() {
           }}
         >
           <div>
-            <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>โต๊ะ</p>
-            <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{order.tableNumber || '—'}</p>
+            <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginBottom: '3px' }}>โต๊ะ</p>
+            <p style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{order.tableNumber || '—'}</p>
           </div>
           <div>
-            <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>ชื่อลูกค้า</p>
-            <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{order.customerName || '—'}</p>
+            <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginBottom: '3px' }}>ชื่อลูกค้า</p>
+            <p style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{order.customerName || '—'}</p>
           </div>
           <div>
-            <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>เวลา</p>
-            <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+            <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginBottom: '3px' }}>เวลา</p>
+            <p style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>
               {new Date(order.createdAt).toLocaleString('th-TH', {
                 day: 'numeric',
                 month: 'short',
@@ -475,8 +514,8 @@ export default function OrderDetailPage() {
           </div>
           {order.note && (
             <div style={{ gridColumn: '1 / -1' }}>
-              <p style={{ color: 'var(--c-text-3)', fontSize: '0.75rem', marginBottom: '3px' }}>หมายเหตุ</p>
-              <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{order.note}</p>
+              <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginBottom: '3px' }}>หมายเหตุ</p>
+              <p style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{order.note}</p>
             </div>
           )}
         </div>
@@ -503,12 +542,12 @@ export default function OrderDetailPage() {
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontWeight: 500, fontSize: '0.9rem' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</p>
-              <p style={{ color: 'var(--c-text-3)', fontSize: '0.78rem', marginTop: '1px' }}>
+              <p style={{ fontWeight: 600, fontSize: 'var(--text-base)' }}>{item.itemName || item.menuItem?.name || '(ลบแล้ว)'}</p>
+              <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginTop: '1px' }}>
                 ฿{item.price.toLocaleString('th-TH')} × {item.quantity}
               </p>
               {item.options && item.options.length > 0 && (
-                <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: '0.78rem', color: 'var(--c-text-3)' }}>
+                <ul style={{ listStyle: 'none', margin: '3px 0 0', paddingLeft: 2, fontSize: 'var(--text-xs)', color: 'var(--c-text-3)' }}>
                   {item.options.map((o, i) => (
                     <li key={i}>• {o.choiceName}{o.unitPrice != null
                       ? ` ฿${o.unitPrice.toLocaleString('th-TH')}`
@@ -516,7 +555,7 @@ export default function OrderDetailPage() {
                   ))}
                 </ul>
               )}
-              {item.note && <p style={{ fontSize: '0.78rem', color: 'var(--c-text-3)', marginTop: 2 }}>📝 {item.note}</p>}
+              {item.note && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: 2 }}>📝 {item.note}</p>}
             </div>
             <span className="price-tag" style={{ flexShrink: 0 }}>
               ฿{(item.price * item.quantity).toLocaleString('th-TH')}
@@ -533,7 +572,7 @@ export default function OrderDetailPage() {
             background: 'var(--c-surface-2)',
           }}
         >
-          <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>รวม</span>
+          <span style={{ fontWeight: 700, fontSize: 'var(--text-sm)' }}>รวม</span>
           <span className="price-tag-lg">฿{order.totalPrice.toLocaleString('th-TH')}</span>
         </div>
       </div>

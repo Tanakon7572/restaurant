@@ -52,7 +52,7 @@ export default function MenuBrowser({ categories, onSelect, emptyText = 'ยั�
         </svg>
         <input className="input" placeholder="ค้นหาเมนู…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '36px' }} />
         {search && (
-          <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: '1.1rem', lineHeight: 1 }} aria-label="ล้างการค้นหา">×</button>
+          <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--c-text-3)', fontSize: 'var(--text-base)', lineHeight: 1 }} aria-label="ล้างการค้นหา">×</button>
         )}
       </div>
 

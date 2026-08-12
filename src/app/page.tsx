@@ -49,7 +49,7 @@ export default function LoginPage() {
         <div style={{ marginBottom: '32px' }}>
           <p
             style={{
-              fontSize: '0.72rem',
+              fontSize: 'var(--text-xs)',
               fontWeight: 600,
               color: 'var(--c-primary)',
               letterSpacing: '0.08em',
@@ -61,7 +61,7 @@ export default function LoginPage() {
           </p>
           <h1
             style={{
-              fontSize: '1.6rem',
+              fontSize: 'var(--text-xl)',
               fontWeight: 700,
               letterSpacing: '-0.03em',
               lineHeight: 1.2,
@@ -69,7 +69,7 @@ export default function LoginPage() {
           >
             Food Order
           </h1>
-          <p style={{ color: 'var(--c-text-2)', fontSize: '0.88rem', marginTop: '6px' }}>
+          <p style={{ color: 'var(--c-text-2)', fontSize: 'var(--text-sm)', marginTop: '6px' }}>
             ระบบจัดการออเดอร์
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
             htmlFor="password"
             style={{
               display: 'block',
-              fontSize: '0.8rem',
+              fontSize: 'var(--text-xs)',
               fontWeight: 500,
               color: 'var(--c-text-2)',
               marginBottom: '6px',
@@ -101,7 +101,7 @@ export default function LoginPage() {
             <p
               style={{
                 color: 'var(--c-danger)',
-                fontSize: '0.82rem',
+                fontSize: 'var(--text-xs)',
                 marginBottom: '14px',
               }}
             >
@@ -112,7 +112,7 @@ export default function LoginPage() {
             type="submit"
             className="btn btn-primary btn-full"
             disabled={loading || !password}
-            style={{ padding: '13px', fontSize: '0.95rem' }}
+            style={{ padding: '13px', fontSize: 'var(--text-sm)' }}
           >
             {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
           </button>

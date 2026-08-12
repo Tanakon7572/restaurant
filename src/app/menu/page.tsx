@@ -87,7 +87,7 @@ function ItemImage({ imageUrl, name, size = 48, cover = false }: { imageUrl?: st
       )
     }
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: '1.8rem' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-primary)', fontWeight: 700, fontSize: 'var(--text-xl)' }}>
         {name.charAt(0)}
       </div>
     )
@@ -534,7 +534,7 @@ export default function MenuPage() {
                   placeholder="ชื่อเมนู"
                 />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-                  <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+                  <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>฿</span>
                   <input
                     className="input"
                     type="number"
@@ -595,7 +595,7 @@ export default function MenuPage() {
                     position: 'absolute', top: 6, right: 6, zIndex: 2,
                     width: 22, height: 22, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.8rem', fontWeight: 700,
+                    fontSize: 'var(--text-xs)', fontWeight: 700,
                     background: selectedIds.includes(item.id) ? 'var(--c-primary)' : 'var(--c-surface)',
                     color: selectedIds.includes(item.id) ? 'var(--c-on-primary)' : 'var(--c-text-3)',
                     border: '1px solid var(--c-border)',
@@ -605,7 +605,7 @@ export default function MenuPage() {
                 </span>
               )}
               {!item.available && (
-                <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 2, background: 'var(--c-danger)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
+                <span style={{ position: 'absolute', top: 6, left: 6, zIndex: 2, background: 'var(--c-danger)', color: '#fff', fontSize: 'var(--text-xs)', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>
                   หมด
                 </span>
               )}
@@ -614,13 +614,13 @@ export default function MenuPage() {
               </div>
               <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: 0 }}>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: item.available ? 'none' : 'line-through', color: item.available ? 'inherit' : 'var(--c-text-3)' }}>
+                  <p style={{ fontWeight: 500, fontSize: 'var(--text-xs)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', lineHeight: 1.3, textDecoration: item.available ? 'none' : 'line-through', color: item.available ? 'inherit' : 'var(--c-text-3)' }}>
                     {item.name}
                   </p>
-                  <p className="price-tag" style={{ fontSize: '0.95rem', marginTop: '2px', textDecoration: item.available ? 'none' : 'line-through' }}>
+                  <p className="price-tag" style={{ fontSize: 'var(--text-sm)', marginTop: '2px', textDecoration: item.available ? 'none' : 'line-through' }}>
                     ฿{item.price.toLocaleString('th-TH')}
                     {!!item.setDiscount && item.setDiscount > 0 && (
-                      <span style={{ fontSize: '0.72rem', color: 'var(--c-text-3)', textDecoration: 'line-through', marginLeft: 5, fontWeight: 400 }}>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', textDecoration: 'line-through', marginLeft: 5, fontWeight: 400 }}>
                         ฿{(item.price + item.setDiscount).toLocaleString('th-TH')}
                       </span>
                     )}
@@ -628,7 +628,7 @@ export default function MenuPage() {
                   {/* Sets show what they contain — the customer-facing name is
                       generated from it, so staff can check it at a glance. */}
                   {item.isSet && item.setComponents && item.setComponents.length > 0 && (
-                    <p style={{ fontSize: '0.68rem', color: 'var(--c-text-3)', marginTop: '3px', lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '3px', lineHeight: 1.4 }}>
                       🎁 {setDisplayName(
                         item.setComponents.map(c => ({ name: c.item.name, price: c.item.price, quantity: c.quantity })),
                         item.name,
@@ -641,7 +641,7 @@ export default function MenuPage() {
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => toggleAvailable(item)}
-                      style={{ fontSize: '0.7rem', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
+                      style={{ fontSize: 'var(--text-xs)', color: item.available ? 'var(--c-success)' : 'var(--c-danger)', padding: '3px 8px' }}
                     >
                       {item.available ? 'มีของ' : 'หมด'}
                     </button>
@@ -653,13 +653,13 @@ export default function MenuPage() {
                       onClick={() => (setCat || item.isSet)
                         ? openSetEditor(item)
                         : (() => { setEditingItem(item.id); setEditItemName(item.name); setEditItemPrice(String(item.price)); setEditItemImageUrl(item.imageUrl || ''); setEditItemCategoryId(item.categoryId) })()}
-                      style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                      style={{ fontSize: 'var(--text-xs)', padding: '3px 8px' }}
                     >
                       แก้ไข
                     </button>
                     <button
                       className="btn btn-ghost btn-sm"
-                      style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
+                      style={{ fontSize: 'var(--text-xs)', color: 'var(--c-danger)', padding: '3px 8px' }}
                       onClick={() => setDeleteTarget({ type: 'item', id: item.id, name: item.name })}
                     >
                       ลบ
@@ -687,7 +687,7 @@ export default function MenuPage() {
             autoFocus
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-            <span style={{ color: 'var(--c-text-3)', fontSize: '0.9rem' }}>฿</span>
+            <span style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>฿</span>
             <input
               className="input"
               type="number"
@@ -929,14 +929,14 @@ export default function MenuPage() {
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button
                           className="btn btn-ghost btn-sm"
-                          style={{ fontSize: '0.7rem', padding: '3px 8px' }}
+                          style={{ fontSize: 'var(--text-xs)', padding: '3px 8px' }}
                           onClick={() => { setEditingCat(sub.id); setEditCatName(sub.name) }}
                         >
                           แก้ไข
                         </button>
                         <button
                           className="btn btn-ghost btn-sm"
-                          style={{ fontSize: '0.7rem', color: 'var(--c-danger)', padding: '3px 8px' }}
+                          style={{ fontSize: 'var(--text-xs)', color: 'var(--c-danger)', padding: '3px 8px' }}
                           onClick={() => setDeleteTarget({ type: 'category', id: sub.id, name: sub.name })}
                         >
                           ลบ
@@ -980,7 +980,7 @@ export default function MenuPage() {
 
       {categories.length === 0 && (
         <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--c-text-3)', fontSize: '0.88rem' }}>
+          <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-sm)' }}>
             ยังไม่มีหมวดหมู่ เพิ่มหมวดหมู่แรกด้านบน
           </p>
         </div>

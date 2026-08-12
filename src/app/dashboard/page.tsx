@@ -48,11 +48,11 @@ function getShortDate(date: Date) {
 function StatCard({ label, value, color, sub }: { label: string; value: number | string; color?: string; sub?: string }) {
   return (
     <div className="glass-panel" style={{ padding: '14px 12px', textAlign: 'center' }}>
-      <p style={{ fontSize: '1.55rem', fontWeight: 700, color: color ?? 'var(--c-text)', letterSpacing: '-0.025em', lineHeight: 1 }}>
+      <p style={{ fontFamily: 'var(--font-num)', fontSize: 'var(--text-xl)', fontWeight: 700, color: color ?? 'var(--c-text)', letterSpacing: '-0.025em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
         {value}
       </p>
       <p style={{ color: 'var(--c-text-3)', fontSize: 'var(--text-xs)', marginTop: '5px' }}>{label}</p>
-      {sub && <p style={{ color: 'var(--c-text-4)', fontSize: '0.62rem', marginTop: '2px' }}>{sub}</p>}
+      {sub && <p style={{ color: 'var(--c-text-4)', fontSize: 'var(--text-xs)', marginTop: '2px' }}>{sub}</p>}
     </div>
   )
 }
@@ -203,7 +203,7 @@ export default function DashboardPage() {
         <p style={{ color: 'oklch(1 0 0 / 0.85)', fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '6px' }}>
           รายได้{period === 'today' ? 'วันนี้' : ` ${periodConfig.days} วัน`}
         </p>
-        <p style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, letterSpacing: '-0.035em', color: 'var(--c-on-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+        <p style={{ fontFamily: 'var(--font-num)', fontSize: 'var(--text-3xl)', fontWeight: 700, letterSpacing: '-0.035em', color: 'var(--c-on-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
           ฿{stats.revenue.toLocaleString('th-TH')}
         </p>
         {stats.avgOrder > 0 && (
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                   title={`฿${d.revenue.toLocaleString('th-TH')}`}
                 />
                 {period !== '30d' && (
-                  <span style={{ fontSize: '0.62rem', color: isToday ? 'var(--c-primary)' : 'var(--c-text-3)', fontWeight: isToday ? 700 : 400, lineHeight: 1 }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: isToday ? 'var(--c-primary)' : 'var(--c-text-3)', fontWeight: isToday ? 700 : 400, lineHeight: 1 }}>
                     {d.label}
                   </span>
                 )}
