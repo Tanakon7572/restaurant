@@ -23,5 +23,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Its own launcher entry on purpose. When a receipt does not come
+            out, staff need this before they can get back to selling, and
+            burying it behind the POS's own menus means walking past the
+            broken screen to reach the fix.
+        -->
+        <activity
+            android:name=".PrinterSettingsActivity"
+            android:exported="true"
+            android:label="@string/printer_settings"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

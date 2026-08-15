@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The POS's own primary token, oklch(0.705 0.190 42), as sRGB. -->
-    <color name="brand_primary">#FD6E2D</color>
+    <!--
+        The POS's own primary token. The earlier orange was 4.03:1 on white,
+        which failed AA for the button labels sitting on it.
+    -->
+    <color name="brand_primary">#C13F0C</color>
 </resources>

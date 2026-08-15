@@ -156,6 +156,60 @@ print dialog on its own (`src/lib/printBridge.ts`). Nothing in the page needs
 to know which device it is on — which is also how you test the web changes in
 desktop Chrome.
 
+### What the bridge answers
+
+All three methods return promptly and never touch the UI thread; calls are
+serialised through one worker, because two slips entering the printer's
+transaction buffer at once come out interleaved.
+
+| method | returns |
+|---|---|
+| `print(job)` | `"ok"`, or the status JSON below when the slip did not print |
+| `status()` | that JSON always, without printing |
+| `paperWidthMm()` | `58`, `80`, or `0` when unknown |
+
+```json
+{ "code": 3, "name": "OUT_OF_PAPER", "label": "กระดาษหมด — ใส่ม้วนใหม่แล้วกดพิมพ์ซ้ำ", "canPrint": false }
+```
+
+Success is the bare `"ok"` older web builds already understand, because a
+handheld is updated by whoever is holding it and the server by whoever
+deploys: the two are never in step. Answering JSON on success would read as a
+refusal to a page whose slip had just printed, and raise a print dialog over
+the sale.
+
+`canPrint: true` means the paper came out. The state is read before printing
+and again after the buffer is committed, because Sunmi's callback confirms
+that the command was *accepted*, not that it printed — and those diverge
+exactly when the roll runs out mid-slip. Codes come from `updatePrinterState()`
+and are named in `PrinterStatus.kt`; `-1` is ours, for a device set to not
+print. On any non-printing outcome the device raises a toast naming the cause,
+so the fix is visible without leaving the checkout screen.
+
+Older APKs answered the bare strings `ok` / `no-printer` / `error`, and the
+first one returned nothing at all. `printBridge.ts` still understands both,
+since field devices update on the shop's schedule.
+
+## Per-device printer settings
+
+A second launcher entry, **ตั้งค่าเครื่องพิมพ์**
+(`PrinterSettingsActivity`), holds what belongs to the handheld rather than to
+the shop: whether it prints at all, and the paper width — automatic, or pinned
+to 58/80 for a head that reports the wrong roll after a paper-holder swap.
+Both live in `SharedPreferences`, so two handhelds on one till can differ.
+
+The V3 MIX is a single unit — till and 58mm head in one body — so there is no
+second printer to route to. The switch is on/off, for a shop running two
+handhelds where one only takes orders on the floor.
+
+Automatic is the default and wins over `receiptWidth` in the shop settings,
+which stays the fallback for when the head cannot be read.
+
+It has its own icon on purpose: when a receipt does not come out, this is the
+screen staff need, and burying it inside the POS means walking back through
+the broken screen to reach the fix. It shows the head's model and serial, the
+live status, and prints a test slip with Thai tone marks and a totals row.
+
 ## Adding a command kind
 
 1. Add it to the `PrintCmd` union in `src/lib/printJob.ts` (web).

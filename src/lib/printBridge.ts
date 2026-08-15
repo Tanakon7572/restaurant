@@ -13,10 +13,30 @@
 import { printSlip } from './print'
 import type { PrintJob } from './printJob'
 
-// The wrapper answers 'ok' | 'no-printer' | 'error'. Older builds of the APK
-// return undefined, which is treated as success — they had no way to report a
-// failure, so assuming one would cry wolf on every sale.
+// The wrapper answers a JSON status: {code, name, label, canPrint}. `canPrint`
+// means the slip came out.
+//
+// Two older shapes still have to be understood, because an APK in the field
+// updates on the shop's schedule and not ours: builds that answered the bare
+// string 'ok' | 'no-printer' | 'error', and the first build, which returned
+// undefined because it had no way to report a failure at all. Undefined is
+// read as success — assuming failure there would cry wolf on every sale.
 type NativePrinter = { print(job: string): string | void }
+
+function nativeSucceeded(result: string | void): boolean {
+  if (result === undefined || result === 'ok') return true
+  try {
+    const status = JSON.parse(result) as { canPrint?: boolean; label?: string }
+    if (status.canPrint) return true
+    // The device raises its own alert naming the cause; logging keeps it in
+    // remote console traces too.
+    console.warn('printer refused the slip:', status.label ?? result)
+    return false
+  } catch {
+    console.warn('printer refused the slip:', result)
+    return false
+  }
+}
 
 declare global {
   interface Window {
@@ -38,9 +58,7 @@ export type PrintOutcome = 'native' | 'dialog'
 export function printSlipJob(job: PrintJob, html: () => string): PrintOutcome {
   if (hasNativePrinter()) {
     try {
-      const result = window.SunmiPrinter!.print(JSON.stringify(job))
-      if (result === undefined || result === 'ok') return 'native'
-      console.warn('native printer refused the slip:', result)
+      if (nativeSucceeded(window.SunmiPrinter!.print(JSON.stringify(job)))) return 'native'
     } catch (err) {
       // A dead printer service must not cost the cashier the slip: fall through
       // to the dialog rather than swallowing the print.

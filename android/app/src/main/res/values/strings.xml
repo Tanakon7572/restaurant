@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Food Order POS</string>
+    <string name="printer_settings">ตั้งค่าเครื่องพิมพ์</string>
 </resources>
