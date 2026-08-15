@@ -4,6 +4,23 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!--
+        Android 11 hides other packages from us unless they are named here,
+        and the printer lives in one: the Sunmi service is a separate app.
+        Without this the library's own lookup comes back empty, it decides
+        "printer service does not exist", and the handheld reports no printer
+        while Sunmi's own test app prints perfectly.
+
+        The library targets SDK 26 and so declares nothing itself — this has
+        to be in the app manifest.
+    -->
+    <queries>
+        <package android:name="woyou.aidlservice.jiuiv5" />
+        <intent>
+            <action android:name="woyou.aidlservice.jiuiv5.IWoyouService" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
