@@ -36,30 +36,54 @@ class PrinterBridge(private val context: Context) {
     private val worker = Executors.newSingleThreadExecutor()
     private val prefs = PrinterPrefs(context)
 
+    /**
+     * Why there is no usable service, in words, for the settings screen.
+     *
+     * Without this a device that cannot print looks identical to one that has
+     * not finished binding yet, and the only way to tell them apart is a USB
+     * cable and logcat — which is not available to the shop.
+     */
+    @Volatile
+    var lastIssue: String = "ยังไม่ได้เชื่อมต่อเครื่องพิมพ์"
+        private set
+
+    /** Called once the service is usable, so a screen can stop saying "checking". */
+    @Volatile
+    var onReady: (() -> Unit)? = null
+
     private val callback = object : InnerPrinterCallback() {
         override fun onConnected(s: SunmiPrinterService) {
-            // A device with no head binds the service anyway, so ask before
-            // treating it as a printer we can send slips to.
-            val present = runCatching {
-                InnerPrinterManager.getInstance().hasPrinter(s)
-            }.getOrDefault(true)
-            if (!present) {
-                Log.w(TAG, "service bound but this device reports no printer")
-                return
-            }
             service = s
+            // Asked for the record only. Gating on it was wrong: some devices
+            // answer false with a working head, and the slip was then refused
+            // for the rest of the session with no way to see why.
+            runCatching { InnerPrinterManager.getInstance().hasPrinter(s) }
+                .onSuccess { if (!it) Log.w(TAG, "bound, but hasPrinter() says no head") }
+                .onFailure { Log.w(TAG, "hasPrinter() failed", it) }
+
             runCatching { s.printerInit(null) }
                 .onFailure { Log.e(TAG, "printerInit failed", it) }
+            lastIssue = ""
+            onReady?.invoke()
         }
 
         override fun onDisconnected() {
             service = null
+            lastIssue = "เครื่องพิมพ์ถูกตัดการเชื่อมต่อ"
         }
     }
 
     fun connect() {
         runCatching { InnerPrinterManager.getInstance().bindService(context, callback) }
-            .onFailure { Log.e(TAG, "printer bind failed", it) }
+            .onSuccess { bound ->
+                // bindService answers false when the printer service is not
+                // installed at all — an emulator, or a non-Sunmi tablet.
+                if (bound == false) lastIssue = "อุปกรณ์นี้ไม่มีบริการเครื่องพิมพ์ของ Sunmi ติดตั้งอยู่"
+            }
+            .onFailure {
+                Log.e(TAG, "printer bind failed", it)
+                lastIssue = "เชื่อมต่อบริการเครื่องพิมพ์ไม่ได้: ${it.javaClass.simpleName}"
+            }
     }
 
     fun disconnect() {
@@ -280,9 +304,12 @@ class PrinterBridge(private val context: Context) {
         const val QR_ERROR_LEVEL = 2
         // Long enough to cover a cold start, short enough that a genuinely
         // absent printer does not hold up the screen.
-        const val BIND_WAIT_MS = 2000
+        // A cold start on a busy handheld can take several seconds to bind.
+        // Two was tuned against a warm app and reported "no printer" on the
+        // first screen after install.
+        const val BIND_WAIT_MS = 6000
         const val BIND_STEP_MS = 100
-        const val STATUS_TIMEOUT_MS = 3000L
+        const val STATUS_TIMEOUT_MS = 8000L
         const val PRINT_TIMEOUT_MS = 20000L
         // A 58mm receipt is well under this; past it the head is not coming back.
         const val PRINT_RESULT_WAIT_MS = 8000L

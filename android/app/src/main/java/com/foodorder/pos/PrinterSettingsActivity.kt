@@ -36,6 +36,9 @@ class PrinterSettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         prefs = PrinterPrefs(this)
         printer = PrinterBridge(this)
+        // Binding finishes on its own schedule; without this the screen shows
+        // whatever was true two seconds after it opened, forever.
+        printer.onReady = { runOnUiThread { refresh() } }
         printer.connect()
 
         val root = LinearLayout(this).apply {
@@ -120,10 +123,15 @@ class PrinterSettingsActivity : AppCompatActivity() {
             val detectedMm = printer.detectedPaperMm()
             val state = JSONObject(printer.status())
 
+            val issue = printer.lastIssue
             val device = when {
                 model.isNotBlank() && serial.isNotBlank() -> "$model · S/N $serial"
                 model.isNotBlank() -> model
-                else -> "ไม่พบเครื่องพิมพ์ในตัว"
+                // Naming the obstacle beats repeating that there isn't one:
+                // a service that never bound and a head that will not answer
+                // need different things done about them.
+                issue.isNotBlank() -> "ยังใช้เครื่องพิมพ์ไม่ได้\n$issue"
+                else -> "เชื่อมต่อแล้ว แต่เครื่องพิมพ์ไม่ตอบรุ่นและหมายเลข"
             }
             val paper = when {
                 prefs.paper != PrinterPrefs.Paper.AUTO ->
