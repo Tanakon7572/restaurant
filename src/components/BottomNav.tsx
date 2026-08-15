@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useIncomingOrders } from '@/lib/useIncomingOrders'
 
 function IconDashboard() {
   return (
@@ -113,7 +114,7 @@ function IconMoreDots() {
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const [pendingCount, setPendingCount] = useState(0)
+  const pendingCount = useIncomingOrders()
   const [moreOpen, setMoreOpen] = useState(false)
 
   // Prefetch all nav pages upfront so navigation feels instant
@@ -127,18 +128,6 @@ export default function BottomNav() {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [moreOpen])
-
-  useEffect(() => {
-    function fetchPending() {
-      fetch('/api/orders?status=pending')
-        .then(r => r.ok ? r.json() : [])
-        .then(data => Array.isArray(data) ? setPendingCount(data.length) : null)
-        .catch(() => {})
-    }
-    fetchPending()
-    const id = setInterval(fetchPending, 30_000)
-    return () => clearInterval(id)
-  }, [])
 
   return (
     <nav
@@ -229,7 +218,7 @@ export default function BottomNav() {
                     border: '2px solid var(--c-surface)',
                     lineHeight: 1,
                   }}
-                  aria-label={`${pendingCount} ออเดอร์รอรับ`}
+                  aria-label={`${pendingCount} คำขอจากลูกค้ารอยืนยัน`}
                 >
                   {pendingCount > 9 ? '9+' : pendingCount}
                 </span>

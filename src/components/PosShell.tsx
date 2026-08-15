@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import BottomNav from './BottomNav'
+import { useIncomingOrders } from '@/lib/useIncomingOrders'
 
 function IconGrid() {
   return (
@@ -112,7 +113,7 @@ function IconMore() {
 export default function PosShell({ children, cart }: { children: React.ReactNode; cart?: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [pendingCount, setPendingCount] = useState(0)
+  const pendingCount = useIncomingOrders()
   const [moreOpen, setMoreOpen] = useState(false)
 
   // The menu closes from its own item handler on navigation; Escape and an
@@ -131,18 +132,6 @@ export default function PosShell({ children, cart }: { children: React.ReactNode
       document.removeEventListener('mousedown', onDown)
     }
   }, [moreOpen])
-
-  useEffect(() => {
-    function fetchPending() {
-      fetch('/api/orders?status=pending')
-        .then(r => (r.ok ? r.json() : []))
-        .then(data => (Array.isArray(data) ? setPendingCount(data.length) : null))
-        .catch(() => {})
-    }
-    fetchPending()
-    const id = setInterval(fetchPending, 30_000)
-    return () => clearInterval(id)
-  }, [])
 
   return (
     <div className="pos-shell">

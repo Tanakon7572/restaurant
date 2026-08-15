@@ -1,11 +1,46 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ShopHeader from '@/components/ShopHeader'
 import ConfirmModal from '@/components/ConfirmModal'
 import ImageUploadField from '@/components/ImageUploadField'
+import { chimeMuted, setChimeMuted, playChime, subscribeChimeMuted } from '@/lib/useIncomingOrders'
+
+/**
+ * Kept on the device rather than in the shop's settings row: the handheld in
+ * a pocket at the back should be able to ring while the one on the counter
+ * beside the customers stays quiet.
+ */
+function ChimeToggle() {
+  // Reads false on the server, where localStorage does not exist, then the
+  // real value once mounted.
+  const muted = useSyncExternalStore(subscribeChimeMuted, chimeMuted, () => false)
+
+  return (
+    <div>
+      <Label>เสียงเตือนออเดอร์จากลูกค้า</Label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={!muted}
+            onChange={e => setChimeMuted(!e.target.checked)}
+            style={{ width: 20, height: 20, accentColor: 'var(--c-primary)' }}
+          />
+          <span style={{ fontSize: 'var(--text-md)' }}>เปิดเสียงเมื่อมีคำขอใหม่</span>
+        </label>
+        <button type="button" className="btn btn-ghost" onClick={playChime} disabled={muted}>
+          ลองฟังเสียง
+        </button>
+      </div>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-3)', marginTop: '6px' }}>
+        ตั้งแยกในแต่ละเครื่อง เครื่องนี้เท่านั้น
+      </p>
+    </div>
+  )
+}
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -346,6 +381,8 @@ export default function SettingsPage() {
                 : 'บันทึกรูป QR จากแอปธนาคารของร้าน ลูกค้าต้องกรอกยอดเองเพราะรูปไม่มียอดฝังอยู่'}
             />
           </div>
+
+          <ChimeToggle />
 
           <div>
             <Label>ขนาดกระดาษใบเสร็จ</Label>
