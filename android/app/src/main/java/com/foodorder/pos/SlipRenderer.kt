@@ -1,11 +1,16 @@
 package com.foodorder.pos
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Typeface
+import android.util.Base64
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -26,6 +31,26 @@ object SlipRenderer {
     private const val LINE_GAP = 2f
     private const val QTY_COL = 44f
     private const val INDENT = 16f
+
+    /**
+     * Decoded logos, kept between passes and between slips.
+     *
+     * `run()` walks the commands twice — once to measure, once to draw — and
+     * decoding the same PNG each time would double the work on every slip for
+     * an image that changes about once a year.
+     */
+    private val logoCache = object : LinkedHashMap<String, Bitmap?>(4, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap?>) = size > 3
+    }
+
+    private fun decodeImage(b64: String): Bitmap? = synchronized(logoCache) {
+        logoCache.getOrPut(b64) {
+            runCatching {
+                val bytes = Base64.decode(b64, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }.onFailure { Log.w("SlipRenderer", "logo decode failed", it) }.getOrNull()
+        }
+    }
 
     private fun sizePx(size: String?): Float = when (size) {
         "sm" -> 20f
@@ -133,6 +158,25 @@ object SlipRenderer {
                         canvas.drawLine(PAD, y, PAD + content, y, p)
                     }
                     y += 8f
+                }
+                "image" -> {
+                    val bmp = decodeImage(c.optString("data"))
+                    if (bmp != null && bmp.width > 0) {
+                        // Never enlarged: the web side already sized it in
+                        // printer dots, and scaling a one-bit image up turns
+                        // clean edges into staircases.
+                        val w = minOf(bmp.width, content.toInt())
+                        val h = bmp.height * w / bmp.width
+                        y += 4f
+                        val left = PAD + (content - w) / 2f
+                        canvas?.drawBitmap(
+                            bmp,
+                            Rect(0, 0, bmp.width, bmp.height),
+                            RectF(left, y, left + w, y + h),
+                            null,
+                        )
+                        y += h + 6f
+                    }
                 }
                 // 'qr' and 'feed' are the printer's own commands, not drawn here.
             }

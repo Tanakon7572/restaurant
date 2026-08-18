@@ -9,6 +9,7 @@ import EmptyState from '@/components/EmptyState'
 import { computeBill, changeFor, round2, PAYMENT_METHODS, METHOD_LABELS, type PaymentMethod } from '@/lib/billing'
 import { promptPayPayload } from '@/lib/promptpay'
 import { DEFAULT_SHOP_SETTINGS, type ShopSettings } from '@/lib/shopSettings'
+import { usePrintLogo } from '@/lib/usePrintLogo'
 import { printSlipJob, hasNativePrinter, type PrintOutcome } from '@/lib/printBridge'
 import { receiptJob } from '@/lib/printJob'
 import { receiptHtml, type SlipBill, type SlipOrder } from '@/lib/receipt'
@@ -64,6 +65,7 @@ export default function CheckoutPage() {
   // Null until a slip has been attempted for this bill. 'dialog' on the
   // handheld means the head refused it and the browser dialog stood in.
   const [printedVia, setPrintedVia] = useState<PrintOutcome | null>(null)
+  const printLogo = usePrintLogo(settings.logoUrl, settings.receiptWidth)
 
   const load = useCallback(() => {
     fetch('/api/bills/open')
@@ -128,7 +130,7 @@ export default function CheckoutPage() {
       ? promptPayPayload(settings.promptPayId, bill.total)
       : null
     setPrintedVia(printSlipJob(
-      receiptJob(bill, settings, payload),
+      receiptJob(bill, settings, payload, printLogo),
       () => {
         const qrSvg = bill.method === 'promptpay'
           ? document.querySelector('#promptpay-qr svg')?.outerHTML ?? null

@@ -195,6 +195,10 @@ model AppSettings {
   receiptFooter     String?
   // Thermal paper width in mm: 58 or 80.
   receiptWidth      Int     @default(58)
+  // The shop's mark, printed at the head of every slip and set into the
+  // middle of the payment QR. Plain artwork reproduces best: the head prints
+  // black or nothing, so photographs and gradients come out as mud.
+  logoUrl           String?
 }
 
 model OptionGroup {

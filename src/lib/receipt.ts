@@ -28,6 +28,15 @@ function moneyRow(label: string, value: number, cls = ''): string {
 }
 
 /**
+ * The shop's mark above the name. Sized in millimetres because this markup is
+ * bound for a paper width, not a screen, and printed at full contrast so the
+ * browser's dialog does not helpfully lighten it.
+ */
+function logoBlock(url: string): string {
+  return url ? `<img class="logo" src="${escapeHtml(url)}" alt="">` : ''
+}
+
+/**
  * Customer receipt. `qrSvg` is the already-rendered PromptPay QR markup —
  * passed in rather than generated here so this module stays free of React and
  * printing works with no network.
@@ -42,6 +51,7 @@ export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: stri
 
   return `
     <div class="c">
+      ${logoBlock(settings.logoUrl)}
       <div class="lg b">${escapeHtml(settings.shopName)}</div>
       ${settings.receiptHeader
         ? `<div>${escapeHtml(settings.receiptHeader).replace(/\n/g, '<br>')}</div>` : ''}
@@ -80,9 +90,10 @@ export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: stri
  * Kitchen ticket: no prices at all, big order number, options and notes shown
  * in full. What the line cook needs and nothing else.
  */
-export function kitchenTicketHtml(order: SlipOrder, shopName: string): string {
+export function kitchenTicketHtml(order: SlipOrder, shopName: string, logoUrl = ''): string {
   return `
     <div class="c">
+      ${logoBlock(logoUrl)}
       <div class="b">${escapeHtml(shopName)}</div>
       <div class="xl b">ออเดอร์ #${order.dailyNumber ?? order.id}</div>
       ${order.tableNumber ? `<div class="lg b">โต๊ะ ${escapeHtml(order.tableNumber)}</div>` : ''}

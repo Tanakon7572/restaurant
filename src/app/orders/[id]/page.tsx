@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePrintLogo } from '@/lib/usePrintLogo'
 import { useRouter, useParams } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -101,6 +102,8 @@ export default function OrderDetailPage() {
   // failed settings fetch never blocks printing.
   const [shopName, setShopName] = useState('ร้านอาหาร')
   const [receiptWidth, setReceiptWidth] = useState(58)
+  const [logoUrl, setLogoUrl] = useState('')
+  const printLogo = usePrintLogo(logoUrl, receiptWidth)
   const router = useRouter()
   const params = useParams()
 
@@ -110,6 +113,7 @@ export default function OrderDetailPage() {
       .then(d => {
         if (d?.shopName) setShopName(d.shopName)
         if (d?.receiptWidth) setReceiptWidth(d.receiptWidth)
+        if (d?.logoUrl) setLogoUrl(d.logoUrl)
       })
       .catch(() => {})
     // Loaded up front, not when editing starts: reopening a line resolves
@@ -438,8 +442,8 @@ export default function OrderDetailPage() {
       })),
     }
     printSlipJob(
-      kitchenTicketJob(slip, shopName, receiptWidth),
-      () => kitchenTicketHtml(slip, shopName),
+      kitchenTicketJob(slip, shopName, receiptWidth, printLogo),
+      () => kitchenTicketHtml(slip, shopName, logoUrl),
     )
   }
 

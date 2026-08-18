@@ -79,6 +79,7 @@ export default function SettingsPage() {
   const [billing, setBilling] = useState({
     vatMode: 'none', vatRate: '7', serviceChargeRate: '0',
     promptPayId: '', paymentQrUrl: '', receiptHeader: '', receiptFooter: '', receiptWidth: '58',
+    logoUrl: '',
   })
   const [billingSaving, setBillingSaving] = useState(false)
   const [billingMsg, setBillingMsg] = useState('')
@@ -104,6 +105,7 @@ export default function SettingsPage() {
           receiptHeader: data.receiptHeader ?? '',
           receiptFooter: data.receiptFooter ?? '',
           receiptWidth: String(data.receiptWidth ?? 58),
+          logoUrl: data.logoUrl ?? '',
         })
       })
       .finally(() => setLoading(false))
@@ -125,6 +127,7 @@ export default function SettingsPage() {
           receiptHeader: billing.receiptHeader,
           receiptFooter: billing.receiptFooter,
           receiptWidth: Number(billing.receiptWidth),
+          logoUrl: billing.logoUrl,
         }),
       })
       const data = await res.json()
@@ -379,6 +382,16 @@ export default function SettingsPage() {
               hint={billing.promptPayId.trim()
                 ? 'ตอนนี้ใช้พร้อมเพย์อยู่ รูปนี้จะถูกใช้ก็ต่อเมื่อลบเบอร์พร้อมเพย์ออก'
                 : 'บันทึกรูป QR จากแอปธนาคารของร้าน ลูกค้าต้องกรอกยอดเองเพราะรูปไม่มียอดฝังอยู่'}
+            />
+          </div>
+
+          <div>
+            <Label>โลโก้ร้าน</Label>
+            <ImageUploadField
+              value={billing.logoUrl}
+              onChange={url => setBilling(b => ({ ...b, logoUrl: url }))}
+              label="อัปโหลดโลโก้"
+              hint="พิมพ์บนหัวใบเสร็จและใบออเดอร์ — หัวพิมพ์มีแค่ดำกับไม่ดำ ลายเส้นหนาชัดจะออกมาดี ส่วนภาพถ่ายหรือไล่เฉดจะเละ"
             />
           </div>
 

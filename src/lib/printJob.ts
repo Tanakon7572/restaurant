@@ -20,6 +20,9 @@ export type PrintCmd =
   | { kind: 'item'; qty: string; name: string; price: string; indent: boolean }
   | { kind: 'rule' }
   | { kind: 'qr'; data: string; caption?: string }
+  // Base64 PNG, already reduced to black and white and sized in printer
+  // dots by slipLogo.ts. Drawn into the surrounding text bitmap.
+  | { kind: 'image'; data: string }
   | { kind: 'feed'; lines: number }
 
 export type PrintJob = { widthMm: number; cmds: PrintCmd[] }
@@ -52,6 +55,7 @@ function itemCmds(items: SlipItem[], withPrice: boolean): PrintCmd[] {
  */
 export function receiptJob(
   bill: SlipBill, settings: ShopSettings, qrPayload: string | null,
+  logo?: string | null,
 ): PrintJob {
   const items = bill.orders.flatMap(o => o.items)
   const method = METHOD_LABELS[bill.method as PaymentMethod] ?? bill.method
@@ -60,6 +64,7 @@ export function receiptJob(
     : `VAT ${settings.vatRate}%`
 
   const cmds: PrintCmd[] = [
+    ...(logo ? [{ kind: 'image', data: logo } as PrintCmd] : []),
     { kind: 'text', text: settings.shopName, align: 'center', size: 'lg', bold: true },
     ...(settings.receiptHeader ? lines(settings.receiptHeader) : []),
     rule(),
@@ -108,8 +113,11 @@ export function receiptJob(
  * Kitchen ticket: no prices at all, big order number, options and notes shown
  * in full. What the line cook needs and nothing else.
  */
-export function kitchenTicketJob(order: SlipOrder, shopName: string, widthMm: number): PrintJob {
+export function kitchenTicketJob(
+  order: SlipOrder, shopName: string, widthMm: number, logo?: string | null,
+): PrintJob {
   const cmds: PrintCmd[] = [
+    ...(logo ? [{ kind: 'image', data: logo } as PrintCmd] : []),
     { kind: 'text', text: shopName, align: 'center', bold: true },
     {
       kind: 'text', text: `ออเดอร์ #${order.dailyNumber ?? order.id}`,

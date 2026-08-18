@@ -8,6 +8,7 @@ export type ShopSettings = BillSettings & {
   receiptHeader: string
   receiptFooter: string
   receiptWidth: number
+  logoUrl: string
 }
 
 export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
@@ -20,6 +21,7 @@ export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
   receiptHeader: '',
   receiptFooter: '',
   receiptWidth: 58,
+  logoUrl: '',
 }
 
 // The single AppSettings row, with every field defaulted. Bills are priced
@@ -37,5 +39,6 @@ export async function loadShopSettings(prisma: PrismaClient): Promise<ShopSettin
     receiptHeader: row.receiptHeader ?? '',
     receiptFooter: row.receiptFooter ?? '',
     receiptWidth: row.receiptWidth ?? 58,
+    logoUrl: row.logoUrl ?? '',
   }
 }

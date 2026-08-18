@@ -29,6 +29,11 @@ export function slipStyles(widthMm: number): string {
       line-height: 1.35; color: #000; background: #fff;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
+    .logo {
+      display: block; margin: 0 auto 1mm;
+      width: ${widthMm >= 80 ? 38 : 26}mm; max-width: 70%; height: auto;
+      filter: grayscale(1) contrast(3);
+    }
     .c { text-align: center; }
     .r { text-align: right; }
     .b { font-weight: 700; }

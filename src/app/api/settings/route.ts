@@ -19,6 +19,7 @@ export async function GET() {
       receiptHeader: settings?.receiptHeader ?? '',
       receiptFooter: settings?.receiptFooter ?? '',
       receiptWidth: settings?.receiptWidth ?? 58,
+      logoUrl: settings?.logoUrl ?? '',
     })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to fetch settings', detail: String(err) }, { status: 500 })
@@ -68,6 +69,7 @@ export async function PATCH(request: Request) {
     if (body.receiptHeader !== undefined) data.receiptHeader = String(body.receiptHeader).trim()
     if (body.receiptFooter !== undefined) data.receiptFooter = String(body.receiptFooter).trim()
     if (body.receiptWidth !== undefined) data.receiptWidth = Number(body.receiptWidth) === 80 ? 80 : 58
+    if (body.logoUrl !== undefined) data.logoUrl = String(body.logoUrl)
 
     if (existing) {
       await prisma.appSettings.update({ where: { id: existing.id }, data })
