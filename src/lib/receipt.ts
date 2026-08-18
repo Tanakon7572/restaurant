@@ -41,7 +41,9 @@ function logoBlock(url: string): string {
  * passed in rather than generated here so this module stays free of React and
  * printing works with no network.
  */
-export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: string | null): string {
+export function receiptHtml(
+  bill: SlipBill, settings: ShopSettings, qrSvg?: string | null,
+): string {
   const items = bill.orders.flatMap(o => o.items)
   const method = METHOD_LABELS[bill.method as PaymentMethod] ?? bill.method
 
@@ -51,8 +53,9 @@ export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: stri
 
   return `
     <div class="c">
-      ${logoBlock(settings.logoUrl)}
-      <div class="lg b">${escapeHtml(settings.shopName)}</div>
+      ${settings.logoUrl
+        ? logoBlock(settings.logoUrl)
+        : `<div class="lg b">${escapeHtml(settings.shopName)}</div>`}
       ${settings.receiptHeader
         ? `<div>${escapeHtml(settings.receiptHeader).replace(/\n/g, '<br>')}</div>` : ''}
     </div>
@@ -75,7 +78,15 @@ export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: stri
     <div class="row"><span>ชำระโดย</span><span>${escapeHtml(method)}</span></div>
     ${bill.received != null ? moneyRow('รับเงิน', bill.received) : ''}
     ${bill.changeDue != null ? moneyRow('เงินทอน', bill.changeDue) : ''}
-    ${qrSvg ? `<div class="qr">${qrSvg}</div><div class="c">สแกนเพื่อชำระเงิน</div>` : ''}
+    ${qrSvg
+      ? `<div class="qr">${qrSvg}</div><div class="c">สแกนเพื่อชำระเงิน</div>`
+      : settings.paymentQrUrl && !settings.promptPayId && bill.method === 'promptpay'
+        // No amount is encoded in the shop's own QR, so the figure is spelled
+        // out beside it; otherwise the customer types whatever they like.
+        ? `<div class="rule"></div><div class="c">สแกนเพื่อชำระเงิน</div>
+           <img class="payqr" src="${escapeHtml(settings.paymentQrUrl)}" alt="">
+           <div class="c b">กรอกยอด ${baht(bill.total)} บาทเอง</div>`
+        : ''}
     <div class="rule"></div>
     <div class="c">
       ${settings.receiptFooter
@@ -93,8 +104,7 @@ export function receiptHtml(bill: SlipBill, settings: ShopSettings, qrSvg?: stri
 export function kitchenTicketHtml(order: SlipOrder, shopName: string, logoUrl = ''): string {
   return `
     <div class="c">
-      ${logoBlock(logoUrl)}
-      <div class="b">${escapeHtml(shopName)}</div>
+      ${logoUrl ? logoBlock(logoUrl) : `<div class="b">${escapeHtml(shopName)}</div>`}
       <div class="xl b">ออเดอร์ #${order.dailyNumber ?? order.id}</div>
       ${order.tableNumber ? `<div class="lg b">โต๊ะ ${escapeHtml(order.tableNumber)}</div>` : ''}
       ${order.customerName ? `<div>${escapeHtml(order.customerName)}</div>` : ''}

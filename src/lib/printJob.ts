@@ -56,6 +56,8 @@ function itemCmds(items: SlipItem[], withPrice: boolean): PrintCmd[] {
 export function receiptJob(
   bill: SlipBill, settings: ShopSettings, qrPayload: string | null,
   logo?: string | null,
+  /** The shop's own payment QR, already reduced for the head. Carries no amount. */
+  payQr?: string | null,
 ): PrintJob {
   const items = bill.orders.flatMap(o => o.items)
   const method = METHOD_LABELS[bill.method as PaymentMethod] ?? bill.method
@@ -64,8 +66,11 @@ export function receiptJob(
     : `VAT ${settings.vatRate}%`
 
   const cmds: PrintCmd[] = [
-    ...(logo ? [{ kind: 'image', data: logo } as PrintCmd] : []),
-    { kind: 'text', text: settings.shopName, align: 'center', size: 'lg', bold: true },
+    // The logo carries the shop's name where there is one; printing both
+    // says it twice and costs a line of paper on every slip.
+    ...(logo
+      ? [{ kind: 'image', data: logo } as PrintCmd]
+      : [{ kind: 'text', text: settings.shopName, align: 'center', size: 'lg', bold: true } as PrintCmd]),
     ...(settings.receiptHeader ? lines(settings.receiptHeader) : []),
     rule(),
     { kind: 'row', left: `ใบเสร็จ #${bill.id}`, right: thaiDateTime(bill.createdAt), size: 'sm' },
@@ -97,7 +102,18 @@ export function receiptJob(
   )
   if (bill.received != null) cmds.push(money('รับเงิน', bill.received))
   if (bill.changeDue != null) cmds.push(money('เงินทอน', bill.changeDue))
-  if (qrPayload) cmds.push({ kind: 'qr', data: qrPayload, caption: 'สแกนเพื่อชำระเงิน' })
+  if (qrPayload) {
+    cmds.push({ kind: 'qr', data: qrPayload, caption: 'สแกนเพื่อชำระเงิน' })
+  } else if (payQr) {
+    // The shop's printed QR: no amount is encoded in it, so the figure has to
+    // be said in words next to it or the customer types whatever they like.
+    cmds.push(
+      rule(),
+      { kind: 'text', text: 'สแกนเพื่อชำระเงิน', align: 'center' },
+      { kind: 'image', data: payQr },
+      { kind: 'text', text: `กรอกยอด ${baht(bill.total)} บาทเอง`, align: 'center', bold: true },
+    )
+  }
 
   cmds.push(
     rule(),
@@ -117,8 +133,9 @@ export function kitchenTicketJob(
   order: SlipOrder, shopName: string, widthMm: number, logo?: string | null,
 ): PrintJob {
   const cmds: PrintCmd[] = [
-    ...(logo ? [{ kind: 'image', data: logo } as PrintCmd] : []),
-    { kind: 'text', text: shopName, align: 'center', bold: true },
+    ...(logo
+      ? [{ kind: 'image', data: logo } as PrintCmd]
+      : [{ kind: 'text', text: shopName, align: 'center', bold: true } as PrintCmd]),
     {
       kind: 'text', text: `ออเดอร์ #${order.dailyNumber ?? order.id}`,
       align: 'center', size: 'xl', bold: true,

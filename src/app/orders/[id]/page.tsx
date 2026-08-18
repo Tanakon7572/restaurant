@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePrintLogo } from '@/lib/usePrintLogo'
+import { usePrintImage } from '@/lib/usePrintLogo'
+import { logoDots } from '@/lib/slipLogo'
 import { useRouter, useParams } from 'next/navigation'
 import PosShell from '@/components/PosShell'
 import ConfirmModal from '@/components/ConfirmModal'
@@ -103,7 +104,7 @@ export default function OrderDetailPage() {
   const [shopName, setShopName] = useState('ร้านอาหาร')
   const [receiptWidth, setReceiptWidth] = useState(58)
   const [logoUrl, setLogoUrl] = useState('')
-  const printLogo = usePrintLogo(logoUrl, receiptWidth)
+  const printLogo = usePrintImage(logoUrl, logoDots(receiptWidth))
   const router = useRouter()
   const params = useParams()
 

@@ -34,6 +34,10 @@ export function slipStyles(widthMm: number): string {
       width: ${widthMm >= 80 ? 38 : 26}mm; max-width: 70%; height: auto;
       filter: grayscale(1) contrast(3);
     }
+    .payqr {
+      display: block; margin: 1.5mm auto; width: ${widthMm >= 80 ? 54 : 40}mm;
+      max-width: 92%; height: auto; filter: grayscale(1) contrast(3);
+    }
     .c { text-align: center; }
     .r { text-align: right; }
     .b { font-weight: 700; }

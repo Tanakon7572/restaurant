@@ -1,31 +1,29 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { logoForPrinting } from './slipLogo'
+import { imageForPrinting } from './slipLogo'
 
 /**
- * The printable logo, ready before anyone presses print.
+ * A printable picture, ready before anyone presses print.
  *
- * Converting it takes a canvas and an image load, and the moment a slip is
+ * Converting one takes a canvas and an image load, and the moment a slip is
  * wanted is the worst moment to start: a cashier is holding a customer's
  * money. So it is prepared when the settings arrive and simply sits there.
  *
- * Null means no logo, a logo that failed to load, or one still converting —
- * all three print the shop name alone, which is what happened before there
- * was a logo at all.
+ * Null means no image, one that failed to load, or one still converting — all
+ * three print the slip without it, which is what happened before.
  */
-export function usePrintLogo(logoUrl: string, widthMm: number): string | null {
-  // The URL is stored alongside the result so a logo converted for the
+export function usePrintImage(url: string, dots: number): string | null {
+  // The URL is stored alongside the result so a picture converted for the
   // previous one is never handed out while the new one is still loading.
   const [done, setDone] = useState<{ url: string; data: string | null } | null>(null)
 
   useEffect(() => {
-    if (!logoUrl) return
+    if (!url) return
     let alive = true
-    logoForPrinting(logoUrl, widthMm)
-      .then(data => { if (alive) setDone({ url: logoUrl, data }) })
+    imageForPrinting(url, dots).then(data => { if (alive) setDone({ url, data }) })
     return () => { alive = false }
-  }, [logoUrl, widthMm])
+  }, [url, dots])
 
-  return logoUrl && done?.url === logoUrl ? done.data : null
+  return url && done?.url === url ? done.data : null
 }

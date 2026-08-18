@@ -21,8 +21,8 @@ android {
         applicationId = "com.foodorder.pos"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
 
         // The POS server the wrapper loads. Change this, not the Kotlin.
         buildConfigField("String", "POS_URL", "\"https://restaurant-lac-one.vercel.app\"")
