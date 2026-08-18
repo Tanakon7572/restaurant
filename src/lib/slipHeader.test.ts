@@ -28,10 +28,9 @@ it('logo replaces the shop name, and the name returns without one', () => {
   expect(kitchenTicketHtml(order, 'ร้านเครป', '')).toContain('ร้านเครป')
 })
 
-it('prints the uploaded QR with the amount spelled out, never encoded', () => {
+it('prints the uploaded QR as a picture, never as an encoded payload', () => {
   const j = receiptJob(bill, DEFAULT_SHOP_SETTINGS, null, null, 'QRPNG')
   expect(images(j)).toBe(1)
-  expect(texts(j).join(' ')).toContain('กรอกยอด')
   // no `qr` command: nothing was encoded, so nothing can carry a wrong amount
   expect(j.cmds.some(c => c.kind === 'qr')).toBe(false)
 })
@@ -40,7 +39,6 @@ it('a generated PromptPay code wins over the uploaded image', () => {
   const j = receiptJob(bill, DEFAULT_SHOP_SETTINGS, 'PAYLOAD', null, 'QRPNG')
   expect(j.cmds.some(c => c.kind === 'qr')).toBe(true)
   expect(images(j)).toBe(0)
-  expect(texts(j).join(' ')).not.toContain('กรอกยอด')
 })
 
 it('html shows the uploaded QR only for promptpay with no id', () => {

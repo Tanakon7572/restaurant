@@ -105,13 +105,13 @@ export function receiptJob(
   if (qrPayload) {
     cmds.push({ kind: 'qr', data: qrPayload, caption: 'สแกนเพื่อชำระเงิน' })
   } else if (payQr) {
-    // The shop's printed QR: no amount is encoded in it, so the figure has to
-    // be said in words next to it or the customer types whatever they like.
+    // The shop's printed QR carries no amount. The total is already set in the
+    // largest type on the slip a few lines up, so repeating it here would only
+    // crowd the code.
     cmds.push(
       rule(),
       { kind: 'text', text: 'สแกนเพื่อชำระเงิน', align: 'center' },
       { kind: 'image', data: payQr },
-      { kind: 'text', text: `กรอกยอด ${baht(bill.total)} บาทเอง`, align: 'center', bold: true },
     )
   }
 

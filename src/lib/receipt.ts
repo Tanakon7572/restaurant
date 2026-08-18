@@ -81,11 +81,10 @@ export function receiptHtml(
     ${qrSvg
       ? `<div class="qr">${qrSvg}</div><div class="c">สแกนเพื่อชำระเงิน</div>`
       : settings.paymentQrUrl && !settings.promptPayId && bill.method === 'promptpay'
-        // No amount is encoded in the shop's own QR, so the figure is spelled
-        // out beside it; otherwise the customer types whatever they like.
+        // The shop's own QR carries no amount. The total is already set in the
+        // largest type on the slip a few lines up.
         ? `<div class="rule"></div><div class="c">สแกนเพื่อชำระเงิน</div>
-           <img class="payqr" src="${escapeHtml(settings.paymentQrUrl)}" alt="">
-           <div class="c b">กรอกยอด ${baht(bill.total)} บาทเอง</div>`
+           <img class="payqr" src="${escapeHtml(settings.paymentQrUrl)}" alt="">`
         : ''}
     <div class="rule"></div>
     <div class="c">
